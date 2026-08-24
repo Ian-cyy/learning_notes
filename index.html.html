@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOC 学习全记录</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f6f8fb;
+    --bg-card: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --primary: #1a2744;
+    --primary-light: #2c4a7c;
+    --accent: #4a9eff;
+    --accent-light: #e8f2ff;
+    --code-bg: #f4f6fa;
+    --code-text: #2c3e50;
+    --formula-bg: #faf8f2;
+    --formula-border: #e8dcc0;
+    --formula-text: #5a4a2a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+    --sidebar-width: 300px;
+    --content-max: 860px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --text: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border: #334155;
+    --border-light: #1e293b;
+    --primary: #3b5998;
+    --primary-light: #4a6fa5;
+    --accent: #60a5fa;
+    --accent-light: #1e3a5f;
+    --code-bg: #1e293b;
+    --code-text: #cbd5e1;
+    --formula-bg: #1e293b;
+    --formula-border: #475569;
+    --formula-text: #fbbf24;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg);
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ===== 顶部导航栏 ===== */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.85);
+  }
+  [data-theme="dark"] .topbar { background: rgba(15,23,42,0.85); }
+
+  .topbar-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-title .dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .topbar-title .sub {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 8px;
+  }
+
+  .topbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .icon-btn {
+    width: 36px; height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .menu-btn { display: none; }
+
+  /* ===== 侧边栏 ===== */
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: var(--sidebar-width);
+    height: calc(100vh - 60px);
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px 0;
+    z-index: 90;
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar-header {
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sidebar-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .toc-list { list-style: none; padding: 0 12px; }
+  .toc-list li { margin: 2px 0; }
+  .toc-list a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13.5px;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+  }
+  .toc-list a:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+  .toc-list a.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  .toc-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    background: var(--border);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc-list a.active .toc-num {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ===== 主内容区 ===== */
+  .main {
+    margin-left: var(--sidebar-width);
+    margin-top: 60px;
+    padding: 40px 48px 80px;
+    min-height: calc(100vh - 60px);
+  }
+
+  .content-wrapper {
+    max-width: var(--content-max);
+    margin: 0 auto;
+  }
+
+  /* ===== 文章头部 ===== */
+  .article-header {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid var(--border);
+  }
+  .article-header .tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+  .article-header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .article-header .subtitle {
+    font-size: 17px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+  }
+  .article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .article-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* ===== 章节标题 ===== */
+  h2.chapter {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 50px 0 24px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: #fff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+    scroll-margin-top: 80px;
+  }
+  h2.chapter .ch-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 32px 0 14px;
+    padding-left: 14px;
+    border-left: 4px solid var(--accent);
+    scroll-margin-top: 80px;
+  }
+
+  h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-light);
+    margin: 22px 0 10px;
+    scroll-margin-top: 80px;
+  }
+
+  p { margin: 10px 0; text-align: justify; }
+
+  /* ===== 代码块 ===== */
+  pre, code {
+    font-family: "JetBrains Mono", "Fira Code", "DejaVu Sans Mono", "Noto Sans Mono CJK SC", monospace;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 13px;
+    line-height: 1.65;
+    overflow-x: auto;
+    margin: 14px 0;
+    color: var(--code-text);
+  }
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #e06c5e;
+  }
+  [data-theme="dark"] code { color: #f87171; }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* ===== 公式 ===== */
+  .formula {
+    background: var(--formula-bg);
+    border: 1px solid var(--formula-border);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 14px 0;
+    font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace;
+    font-size: 14px;
+    text-align: center;
+    color: var(--formula-text);
+    overflow-x: auto;
+  }
+
+  /* ===== 问题卡片 ===== */
+  .issue-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin: 20px 0;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.2s;
+  }
+  .issue-card:hover { box-shadow: var(--shadow-lg); }
+
+  .issue-header {
+    background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: #fff;
+    padding: 12px 18px;
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .issue-header .issue-id {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 24px;
+    background: #ffc857;
+    color: var(--primary);
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 0 8px;
+  }
+
+  .issue-body { padding: 16px 20px; }
+  .issue-body .field { margin: 8px 0; }
+  .issue-body .field-label {
+    font-weight: 700;
+    margin-right: 6px;
+  }
+  .field-label.phenomenon { color: #f59e0b; }
+  .field-label.reason { color: #ef4444; }
+  .field-label.debug { color: #a855f7; }
+  .field-label.solution { color: #22c55e; }
+  .field-label.lesson { color: #3b82f6; }
+
+  /* ===== 分类栏 ===== */
+  .category-bar {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 18px;
+    margin: 30px 0 14px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .category-bar::before {
+    content: "";
+    width: 4px; height: 16px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* ===== 表格 ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13.5px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  th {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  td {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--bg-secondary); }
+
+  /* ===== 提示框 ===== */
+  .tip-box, .warn-box {
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 16px 0;
+  }
+  .tip-box {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+  }
+  .tip-box .tip-title {
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .warn-box {
+    background: #fef5e7;
+    border-left: 4px solid #f59e0b;
+  }
+  [data-theme="dark"] .warn-box { background: #422006; border-left-color: #f59e0b; }
+  .warn-box .warn-title {
+    font-weight: 700;
+    color: #d97706;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  [data-theme="dark"] .warn-box .warn-title { color: #fbbf24; }
+
+  /* ===== 列表 ===== */
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  /* ===== 参数组 ===== */
+  .param-group { margin: 20px 0; }
+  .param-group-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-light);
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .status-done { color: #22c55e; font-weight: 700; }
+  .status-todo { color: #f59e0b; font-weight: 700; }
+
+  /* ===== 回到顶部 ===== */
+  .back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 44px; height: 44px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+    z-index: 80;
+  }
+  .back-to-top.visible { opacity: 1; visibility: visible; }
+  .back-to-top:hover { transform: translateY(-2px); }
+
+  /* ===== 阅读进度条 ===== */
+  .progress-bar {
+    position: fixed;
+    top: 60px; left: 0;
+    height: 3px;
+    background: var(--accent);
+    z-index: 95;
+    transition: width 0.1s;
+  }
+
+  /* ===== 遮罩层（移动端） ===== */
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 60px; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 85;
+  }
+  .overlay.show { display: block; }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 900px) {
+    .menu-btn { display: flex; }
+    .sidebar {
+      transform: translateX(-100%);
+      box-shadow: var(--shadow-lg);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; padding: 24px 20px 60px; }
+    .article-header h1 { font-size: 24px; }
+    h2.chapter { font-size: 19px; padding: 12px 16px; }
+    h2.chapter .ch-num { width: 30px; height: 30px; font-size: 14px; }
+    .topbar-title .sub { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .main { padding: 16px 14px 50px; }
+    .article-meta { gap: 12px; font-size: 12px; }
+    pre { font-size: 12px; padding: 12px 14px; }
+    table { font-size: 12px; }
+    th, td { padding: 7px 10px; }
+  }
+
+  /* ===== 滚动条美化 ===== */
+  .sidebar::-webkit-scrollbar { width: 5px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  pre::-webkit-scrollbar { height: 6px; }
+  pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- 阅读进度条 -->
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+
+<!-- 顶部导航 -->
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menuBtn" title="目录">☰</button>
+  <div class="topbar-title">
+    <span class="dot"></span>
+    FOC 学习全记录
+    <span class="sub">从数学仿真到霍尔闭环电压控制 FOC</span>
+  </div>
+  <div class="topbar-actions">
+    <a class="icon-btn" href="https://github.com/Ian-cyy" target="_blank" title="GitHub: Ian-cyy" style="text-decoration:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+    </a>
+    <button class="icon-btn" id="themeBtn" title="切换深色模式">🌙</button>
+  </div>
+</header>
+
+<!-- 遮罩层 -->
+<div class="overlay" id="overlay"></div>
+
+<!-- 侧边栏目录 -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h3>📑 章节目录</h3>
+  </div>
+  <ul class="toc-list">
+    <li><a href="#ch1" data-target="ch1"><span class="toc-num">一</span>项目起点与整体目标</a></li>
+    <li><a href="#ch2" data-target="ch2"><span class="toc-num">二</span>硬件平台与引脚</a></li>
+    <li><a href="#ch3" data-target="ch3"><span class="toc-num">三</span>坐标变换数学仿真</a></li>
+    <li><a href="#ch4" data-target="ch4"><span class="toc-num">四</span>SPWM 三相输出</a></li>
+    <li><a href="#ch5" data-target="ch5"><span class="toc-num">五</span>霍尔传感器测角</a></li>
+    <li><a href="#ch6" data-target="ch6"><span class="toc-num">六</span>闭环速度控制</a></li>
+    <li><a href="#ch7" data-target="ch7"><span class="toc-num">七</span>问题与解决方法</a></li>
+    <li><a href="#ch8" data-target="ch8"><span class="toc-num">八</span>关键参数一览</a></li>
+    <li><a href="#ch9" data-target="ch9"><span class="toc-num">九</span>调试工具与技巧</a></li>
+    <li><a href="#ch10" data-target="ch10"><span class="toc-num">十</span>当前状态与下一步</a></li>
+  </ul>
+  <div class="sidebar-footer">
+    工程：001_foc_simulation_g431rbt6<br>
+    主控：STM32G431RBT6<br>
+    共 10 章 · 18 个问题记录<br><br>
+    <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">
+      → GitHub: Ian-cyy
+    </a>
+  </div>
+</aside>
+
+<!-- 主内容 -->
+<main class="main">
+  <div class="content-wrapper">
+
+    <!-- 文章头部 -->
+    <div class="article-header">
+      <span class="tag">EMBEDDED · MOTOR CONTROL</span>
+      <h1>FOC 学习全记录</h1>
+      <p class="subtitle">从数学仿真到霍尔闭环电压控制 FOC 的完整开发过程</p>
+      <div class="article-meta">
+        <span>🔧 STM32G431RBT6</span>
+        <span>⚡ CHB-BLDC4260 无刷电机</span>
+        <span>📐 电压模式速度闭环</span>
+        <span>📝 10 章 · 18 个问题</span>
+        <span>👤 <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">GitHub @Ian-cyy</a></span>
+      </div>
+    </div>
+
+    <!-- 第一章 -->
+    <h2 class="chapter" id="ch1"><span class="ch-num">一</span>项目起点与整体目标</h2>
+    <p>本工程从 <code>000_foc_analog</code>（STM32F103）移植而来，最初是纯软件的 FOC 坐标变换仿真（无电机、无硬件），逐步演进为：</p>
+    <div class="formula">数学仿真 → SPWM 输出 → 霍尔测角 → 霍尔闭环电压控制 FOC</div>
+    <p><strong>最终形态：</strong>用 3 路霍尔传感器测电角度，速度环输出"带符号电压指令"（q_ref），磁场角锁定转子（hall + theta_offset + 固定超前角），实现转速闭环控制、可正反转、可停车。</p>
+    <h4>移植内容</h4>
+    <ul>
+      <li><strong>foc_port</strong>（坐标变换数学库）：FOC_Clarke / Foc_Park / FOC_Rev_Park / FOC_Rev_Clarke</li>
+      <li><strong>foc_debug</strong>（调试/仿真波形生成）</li>
+      <li><strong>新增：</strong>foc_pwm（SPWM 输出）、foc_hall（霍尔测角）、foc_ctrl（控制调度）</li>
+    </ul>
+
+    <!-- 第二章 -->
+    <h2 class="chapter" id="ch2"><span class="ch-num">二</span>硬件平台与引脚</h2>
+    <h3>主控</h3>
+    <p>STM32G431RBT6（170MHz，APB1 = APB2 = 170MHz）</p>
+    <h3>电机</h3>
+    <p>CHB-BLDC4260，三相无刷内置霍尔（无驱动器）</p>
+    <ul>
+      <li><strong>结构：</strong>定子 6 槽 / 转子 8 极 ⇒ 极对数 = 4</li>
+      <li><strong>额定：</strong>12V / 0.52A / 1600rpm，空载 2000rpm，最大 1.1A / 3.9W</li>
+    </ul>
+    <h3>驱动板</h3>
+    <p>12V 三相无刷驱动板，3 路 PWM 输入（内含死区）</p>
+    <h3>定时器分配</h3>
+    <table>
+      <tr><th>定时器</th><th>用途</th><th>配置 / 引脚</th></tr>
+      <tr><td>TIM6</td><td>20kHz 控制中断</td><td>Prescaler=0, Period=8499</td></tr>
+      <tr><td>TIM4</td><td>PWM 输出（U/V 相）</td><td>CH1=PA11(UI), CH2=PA12(V)</td></tr>
+      <tr><td>TIM15</td><td>PWM 输出（W 相）</td><td>CH1=PB14(W)，带 Break/死区的高级定时器</td></tr>
+      <tr><td>TIM2</td><td>霍尔接口</td><td>CH1=PA5, CH2=PA1, CH3=PA2，CNT 每次霍尔跳变自动清零</td></tr>
+    </table>
+    <h3>霍尔引脚定义</h3>
+    <p>PA1 = H1(bit0)　PA2 = H2(bit1)　PA5 = H3(bit2)，内部上拉</p>
+
+    <!-- 第三章 -->
+    <h2 class="chapter" id="ch3"><span class="ch-num">三</span>阶段一：坐标变换数学仿真</h2>
+    <p>纯数学，验证坐标变换正确性。所有变换为<strong>等幅值变换</strong>。</p>
+    <h3>foc_port.h 关键定义</h3>
+    <pre><code>#define _PI        3.1415926535f
+#define _PI_3      (_PI / 3.0f)
+#define SQRT_3     1.73205080757f
+#define LIMIT_ANGLE(x) fmodf(x, 2.0f*_PI)</code></pre>
+    <h3>四个变换函数（公式）</h3>
+    <table>
+      <tr><th>变换</th><th>公式</th></tr>
+      <tr><td><strong>Clarke</strong></td><td>α = a,　β = (a + 2b) / √3</td></tr>
+      <tr><td><strong>Park</strong></td><td>q = cosθ·β − sinθ·α,　d = cosθ·α + sinθ·β</td></tr>
+      <tr><td><strong>逆 Park</strong></td><td>α = cosθ·d − sinθ·q,　β = cosθ·q + sinθ·d</td></tr>
+      <tr><td><strong>逆 Clarke</strong></td><td>a = α,　b = (√3·β − α) / 2,　c = (−α − √3·β) / 2</td></tr>
+    </table>
+    <h3>foc_debug 两种自测模式</h3>
+    <p>通过 TIM6 中断回调切换：</p>
+    <ol>
+      <li><strong>正逆闭环自检</strong>（Clarke_Park_Debug + RePark_ReClarke_Debug）：生成互差 120° 三相正弦 → Clarke → Park（d≈1, q≈0 自检）→ 逆变换还原。</li>
+      <li><strong>反向输出</strong>（Rev_Output_Debug）：可调 d_ref / q_ref 经逆 Park + 逆 Clarke 生成三相正弦。</li>
+    </ol>
+    <p>调试输出：<code>Send_Debug_Data()</code> 打包 CSV 经 USART 发 VOFA+ 画波形。</p>
+    <div class="tip-box">
+      <div class="tip-title">💡 关键经验</div>
+      <ul>
+        <li>模拟电角度 x 用 <code>fmodf</code> 取模到 [0, 2π)，形成锯齿（0→6.28→0），这是电角度周期的标准表示，跳回 0 是正常的。</li>
+        <li>扇区内插值角度一定"上升"（sector×60 + frac×60），与方向无关。</li>
+      </ul>
+    </div>
+
+    <!-- 第四章 -->
+    <h2 class="chapter" id="ch4"><span class="ch-num">四</span>阶段二：SPWM 三相输出</h2>
+    <p><code>foc_pwm.c</code>：<code>FOC_RUN_SPWM</code> 把 dq 电压变成三路 20kHz 占空比写到 CCR。</p>
+    <h3>核心流程</h3>
+    <div class="formula">dq → 逆 Park → 逆 Clarke → +half_power 抬升到 [0, power] → 映射 CCR → 写定时器</div>
+    <h3>关键代码</h3>
+    <pre><code>void FOC_RUN_SPWM(dq_t U_qd, float angle_el)
+{
+    input  = FOC_Rev_Park(U_qd, angle_el);    // dq -> αβ
+    output = FOC_Rev_Clarke(input);            // αβ -> abc
+    output.a += half_power;  // 抬升偏置使占空比绕 50% 摆动
+    output.b += half_power;
+    output.c += half_power;
+    ccr = output / power * Tpwm;  // 映射 CCR，限幅 [0, Tpwm]
+    A_H_SET_PWM(ccr);  B_H_SET_PWM(ccr);  C_H_SET_PWM(ccr);
+}</code></pre>
+    <p><strong>参数：</strong>power = 12（母线电压），Tpwm = 8499（ARR）。</p>
+    <div class="warn-box">
+      <div class="warn-title">⚠️ 幅值限制</div>
+      SPWM 线性区相电压峰值 ≤ power/2 = <strong>6V</strong>，q_ref 超过会进入过调制。
+    </div>
+    <h3>遇到的问题与解决</h3>
+    <h4>1. HAL_TIMEx_MOEStart 编译报错 / 链接失败</h4>
+    <ul>
+      <li><strong>原因：</strong>G4 HAL 没有这个 API（那是 F1/F4 的老接口），G4 用的是 <code>__HAL_TIM_MOE_ENABLE</code> 宏。</li>
+      <li><strong>解决：</strong>直接删掉这行——<code>HAL_TIM_PWM_Start()</code> 内部已对带 Break 的 TIM15 自动执行 <code>__HAL_TIM_MOE_ENABLE</code>，PB14 会有输出。</li>
+    </ul>
+    <h4>2. 开环电机抖动不转</h4>
+    <p>q_ref = 1V 太弱（扭矩不够克服齿槽力），调到 1.5~3V。</p>
+    <h4>3. 冷启动抖动</h4>
+    <p>9.55Hz 磁场瞬时给，转子咬不住 → 抖动。解决：加大 q_ref 或用软启动斜坡。</p>
+
+    <!-- 第五章 -->
+    <h2 class="chapter" id="ch5"><span class="ch-num">五</span>阶段三：霍尔传感器测角</h2>
+    <p>TIM2 霍尔接口：TI1/TI2/TI3 三路异或，计数器在每次霍尔跳变自动清零（SMS=RESET），所以 CNT = 本 60° 扇区内走过的 170MHz 计数，天然适合扇区内插值。</p>
+    <h3>FOC_HALL_Update 核心逻辑（20kHz 每拍调用）</h3>
+    <ol>
+      <li>读 3 路霍尔合成码：<code>code = H1 | H2&lt;&lt;1 | H3&lt;&lt;2</code></li>
+      <li>软件去抖：码需连续稳定 3 拍（150μs）才认可</li>
+      <li>查 sector_tab 得到扇区号 0~5</li>
+      <li>扇区跳变时：判断正/反转方向（hall_rev）、扇区周期低通、算带符号转速</li>
+      <li><strong>方向感知插值：</strong>
+        <ul>
+          <li>正转：hall = sector×60 + frac×60（低端升到高端）</li>
+          <li>反转：hall = (sector+1)×60 − frac×60（高端降到低端）</li>
+        </ul>
+      </li>
+    </ol>
+    <h3>扇区表（按电机实际转向标定）</h3>
+    <pre><code>static const uint8_t sector_tab[8] = {
+    0xFF, 0, 4, 5, 2, 1, 3, 0xFF
+    /* 000/111 无效；001->0, 010->4, 011->5, 100->2, 101->1, 110->3 */
+};
+/* 码序：电机正转 1->5->4->6->2->3，映射扇区 0->1->2->3->4->5 */</code></pre>
+    <h3>实测转速（带方向）</h3>
+    <div class="formula">measured_rpm = ±4.25e8 / sector_period</div>
+    <p>（170MHz × 60 / (6 × 4 × sector_period)）</p>
+    <p>sector_period = 0.7×old + 0.3×new（低通滤波，速度估计更稳）</p>
+    <h3>遇到的问题与解决（霍尔这块最曲折）</h3>
+    <h4>1. 霍尔码含毛刺（PWM 噪声耦合）</h4>
+    <ul>
+      <li><strong>现象：</strong>手转干净，电机一转就乱。</li>
+      <li><strong>解决：</strong>软件去抖（连续 3 拍同码才认）。</li>
+    </ul>
+    <h4>2. 扇区边界"卡死 + 突跳"</h4>
+    <ul>
+      <li><strong>原因：</strong>扇区实际比估计的慢，frac 提前顶到 1 → 干等在边界。</li>
+      <li><strong>解决：</strong>扇区周期低通滤波 + frac>1 时用实时 CNT 重新锚定。</li>
+    </ul>
+    <h4>3. 标定扇区表必须看原始码</h4>
+    <ul>
+      <li><strong>原因：</strong>raw 是物理事实，扇区号是我们贴的标签，顺序未知。</li>
+      <li><strong>方法：</strong>手转慢，记 raw 序列；校验"相邻码只差 1 位"（格雷码），毛刺序列不能用来建表。</li>
+      <li><strong>本电机实测干净序列：</strong>1→3→2→6→4→5（手转），电机转反向即 1→5→4→6→2→3。</li>
+    </ul>
+    <h4>4. 方向感知：反转时角度畸变</h4>
+    <ul>
+      <li><strong>现象：</strong>升一段、掉一截。</li>
+      <li><strong>原因：</strong>插值恒为 sector×60 + frac×60（只上升），反转时应从高端降到低端。</li>
+      <li><strong>解决：</strong>加 hall_rev 方向标志，反转用 (sector+1)×60 − frac×60。</li>
+      <li><strong>副作用收益：</strong>measured_rpm 同时带上正负号，闭环才能分正反转。</li>
+    </ul>
+
+    <!-- 第六章 -->
+    <h2 class="chapter" id="ch6"><span class="ch-num">六</span>阶段四：闭环速度控制</h2>
+    <h3>控制调度 FOC_CTRL_Step（TIM6 20kHz 每拍）</h3>
+    <pre><code>FOC_HALL_Update()
+if (hall_calib_flag)   Ctrl_Calib_Step();    // 标定
+else if (closed_loop)   Ctrl_Closed_Step();   // 闭环
+else                    Ctrl_Speed_Step();    // 开环
+FOC_RUN_SPWM((d_ref, q_ref), x)
+Ctrl_Send_Step();                               // 每 50 拍置串口发送标志</code></pre>
+    <h3>开环 Ctrl_Speed_Step</h3>
+    <div class="formula">angle_step = motor_rpm × POLE_PAIRS × 2π / (60 × 20000)</div>
+    <p>固定速率斜坡（RPM_ACCEL = 800rpm/s）→ x 累加。开环 = 磁场自由转，转子跟不跟得上看运气（会失步/抖）。</p>
+    <h3>标定 Ctrl_Calib_Step（相位对齐）</h3>
+    <p>x 冻结，强磁场（q_ref = 5~6V）拉转子 → 等稳定（50ms 角度 < 1°）→ theta_offset = x(度) − hall_angle_deg，归一化到 [0, 360)。</p>
+    <h3>闭环 Ctrl_Closed_Step（最终方案，电压控制）</h3>
+    <ol>
+      <li>motor_rpm == 0 时清积分 + 电压（停车释放）</li>
+      <li>rpm_ref 斜坡（800rpm/s）</li>
+      <li>速度 PI → pid_v（带符号电压，限幅 ±6V）：
+        <ul>
+          <li>pid_err = rpm_ref − measured_rpm</li>
+          <li>i_term += pid_ki × pid_err（限幅 ±4V）</li>
+          <li>pid_v = pid_kp × pid_err + i_term（限幅 ±6V）</li>
+        </ul>
+      </li>
+      <li>q_ref = pid_v　<span style="color:#ef4444">// 带符号！正=正转，负=反转</span></li>
+      <li>pid_delta = pid_delta_fwd（固定 30° 超前角）</li>
+      <li>磁场角 x = (hall + theta_offset + pid_delta) × π/180</li>
+    </ol>
+    <h4>闭环核心代码</h4>
+    <pre><code>static void Ctrl_Closed_Step(void)
+{
+    static float i_term = 0.0f;
+    if (motor_rpm == 0.0f) { i_term = 0.0f; pid_v = 0.0f; }  // 停车释放
+    { rpm_ref 斜坡 }
+    pid_err = rpm_ref - measured_rpm;
+    i_term += pid_ki * pid_err;          // 限幅 ±pid_i_max
+    pid_v = pid_kp * pid_err + i_term;   // 限幅 ±pid_v_max
+    q_ref = pid_v;                        // 带符号电压
+    pid_delta = pid_delta_fwd;            // 固定超前角 30°
+    x = (hall_angle_deg + theta_offset + pid_delta) * _PI / 180.0f;
+    x = LIMIT_ANGLE(x);
+    motor_rpm_actual = rpm_ref;
+}</code></pre>
+    <h3>核心物理：为什么用"电压控制"而不是"δ 控制"</h3>
+    <div class="formula">转速 ∝ V · cos(δ) / λ<sub>m</sub></div>
+    <ul>
+      <li>V = q_ref（电压幅值），δ = 磁场超前角</li>
+      <li>δ 被限幅在 ±60° 内时，cos(δ) ∈ [0.5, 1]，转速只能在 2:1 范围调</li>
+      <li>要停（转速→0）需要 cos(δ)→0 即 δ→±90°，但 90° 是零稳定裕量点</li>
+      <li><strong>结论：</strong>靠 δ 调速范围窄且停不下来，真正杠杆是电压 V</li>
+    </ul>
+    <p>因此：速度环输出"电压 pid_v"，q_ref = pid_v（带符号），δ 固定 30°。</p>
+    <h3>方向问题：为什么用 q_ref 正负反转</h3>
+    <div class="formula">扭矩 ∝ V · cos(δ) − 反电动势</div>
+    <p>cos 是偶函数 → ±δ 扭矩方向相同，翻转 δ 无法反转。要反转必须把磁场整体翻转 180°：U_qd = (0, q)，q 变负 → 逆 Park 后磁场矢量翻转 180° → 扭矩反向。</p>
+
+    <!-- 第七章 -->
+    <h2 class="chapter" id="ch7"><span class="ch-num">七</span>遇到的重要问题与解决方法</h2>
+    <p>每个问题按：<strong>现象 → 原因 → 排查 → 解决 → 教训</strong> 展开。</p>
+
+    <div class="category-bar">编译 / 链接类</div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">1</span>HAL_TIMEx_MOEStart 编译报"声明隐式" + 链接报 Undefined symbol</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label phenomenon">现象：</span>调用 HAL_TIMEx_MOEStart(&htim15)，编译警告 "declared implicitly"，链接报 "Undefined symbol"。</div>
+        <div class="field"><span class="field-label reason">原因：</span>这是 F1/F4 时代的老 API，STM32G4 的 HAL 里没有这个函数。G4 用宏 __HAL_TIM_MOE_ENABLE(htim) 直接置 BDTR.MOE 位。</div>
+        <div class="field"><span class="field-label debug">排查：</span>搜索 G4 HAL 头文件确认没有；同时发现 HAL_TIM_PWM_Start 对带 Break 的定时器会自动执行 __HAL_TIM_MOE_ENABLE。</div>
+        <div class="field"><span class="field-label solution">解决：</span>直接删掉 HAL_TIMEx_MOEStart(&htim15) 这一行，无需额外处理。</div>
+        <div class="field"><span class="field-label lesson">教训：</span>跨芯片系列移植时，HAL API 名可能变化；报"声明隐式"先搜头文件确认。</div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">2</span>串口波特率上限：4M 不行、2M 波形坏、1152000 正常</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label phenomenon">现象：</span>USART1 设 4M 收不到/乱码；设 2M 能收到但波形有毛刺丢帧；设 1152000 稳定。</div>
+        <div class="field"><span class="field-label reason">原因：</span>板载 GD32 做 DAPLink 的虚拟串口（CDC）是瓶颈：固件波特率表通常只支持到 ~2M；GD32 侧 UART 搬运 + USB CDC 端点调度在 2M 上丢字节；USB FS 带宽跟不上。STM32 硬件本身能跑 10.6M，但被 DAPLink 卡死。</div>
+        <div class="field"><span class="field-label solution">解决：</span>用 1152000（或更保守 921600）。2.5ms 一帧、每帧 ~20 字节，1152000 下只占 ~6% 带宽。</div>
+        <div class="field"><span class="field-label lesson">教训：</span>板载 USB 转串口的波特率上限在桥接芯片/固件，不是 MCU。</div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">3</span>Keil Logic Analyzer 报 error 129 "Trace not supported"</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label phenomenon">现象：</span>把变量加到 Logic Analyzer，报 "*** error 129: Trace not supported!"。</div>
+        <div class="field"><span class="field-label reason">原因：</span>Logic Analyzer 实时采样依赖 trace（ETM/ITM），而 DAPLink（CMSIS-DAP 实现）不支持 trace，是硬件能力限制。</div>
+        <div class="field"><span class="field-label solution">解决：</span>改用 Watch 窗口（暂停看全局变量）+ 串口发 VOFA+ 实时看波形。</div>
+        <div class="field"><span class="field-label lesson">教训：</span>低成本 DAPLink/ST-Link 没有 trace，实时数据走串口上位机是通用方案。</div>
+      </div>
+    </div>
+
+    <div class="category-bar">控制行为类</div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">4</span>开环电机抖动不转（空载）</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label phenomenon">现象：</span>q_ref=1、9.55Hz 电频率，电机只在原地抖，不转。</div>
+        <div class="field"><span class="field-label reason">原因：</span>q_ref=1V 只有 8% 占空比摆幅，扭矩太小，克服不了齿槽力和摩擦；冷启动直接给 9.55Hz 旋转磁场，转子从静止要瞬间同步，咬不住。</div>
+        <div class="field"><span class="field-label debug">排查：</span>q_ref 加到 1.5 能转，2.0 手捏有明显阻力 → 电压=扭矩。</div>
+        <div class="field"><span class="field-label solution">解决：</span>q_ref 提到 1.5~3V；之后加软启动斜坡。</div>
+        <div class="field"><span class="field-label lesson">教训：</span>开环 SPWM 下"电压=扭矩=能否启动"，先保证扭矩再谈转速。</div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">5</span>软启动斜坡 bug："减速到越小越慢，目标设 0 完全不减"</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label phenomenon">现象：</span>motor_rpm 从 100 改 0，电机很久都不减速；改小值时越减越慢。</div>
+        <div class="field"><span class="field-label reason">原因：</span>斜坡速率写成了与目标成正比：slew = fabsf(angle_step) * 0.00005f。目标 0 → angle_step=0 → slew=0 → 斜坡完全不动。</div>
+        <div class="field"><span class="field-label solution">解决：</span>改成固定速率斜坡（约 800rpm/s），与目标大小无关。</div>
+        <div class="field"><span class="field-label lesson">教训：</span>加减速斜坡要用固定斜率，不能用"目标的比例"。</div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">6</span>纯 P（I=0）电机转一会就停</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label phenomenon">现象：</span>pid_ki=0、kp=0.01、motor_rpm=100，电机转一小段就停。</div>
+        <div class="field"><span class="field-label reason">原因：</span>维持 100rpm 需要稳态电压 ≈ 1.5V；P 项最大输出 = 0.01×100 = 1V &lt; 1.5V，电压永远不够。</div>
+        <div class="field"><span class="field-label solution">解决：</span>调完 P 的响应特性后必须把 I 加回来（ki=0.000002、i_max=4），I 负责"攒"出维持转速的稳态电压。</div>
+        <div class="field"><span class="field-label lesson">教训：</span>电压源直驱方案下 I 是必需品不是可选项；纯 P 只用于观察响应，不能维持转速。</div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">7</span>停车后"自己动几下"（停 240° 后反向滑到 60°）</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label phenomenon">现象：</span>motor_rpm 从 500 改 0，停稳后又自己反向一扇区一扇区地滑到 60° 才停。</div>
+        <div class="field"><span class="field-label reason">原因：</span>减速过程中 i_term 积成负值（在"刹车"）；停车后 pid_v = i_term（还是负的）→ q_ref 为负 → 磁场翻转 → 反向扭矩 → 被残留积分推着反向滑。</div>
+        <div class="field"><span class="field-label solution">解决：</span>在 Ctrl_Closed_Step 开头加：if (motor_rpm == 0.0f) { i_term = 0.0f; pid_v = 0.0f; }</div>
+        <div class="field"><span class="field-label lesson">教训：</span>刹车会把积分积到"反方向"，停车/换向时积分残留是"自己动"的元凶，要主动清零。</div>
+      </div>
+    </div>
+
+    <div class="category-bar">霍尔 / 测角类</div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">8</span>霍尔码含毛刺（电机一转就乱，手转干净）</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label phenomenon">现象：</span>手转电机霍尔角度干净；一上电驱动就乱跳。</div>
+        <div class="field"><span class="field-label reason">原因：</span>20kHz PWM 开关噪声耦合进 3.3V 霍尔信号线，扇区边界码被打成无效组合（000/111），角度冻结/乱跳。</div>
+        <div class="field"><span class="field-label solution">解决：</span>软件去抖——码需连续稳定 3 拍（150μs）才认可。</div>
+        <div class="field"><span class="field-label lesson">教训：</span>PWM 驱动对霍尔引线是强干扰源；先软件去抖（成本最低），还不行再上 RC 滤波/屏蔽。</div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">9</span>扇区边界"卡死 + 突跳"（60/120/180/240 处平台）</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label phenomenon">现象：</span>霍尔角度在扇区边界卡住好几个点，然后突跳到别的扇区。</div>
+        <div class="field"><span class="field-label reason">原因：</span>frac = cnt/sector_period，若本扇区实际比估计慢，frac 提前顶到 1.0，角度干等在边界。</div>
+        <div class="field"><span class="field-label solution">解决：</span>扇区周期低通（0.7 old + 0.3 new）；frac>1 时用实时 CNT 重新锚定。</div>
+        <div class="field"><span class="field-label lesson">教训：</span>插值"线性假设 + 周期估计"，转速波动时会在扇区末端饱和，周期滤波 + 实时校正能显著压平。</div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">10</span>反转时角度畸变（升一段、掉一截，不是平滑递减）</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label phenomenon">现象：</span>开环反转，霍尔波形是"每扇区上升、到边界掉一截"。</div>
+        <div class="field"><span class="field-label reason">原因：</span>插值恒为 sector×60 + frac×60（只上升）；反转时转子从扇区高端走向低端，正确应从高端降到低端。</div>
+        <div class="field"><span class="field-label solution">解决：</span>加方向标志 hall_rev，反转用 hall = (sector+1)×60 − frac×60。</div>
+        <div class="field"><span class="field-label lesson">教训：</span>插值必须"方向感知"，否则反转波形畸形，且转速测不出方向。副作用：measured_rpm 带正负号。</div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">11</span>标定扇区表必须看原始码 + 格雷码校验</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label phenomenon">现象：</span>按 raw 序列 0→2→1→5→3→4 建表，电机"直接不转"，角度仍乱。</div>
+        <div class="field"><span class="field-label reason">原因：</span>真实霍尔序列相邻码只差 1 位（格雷码）。序列 0,2,1,5,3,4 里 0(000) 是假码，且多处相邻跳变差 2 位，整条序列违反格雷码 → 含毛刺，不能建表。</div>
+        <div class="field"><span class="field-label solution">解决：</span>慢转手记 raw，取干净序列 1→3→2→6→4→5（相邻全差 1 位）；电机转向用 1→5→4→6→2→3 映射扇区 0~5。</div>
+        <div class="field"><span class="field-label lesson">教训：</span>建表前必须用"格雷码只差1位"校验读数干净；000/111 是无效态。</div>
+      </div>
+    </div>
+
+    <div class="category-bar">闭环 / 方向类</div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">12</span>闭环反向跑飞（measured_rpm 恒负、pid_v 顶满 6V）</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label phenomenon">现象：</span>闭环一开，电机反向满速跑，measured_rpm 显示负值，pid_v 饱和。</div>
+        <div class="field"><span class="field-label reason">原因（两个叠加）：</span>
+          <ul>
+            <li>早期 measured_rpm 只有大小没有方向，反向后环路正反馈自激。</li>
+            <li>theta_offset 偏了约 180°，±30° 都落在"反向扭矩区"。</li>
+          </ul>
+        </div>
+        <div class="field"><span class="field-label solution">解决：</span>方向感知后 measured_rpm 带 ± 号；theta_offset += 180 把有效扭矩角搬回正向区。</div>
+        <div class="field"><span class="field-label lesson">教训：</span>测速必须带方向；方向错误会形成正反馈，环路越调越跑飞，是闭环最危险的失败模式。</div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">13</span>设 +100 和 -100 都是负满速跑飞 → cos(δ) 偶函数</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label phenomenon">现象：</span>motor_rpm 无论设 +100 还是 -100，measured 都显示 -1000 满速。</div>
+        <div class="field"><span class="field-label reason">根本原因：</span>扭矩 ∝ V·cos(δ) − 反电动势，cos 是偶函数，±30° 的 cos 值相同 → ±δ 产生相同方向扭矩，翻转 δ 无法反转。</div>
+        <div class="field"><span class="field-label solution">解决：</span>要反转必须把磁场整体翻转 180°：q 变负 → 逆 Park 后磁场矢量翻转 180° → 扭矩反向。所以 q_ref = pid_v（带符号）。</div>
+        <div class="field"><span class="field-label lesson">教训：</span>方向控制靠电压/电流符号（磁场翻转 180°），不是靠相位角 δ 的符号（cos 对称）。</div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">14</span>为什么扭矩角限幅不设 90°</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label reason">原因：</span>扭矩 ∝ sin(δ)，90° 是最大扭矩点，但 dT/dδ = cos(90°) = 0，即"零稳定裕量"——负载稍微一加，扭矩不增反降，直接失步。</div>
+        <div class="field"><span class="field-label solution">结论：</span>90° 是悬崖不是工作点；60° 已能出 sin60 = 0.87（87%）扭矩还留了裕量。</div>
+        <div class="field"><span class="field-label lesson">教训：</span>工程上限留裕量，靠近理论极限 = 靠近不稳定。</div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">15</span>"90° 理想角"到底是哪个角（电流角 vs 电压角）</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label phenomenon">现象：</span>把 pid_delta 设 90°，力气变小、pid_v 反而变大；设 5° 却力气很大。</div>
+        <div class="field"><span class="field-label reason">原理：</span>90° 理想指的是<strong>电流在 q 轴上</strong>（id=0 FOC），那是电流环才能强制做到的。我们是电压源直驱，控制的是电压角 δ：V_q = V·cos(δ) 才是 q 轴驱动电压 → δ 越小 V_q 越大 → 越出力。δ=90° 时 V_q=0 → 反而制动。</div>
+        <div class="field"><span class="field-label solution">解决：</span>电压源下 δ 固定 30°；要 90° 电流角必须上电流环。</div>
+        <div class="field"><span class="field-label lesson">教训：</span>别把"电流角 90°"直接套到"电压角"上，两者物理完全不同。</div>
+      </div>
+    </div>
+
+    <div class="category-bar">调试 / 流程类</div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">16</span>中断里阻塞串口会卡死 20kHz 主环</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label phenomenon">现象：</span>Send_Debug_Data 直接在 TIM6 中断里 HAL_UART_Transmit（阻塞），20kHz 中断被串口拖死。</div>
+        <div class="field"><span class="field-label solution">解决：</span>中断里只算好数据、置 uart_tx_flag；主循环 while 检测标志、再阻塞发送。</div>
+        <div class="field"><span class="field-label lesson">教训：</span>中断里绝不能做阻塞 IO。</div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">17</span>电机跑飞长时间满载，电机烫手</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label phenomenon">现象：</span>闭环跑飞时电机持续满载空转，摸起来很烫。</div>
+        <div class="field"><span class="field-label reason">原因：</span>pid_v 顶满 6V、正反馈一直加 → 长时间大电流。</div>
+        <div class="field"><span class="field-label solution">处理：</span>立即断电；驱动板余量大，但小电机（270g）容易退磁/烧绕组。</div>
+        <div class="field"><span class="field-label lesson">教训：</span>调试前加堵转/超时保护；每次测闭环只跑几秒、摸温度，跑飞立刻断电。</div>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header"><span class="issue-id">18</span>相位对齐标定 q_ref 要足（5~6V），否则 offset 不稳定</div>
+      <div class="issue-body">
+        <div class="field"><span class="field-label phenomenon">现象：</span>q=1.5 标定时 theta_offset 每次不一样（120/165 等）。</div>
+        <div class="field"><span class="field-label reason">原因：</span>q=1.5 的磁场力远小于齿槽力，转子停在齿槽定位点而非磁场对齐位，每次起始位置不同 → offset 不同。</div>
+        <div class="field"><span class="field-label debug">排查：</span>q=6 后标三次全一致 → 确认弱磁场标定不可靠。</div>
+        <div class="field"><span class="field-label solution">解决：</span>标定时 q_ref 给 5~6V，磁场力 >> 齿槽力，转子每次被吸到唯一对齐位。</div>
+        <div class="field"><span class="field-label lesson">教训：</span>校准必须在"被测信号能主导系统"的条件下做；弱激励 = 结果漂移。</div>
+      </div>
+    </div>
+
+    <!-- 第八章 -->
+    <h2 class="chapter" id="ch8"><span class="ch-num">八</span>关键参数一览</h2>
+
+    <div class="param-group">
+      <div class="param-group-title">电机 / 驱动</div>
+      <table>
+        <tr><th>参数</th><th>值</th><th>说明</th></tr>
+        <tr><td>POLE_PAIRS</td><td>4</td><td>8 极转子</td></tr>
+        <tr><td>foc_pwm.power</td><td>12.0</td><td>母线电压（V）</td></tr>
+        <tr><td>Tpwm</td><td>8499</td><td>20kHz ARR 值</td></tr>
+        <tr><td>SPWM 线性上限</td><td>q_ref ≤ 6V</td><td>power/2</td></tr>
+      </table>
+    </div>
+
+    <div class="param-group">
+      <div class="param-group-title">控制环</div>
+      <table>
+        <tr><th>参数</th><th>值</th><th>说明</th></tr>
+        <tr><td>控制频率</td><td>20kHz</td><td>TIM6，Prescaler=0 / Period=8499</td></tr>
+        <tr><td>RPM_ACCEL</td><td>800 rpm/s</td><td>软启动 / 变速固定斜率</td></tr>
+      </table>
+    </div>
+
+    <div class="param-group">
+      <div class="param-group-title">闭环速度 PI（电压量级）</div>
+      <table>
+        <tr><th>参数</th><th>值</th><th>单位</th></tr>
+        <tr><td>pid_kp</td><td>0.005</td><td>V/rpm</td></tr>
+        <tr><td>pid_ki</td><td>0.000002</td><td>V/rpm/拍</td></tr>
+        <tr><td>pid_i_max</td><td>4.0</td><td>V（积分限幅）</td></tr>
+        <tr><td>pid_v_max</td><td>6.0</td><td>V（电压上限）</td></tr>
+        <tr><td>pid_delta_fwd</td><td>30.0</td><td>°（固定超前角）</td></tr>
+      </table>
+    </div>
+
+    <div class="param-group">
+      <div class="param-group-title">测角</div>
+      <table>
+        <tr><th>参数</th><th>值</th><th>说明</th></tr>
+        <tr><td>theta_offset</td><td>180.0</td><td>相位对齐，调试中试反向得到</td></tr>
+        <tr><td>sector_tab</td><td>1→5→4→6→2→3</td><td>按电机转向映射扇区 0~5</td></tr>
+        <tr><td>去抖</td><td>3 拍</td><td>连续稳定才认可</td></tr>
+        <tr><td>扇区周期低通</td><td>0.7 / 0.3</td><td>old / new 权重</td></tr>
+        <tr><td>measured_rpm</td><td>±4.25e8 / sector_period</td><td>带符号</td></tr>
+      </table>
+    </div>
+
+    <div class="param-group">
+      <div class="param-group-title">调试接口（Watch 变量）</div>
+      <table>
+        <tr><th>变量</th><th>含义</th></tr>
+        <tr><td>closed_loop</td><td>0 开环 / 1 闭环</td></tr>
+        <tr><td>motor_rpm</td><td>转速指令</td></tr>
+        <tr><td>q_ref</td><td>闭环被 pid_v 覆盖，开环手动</td></tr>
+        <tr><td>theta_offset</td><td>相位偏移</td></tr>
+        <tr><td>hall_calib_flag</td><td>标定触发标志</td></tr>
+        <tr><td>measured_rpm</td><td>实测转速，带符号</td></tr>
+        <tr><td>pid_v / pid_err / pid_delta</td><td>PI 输出 / 误差 / 扭矩角</td></tr>
+        <tr><td>rpm_ref</td><td>斜坡后转速参考</td></tr>
+        <tr><td>hall_angle_deg</td><td>实测电角度（度）</td></tr>
+        <tr><td>x</td><td>磁场角（弧度）</td></tr>
+        <tr><td>hall_rev</td><td>方向标志</td></tr>
+      </table>
+    </div>
+
+    <div class="param-group">
+      <div class="param-group-title">串口</div>
+      <p>USART1 <strong>1152000</strong>，每 2.5ms 一帧，格式 <code>"%.2f,%.2f\n"</code> = 实测角度, 磁场角度(度)</p>
+    </div>
+
+    <!-- 第九章 -->
+    <h2 class="chapter" id="ch9"><span class="ch-num">九</span>调试工具与技巧</h2>
+    <ul>
+      <li><strong>VOFA+ 串口画波形：</strong>两列 = 实测霍尔角度 / 磁场角，正转两条同向上升锯齿。</li>
+      <li><strong>判断正反转的铁律：</strong>看 hall 扇区序号增减（递增=正转，递减=反转）；扇区内上升是插值，与方向无关。</li>
+      <li><strong>相位差(sim-hall) = theta_offset + pid_delta</strong> = 固定偏移 + 扭矩角，带负载会变大（越接近 90° 越接近最大扭矩），是负载指示器。</li>
+      <li><strong>标定 theta_offset：</strong>q_ref 给足、等转子停稳，用 hall_calib_flag 触发自动计算。</li>
+      <li><strong>测速方向验证：</strong>开环 forward 时 measured 应为正，闭环负说明方向/符号有问题。</li>
+      <li><strong>Keil 无 trace：</strong>用 Watch 暂停看全局变量；实时波形走串口 VOFA+。</li>
+    </ul>
+
+    <!-- 第十章 -->
+    <h2 class="chapter" id="ch10"><span class="ch-num">十</span>当前状态与下一步方向</h2>
+
+    <h3>已完成 <span class="status-done">✓</span></h3>
+    <ol>
+      <li>坐标变换数学仿真（VOFA+ 验证正/逆变换互逆）</li>
+      <li>三相 SPWM 输出（20kHz，PA11/PA12/PB14）</li>
+      <li>霍尔测角（标定/去抖/插值/方向感知，电角度 + 带符号转速）</li>
+      <li>相位对齐标定（theta_offset）</li>
+      <li>闭环速度控制（速度 PI 输出带符号电压 q_ref，磁场锁定转子）</li>
+      <li>正反转正常、可停车（清积分释放）</li>
+    </ol>
+
+    <h3>当前已知待完善 <span class="status-todo">△</span></h3>
+    <ol>
+      <li><strong>低速(100rpm)转速波动 ~10%：</strong>部分来自霍尔测速粗（扇区 25ms 才更新一次），可加"扇区内 CNT 插值测速"改善。</li>
+      <li><strong>PID 还需精调</strong>（先 P 后 I 标准流程）。</li>
+      <li><strong>缺堵转/超时保护</strong>（跑飞会烧电机）。</li>
+      <li><strong>电压直驱的局限：</strong>转速 ∝ V·cos(δ)，δ 固定 30° 时效率非最优。</li>
+    </ol>
+
+    <h3>下一步可选方向</h3>
+    <table>
+      <tr><th>方向</th><th>内容</th></tr>
+      <tr><td>a</td><td>扇区内插值测速（measured_rpm 更细）</td></tr>
+      <tr><td>b</td><td>堵转 / 超时保护</td></tr>
+      <tr><td>c</td><td><strong>加电流环 → 完整 FOC</strong>（速度环→iq→电流 PI→电压），实现 90° 电流角与真正扭矩精确控制</td></tr>
+      <tr><td>d</td><td>相电流采样 + Park 电流闭环</td></tr>
+    </table>
+
+    <div class="tip-box" style="margin-top:40px;">
+      <div class="tip-title">📖 全文完</div>
+      <p style="margin:6px 0 0 0;">本记录完整覆盖从数学仿真到霍尔闭环电压控制 FOC 的全部开发过程、硬件配置、代码逻辑、踩坑排错、关键参数与后续方向。</p>
+    </div>
+
+  </div>
+</main>
+
+<!-- 回到顶部按钮 -->
+<button class="back-to-top" id="backToTop" title="回到顶部">↑</button>
+
+<script>
+  // ===== 深色模式切换 =====
+  const themeBtn = document.getElementById('themeBtn');
+  const html = document.documentElement;
+  const savedTheme = localStorage.getItem('foc-theme');
+  if (savedTheme === 'dark') {
+    html.setAttribute('data-theme', 'dark');
+    themeBtn.textContent = '☀️';
+  }
+  themeBtn.addEventListener('click', () => {
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      themeBtn.textContent = '🌙';
+      localStorage.setItem('foc-theme', 'light');
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      themeBtn.textContent = '☀️';
+      localStorage.setItem('foc-theme', 'dark');
+    }
+  });
+
+  // ===== 移动端侧边栏 =====
+  const menuBtn = document.getElementById('menuBtn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  menuBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+  // 点击目录后关闭移动端侧边栏
+  document.querySelectorAll('.toc-list a').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 900) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+      }
+    });
+  });
+
+  // ===== 滚动监听：高亮当前章节 + 进度条 + 回到顶部 =====
+  const tocLinks = document.querySelectorAll('.toc-list a');
+  const chapters = document.querySelectorAll('h2.chapter');
+  const progressBar = document.getElementById('progressBar');
+  const backToTop = document.getElementById('backToTop');
+
+  function updateActiveChapter() {
+    let current = '';
+    const scrollPos = window.scrollY + 120;
+    chapters.forEach(ch => {
+      if (ch.offsetTop <= scrollPos) {
+        current = ch.id;
+      }
+    });
+    tocLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('data-target') === current) {
+        link.classList.add('active');
+      }
+    });
+  }
+
+  function updateProgress() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = progress + '%';
+    if (scrollTop > 400) {
+      backToTop.classList.add('visible');
+    } else {
+      backToTop.classList.remove('visible');
+    }
+  }
+
+  window.addEventListener('scroll', () => {
+    updateActiveChapter();
+    updateProgress();
+  }, { passive: true });
+
+  backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // 初始化
+  updateActiveChapter();
+  updateProgress();
+</script>
+
+</body>
+</html>
