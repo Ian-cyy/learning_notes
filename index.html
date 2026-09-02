@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的学习笔记</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        .github-top {
+            margin-bottom: 8px;
+        }
+        .github-top a {
+            color: #0969da;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .github-top a:hover {
+            text-decoration: underline;
+        }
+        .subtitle {
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+        .nav-list {
+            list-style: none;
+        }
+        .nav-list li {
+            background: #fff;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            transition: box-shadow 0.2s;
+        }
+        .nav-list li:hover {
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .nav-list a {
+            display: block;
+            padding: 18px 24px;
+            text-decoration: none;
+            color: #333;
+            font-size: 16px;
+        }
+        .nav-list a .title {
+            font-weight: 600;
+        }
+        .nav-list a .desc {
+            display: block;
+            color: #999;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .nav-list a .time-row {
+            display: flex;
+            gap: 24px;
+            color: #bbb;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+        footer {
+            text-align: center;
+            color: #bbb;
+            font-size: 12px;
+            margin-top: 60px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>我的学习笔记</h1>
+        <p class="github-top">GitHub: <a href="https://github.com/Ian-cyy" target="_blank">@Ian-cyy</a></p>
+        <p class="subtitle">嵌入式 / 机器人 / 控制算法 项目笔记汇总</p>
+
+        <ul class="nav-list">
+            <!-- 每个 li 对应一个子文件夹项目，href 写相对路径 -->
+            <li>
+                <a href="https://ian-cyy.github.io/foc-notes/">
+                    <span class="title">FOC 电机控制</span>
+                    <span class="desc">无刷电机磁场定向控制学习笔记</span>
+                    <span class="time-row">
+                        <span>创建时间：2026年8月25日</span>
+                        <span>更新时间：2026年8月25日</span>
+                    </span>
+                </a>
+            </li>
+            <li>
+                <a href="./RDK-X5-remote/">
+                    <span class="title">RDK-X5 远程连接配置</span>
+                    <span class="desc">SSH / VNC / lightdm / dummy虚拟显卡 无头远程桌面笔记</span>
+                    <span class="time-row">
+                        <span>创建时间：2026年9月2日</span>
+                        <span>更新时间：2026年9月2日</span>
+                    </span>
+                </a>
+            </li>
+            <!-- 新增项目复制下面这段，改文件夹名和标题即可
+            <li>
+                <a href="./文件夹名/">
+                    <span class="title">项目标题</span>
+                    <span class="desc">项目描述</span>
+                </a>
+            </li>
+            -->
+        </ul>
+
+        <footer>
+            <p>GitHub: <a href="https://github.com/Ian-cyy" target="_blank" style="color:#999;">@Ian-cyy</a></p>
+            <p style="margin-top:6px;">Powered by GitHub Pages</p>
+        </footer>
+    </div>
+</body>
+</html>
