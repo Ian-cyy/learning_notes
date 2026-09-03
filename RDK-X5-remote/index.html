@@ -1,6 +1,7 @@
-﻿<!DOCTYPE html>
-<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RDK-X5 网络连接 / SSH / VNC 完整手册</title>
 <style>
@@ -306,271 +307,271 @@
     section{padding:20px 16px;}
   }
 </style>
-<link rel="stylesheet" href="./assets/github-dark.min.css">
-<script src="./assets/highlight.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>hljs.highlightAll();</script>
-<style type="text/css">[data-sonner-toaster][dir=ltr],html[dir=ltr]{--toast-icon-margin-start:-3px;--toast-icon-margin-end:4px;--toast-svg-margin-start:-1px;--toast-svg-margin-end:0px;--toast-button-margin-start:auto;--toast-button-margin-end:0;--toast-close-button-start:0;--toast-close-button-end:unset;--toast-close-button-transform:translate(-35%, -35%)}[data-sonner-toaster][dir=rtl],html[dir=rtl]{--toast-icon-margin-start:4px;--toast-icon-margin-end:-3px;--toast-svg-margin-start:0px;--toast-svg-margin-end:-1px;--toast-button-margin-start:0;--toast-button-margin-end:auto;--toast-close-button-start:unset;--toast-close-button-end:0;--toast-close-button-transform:translate(35%, -35%)}[data-sonner-toaster]{position:fixed;width:var(--width);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;--gray1:hsl(0, 0%, 99%);--gray2:hsl(0, 0%, 97.3%);--gray3:hsl(0, 0%, 95.1%);--gray4:hsl(0, 0%, 93%);--gray5:hsl(0, 0%, 90.9%);--gray6:hsl(0, 0%, 88.7%);--gray7:hsl(0, 0%, 85.8%);--gray8:hsl(0, 0%, 78%);--gray9:hsl(0, 0%, 56.1%);--gray10:hsl(0, 0%, 52.3%);--gray11:hsl(0, 0%, 43.5%);--gray12:hsl(0, 0%, 9%);--border-radius:8px;box-sizing:border-box;padding:0;margin:0;list-style:none;outline:0;z-index:999999999;transition:transform .4s ease}@media (hover:none) and (pointer:coarse){[data-sonner-toaster][data-lifted=true]{transform:none}}[data-sonner-toaster][data-x-position=right]{right:var(--offset-right)}[data-sonner-toaster][data-x-position=left]{left:var(--offset-left)}[data-sonner-toaster][data-x-position=center]{left:50%;transform:translateX(-50%)}[data-sonner-toaster][data-y-position=top]{top:var(--offset-top)}[data-sonner-toaster][data-y-position=bottom]{bottom:var(--offset-bottom)}[data-sonner-toast]{--y:translateY(100%);--lift-amount:calc(var(--lift) * var(--gap));z-index:var(--z-index);position:absolute;opacity:0;transform:var(--y);touch-action:none;transition:transform .4s,opacity .4s,height .4s,box-shadow .2s;box-sizing:border-box;outline:0;overflow-wrap:anywhere}[data-sonner-toast][data-styled=true]{padding:16px;background:var(--normal-bg);border:1px solid var(--normal-border);color:var(--normal-text);border-radius:var(--border-radius);box-shadow:0 4px 12px rgba(0,0,0,.1);width:var(--width);font-size:13px;display:flex;align-items:center;gap:6px}[data-sonner-toast]:focus-visible{box-shadow:0 4px 12px rgba(0,0,0,.1),0 0 0 2px rgba(0,0,0,.2)}[data-sonner-toast][data-y-position=top]{top:0;--y:translateY(-100%);--lift:1;--lift-amount:calc(1 * var(--gap))}[data-sonner-toast][data-y-position=bottom]{bottom:0;--y:translateY(100%);--lift:-1;--lift-amount:calc(var(--lift) * var(--gap))}[data-sonner-toast][data-styled=true] [data-description]{font-weight:400;line-height:1.4;color:#3f3f3f}[data-rich-colors=true][data-sonner-toast][data-styled=true] [data-description]{color:inherit}[data-sonner-toaster][data-sonner-theme=dark] [data-description]{color:#e8e8e8}[data-sonner-toast][data-styled=true] [data-title]{font-weight:500;line-height:1.5;color:inherit}[data-sonner-toast][data-styled=true] [data-icon]{display:flex;height:16px;width:16px;position:relative;justify-content:flex-start;align-items:center;flex-shrink:0;margin-left:var(--toast-icon-margin-start);margin-right:var(--toast-icon-margin-end)}[data-sonner-toast][data-promise=true] [data-icon]>svg{opacity:0;transform:scale(.8);transform-origin:center;animation:sonner-fade-in .3s ease forwards}[data-sonner-toast][data-styled=true] [data-icon]>*{flex-shrink:0}[data-sonner-toast][data-styled=true] [data-icon] svg{margin-left:var(--toast-svg-margin-start);margin-right:var(--toast-svg-margin-end)}[data-sonner-toast][data-styled=true] [data-content]{display:flex;flex-direction:column;gap:2px}[data-sonner-toast][data-styled=true] [data-button]{border-radius:4px;padding-left:8px;padding-right:8px;height:24px;font-size:12px;color:var(--normal-bg);background:var(--normal-text);margin-left:var(--toast-button-margin-start);margin-right:var(--toast-button-margin-end);border:none;font-weight:500;cursor:pointer;outline:0;display:flex;align-items:center;flex-shrink:0;transition:opacity .4s,box-shadow .2s}[data-sonner-toast][data-styled=true] [data-button]:focus-visible{box-shadow:0 0 0 2px rgba(0,0,0,.4)}[data-sonner-toast][data-styled=true] [data-button]:first-of-type{margin-left:var(--toast-button-margin-start);margin-right:var(--toast-button-margin-end)}[data-sonner-toast][data-styled=true] [data-cancel]{color:var(--normal-text);background:rgba(0,0,0,.08)}[data-sonner-toaster][data-sonner-theme=dark] [data-sonner-toast][data-styled=true] [data-cancel]{background:rgba(255,255,255,.3)}[data-sonner-toast][data-styled=true] [data-close-button]{position:absolute;left:var(--toast-close-button-start);right:var(--toast-close-button-end);top:0;height:20px;width:20px;display:flex;justify-content:center;align-items:center;padding:0;color:var(--gray12);background:var(--normal-bg);border:1px solid var(--gray4);transform:var(--toast-close-button-transform);border-radius:50%;cursor:pointer;z-index:1;transition:opacity .1s,background .2s,border-color .2s}[data-sonner-toast][data-styled=true] [data-close-button]:focus-visible{box-shadow:0 4px 12px rgba(0,0,0,.1),0 0 0 2px rgba(0,0,0,.2)}[data-sonner-toast][data-styled=true] [data-disabled=true]{cursor:not-allowed}[data-sonner-toast][data-styled=true]:hover [data-close-button]:hover{background:var(--gray2);border-color:var(--gray5)}[data-sonner-toast][data-swiping=true]::before{content:'';position:absolute;left:-100%;right:-100%;height:100%;z-index:-1}[data-sonner-toast][data-y-position=top][data-swiping=true]::before{bottom:50%;transform:scaleY(3) translateY(50%)}[data-sonner-toast][data-y-position=bottom][data-swiping=true]::before{top:50%;transform:scaleY(3) translateY(-50%)}[data-sonner-toast][data-swiping=false][data-removed=true]::before{content:'';position:absolute;inset:0;transform:scaleY(2)}[data-sonner-toast][data-expanded=true]::after{content:'';position:absolute;left:0;height:calc(var(--gap) + 1px);bottom:100%;width:100%}[data-sonner-toast][data-mounted=true]{--y:translateY(0);opacity:1}[data-sonner-toast][data-expanded=false][data-front=false]{--scale:var(--toasts-before) * 0.05 + 1;--y:translateY(calc(var(--lift-amount) * var(--toasts-before))) scale(calc(-1 * var(--scale)));height:var(--front-toast-height)}[data-sonner-toast]>*{transition:opacity .4s}[data-sonner-toast][data-x-position=right]{right:0}[data-sonner-toast][data-x-position=left]{left:0}[data-sonner-toast][data-expanded=false][data-front=false][data-styled=true]>*{opacity:0}[data-sonner-toast][data-visible=false]{opacity:0;pointer-events:none}[data-sonner-toast][data-mounted=true][data-expanded=true]{--y:translateY(calc(var(--lift) * var(--offset)));height:var(--initial-height)}[data-sonner-toast][data-removed=true][data-front=true][data-swipe-out=false]{--y:translateY(calc(var(--lift) * -100%));opacity:0}[data-sonner-toast][data-removed=true][data-front=false][data-swipe-out=false][data-expanded=true]{--y:translateY(calc(var(--lift) * var(--offset) + var(--lift) * -100%));opacity:0}[data-sonner-toast][data-removed=true][data-front=false][data-swipe-out=false][data-expanded=false]{--y:translateY(40%);opacity:0;transition:transform .5s,opacity .2s}[data-sonner-toast][data-removed=true][data-front=false]::before{height:calc(var(--initial-height) + 20%)}[data-sonner-toast][data-swiping=true]{transform:var(--y) translateY(var(--swipe-amount-y,0)) translateX(var(--swipe-amount-x,0));transition:none}[data-sonner-toast][data-swiped=true]{user-select:none}[data-sonner-toast][data-swipe-out=true][data-y-position=bottom],[data-sonner-toast][data-swipe-out=true][data-y-position=top]{animation-duration:.2s;animation-timing-function:ease-out;animation-fill-mode:forwards}[data-sonner-toast][data-swipe-out=true][data-swipe-direction=left]{animation-name:swipe-out-left}[data-sonner-toast][data-swipe-out=true][data-swipe-direction=right]{animation-name:swipe-out-right}[data-sonner-toast][data-swipe-out=true][data-swipe-direction=up]{animation-name:swipe-out-up}[data-sonner-toast][data-swipe-out=true][data-swipe-direction=down]{animation-name:swipe-out-down}@keyframes swipe-out-left{from{transform:var(--y) translateX(var(--swipe-amount-x));opacity:1}to{transform:var(--y) translateX(calc(var(--swipe-amount-x) - 100%));opacity:0}}@keyframes swipe-out-right{from{transform:var(--y) translateX(var(--swipe-amount-x));opacity:1}to{transform:var(--y) translateX(calc(var(--swipe-amount-x) + 100%));opacity:0}}@keyframes swipe-out-up{from{transform:var(--y) translateY(var(--swipe-amount-y));opacity:1}to{transform:var(--y) translateY(calc(var(--swipe-amount-y) - 100%));opacity:0}}@keyframes swipe-out-down{from{transform:var(--y) translateY(var(--swipe-amount-y));opacity:1}to{transform:var(--y) translateY(calc(var(--swipe-amount-y) + 100%));opacity:0}}@media (max-width:600px){[data-sonner-toaster]{position:fixed;right:var(--mobile-offset-right);left:var(--mobile-offset-left);width:100%}[data-sonner-toaster][dir=rtl]{left:calc(var(--mobile-offset-left) * -1)}[data-sonner-toaster] [data-sonner-toast]{left:0;right:0;width:calc(100% - var(--mobile-offset-left) * 2)}[data-sonner-toaster][data-x-position=left]{left:var(--mobile-offset-left)}[data-sonner-toaster][data-y-position=bottom]{bottom:var(--mobile-offset-bottom)}[data-sonner-toaster][data-y-position=top]{top:var(--mobile-offset-top)}[data-sonner-toaster][data-x-position=center]{left:var(--mobile-offset-left);right:var(--mobile-offset-right);transform:none}}[data-sonner-toaster][data-sonner-theme=light]{--normal-bg:#fff;--normal-border:var(--gray4);--normal-text:var(--gray12);--success-bg:hsl(143, 85%, 96%);--success-border:hsl(145, 92%, 87%);--success-text:hsl(140, 100%, 27%);--info-bg:hsl(208, 100%, 97%);--info-border:hsl(221, 91%, 93%);--info-text:hsl(210, 92%, 45%);--warning-bg:hsl(49, 100%, 97%);--warning-border:hsl(49, 91%, 84%);--warning-text:hsl(31, 92%, 45%);--error-bg:hsl(359, 100%, 97%);--error-border:hsl(359, 100%, 94%);--error-text:hsl(360, 100%, 45%)}[data-sonner-toaster][data-sonner-theme=light] [data-sonner-toast][data-invert=true]{--normal-bg:#000;--normal-border:hsl(0, 0%, 20%);--normal-text:var(--gray1)}[data-sonner-toaster][data-sonner-theme=dark] [data-sonner-toast][data-invert=true]{--normal-bg:#fff;--normal-border:var(--gray3);--normal-text:var(--gray12)}[data-sonner-toaster][data-sonner-theme=dark]{--normal-bg:#000;--normal-bg-hover:hsl(0, 0%, 12%);--normal-border:hsl(0, 0%, 20%);--normal-border-hover:hsl(0, 0%, 25%);--normal-text:var(--gray1);--success-bg:hsl(150, 100%, 6%);--success-border:hsl(147, 100%, 12%);--success-text:hsl(150, 86%, 65%);--info-bg:hsl(215, 100%, 6%);--info-border:hsl(223, 43%, 17%);--info-text:hsl(216, 87%, 65%);--warning-bg:hsl(64, 100%, 6%);--warning-border:hsl(60, 100%, 9%);--warning-text:hsl(46, 87%, 65%);--error-bg:hsl(358, 76%, 10%);--error-border:hsl(357, 89%, 16%);--error-text:hsl(358, 100%, 81%)}[data-sonner-toaster][data-sonner-theme=dark] [data-sonner-toast] [data-close-button]{background:var(--normal-bg);border-color:var(--normal-border);color:var(--normal-text)}[data-sonner-toaster][data-sonner-theme=dark] [data-sonner-toast] [data-close-button]:hover{background:var(--normal-bg-hover);border-color:var(--normal-border-hover)}[data-rich-colors=true][data-sonner-toast][data-type=success]{background:var(--success-bg);border-color:var(--success-border);color:var(--success-text)}[data-rich-colors=true][data-sonner-toast][data-type=success] [data-close-button]{background:var(--success-bg);border-color:var(--success-border);color:var(--success-text)}[data-rich-colors=true][data-sonner-toast][data-type=info]{background:var(--info-bg);border-color:var(--info-border);color:var(--info-text)}[data-rich-colors=true][data-sonner-toast][data-type=info] [data-close-button]{background:var(--info-bg);border-color:var(--info-border);color:var(--info-text)}[data-rich-colors=true][data-sonner-toast][data-type=warning]{background:var(--warning-bg);border-color:var(--warning-border);color:var(--warning-text)}[data-rich-colors=true][data-sonner-toast][data-type=warning] [data-close-button]{background:var(--warning-bg);border-color:var(--warning-border);color:var(--warning-text)}[data-rich-colors=true][data-sonner-toast][data-type=error]{background:var(--error-bg);border-color:var(--error-border);color:var(--error-text)}[data-rich-colors=true][data-sonner-toast][data-type=error] [data-close-button]{background:var(--error-bg);border-color:var(--error-border);color:var(--error-text)}.sonner-loading-wrapper{--size:16px;height:var(--size);width:var(--size);position:absolute;inset:0;z-index:10}.sonner-loading-wrapper[data-visible=false]{transform-origin:center;animation:sonner-fade-out .2s ease forwards}.sonner-spinner{position:relative;top:50%;left:50%;height:var(--size);width:var(--size)}.sonner-loading-bar{animation:sonner-spin 1.2s linear infinite;background:var(--gray11);border-radius:6px;height:8%;left:-10%;position:absolute;top:-3.9%;width:24%}.sonner-loading-bar:first-child{animation-delay:-1.2s;transform:rotate(.0001deg) translate(146%)}.sonner-loading-bar:nth-child(2){animation-delay:-1.1s;transform:rotate(30deg) translate(146%)}.sonner-loading-bar:nth-child(3){animation-delay:-1s;transform:rotate(60deg) translate(146%)}.sonner-loading-bar:nth-child(4){animation-delay:-.9s;transform:rotate(90deg) translate(146%)}.sonner-loading-bar:nth-child(5){animation-delay:-.8s;transform:rotate(120deg) translate(146%)}.sonner-loading-bar:nth-child(6){animation-delay:-.7s;transform:rotate(150deg) translate(146%)}.sonner-loading-bar:nth-child(7){animation-delay:-.6s;transform:rotate(180deg) translate(146%)}.sonner-loading-bar:nth-child(8){animation-delay:-.5s;transform:rotate(210deg) translate(146%)}.sonner-loading-bar:nth-child(9){animation-delay:-.4s;transform:rotate(240deg) translate(146%)}.sonner-loading-bar:nth-child(10){animation-delay:-.3s;transform:rotate(270deg) translate(146%)}.sonner-loading-bar:nth-child(11){animation-delay:-.2s;transform:rotate(300deg) translate(146%)}.sonner-loading-bar:nth-child(12){animation-delay:-.1s;transform:rotate(330deg) translate(146%)}@keyframes sonner-fade-in{0%{opacity:0;transform:scale(.8)}100%{opacity:1;transform:scale(1)}}@keyframes sonner-fade-out{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.8)}}@keyframes sonner-spin{0%{opacity:1}100%{opacity:.15}}@media (prefers-reduced-motion){.sonner-loading-bar,[data-sonner-toast],[data-sonner-toast]>*{transition:none!important;animation:none!important}}.sonner-loader{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);transform-origin:center;transition:opacity .2s,transform .2s}.sonner-loader[data-visible=false]{opacity:0;transform:scale(.8) translate(-50%,-50%)}</style></head>
+</head>
 <body>
 
-<div class="hero" data-doubao-translate-traverse-mark="1">
-  <div class="hero-top" data-doubao-translate-traverse-mark="1">
-    <span class="tag" data-doubao-translate-traverse-mark="1">RDK-X5 · Ubuntu 22.04 · 无头环境</span>
-    <div class="links" data-doubao-translate-traverse-mark="1">
-      <!-- 【主界面跳转链接 · 接口预留】将 href 替换为你的主界面地址即可生效 -->
-      <a class="btn" href="https://ian-cyy.github.io/learning_notes/" title="返回学习笔记主页" data-doubao-translate-traverse-mark="1">⌂ 主界面</a>
-      <a class="btn" href="https://github.com/Ian-cyy" target="_blank" rel="noopener" title="GitHub 主页" data-doubao-translate-traverse-mark="1">GitHub · Ian-cyy</a>
+<div class="hero">
+  <div class="hero-top">
+    <span class="tag">RDK-X5 · Ubuntu 22.04 · 无头环境</span>
+    <div class="links">
+      <!-- 【主界面跳转链接 · 接口预留】将 href="#" 替换为你的主界面地址即可生效 -->
+      <a class="btn" href="../" title="返回学习笔记主页">⌂ 主界面</a>
+      <a class="btn" href="https://github.com/Ian-cyy" target="_blank" rel="noopener" title="GitHub 主页">GitHub · Ian-cyy</a>
     </div>
   </div>
-  <h1 data-doubao-translate-traverse-mark="1">RDK-X5 网络连接 / SSH / VNC 完整手册</h1>
-  <div class="sub" data-doubao-translate-traverse-mark="1">适用于 RDK-X5 官方桌面镜像（Ubuntu 22.04，lightdm 显示管理器），无头无 HDMI 显示器的远程开发与调试场景。</div>
-  <div class="meta" data-doubao-translate-traverse-mark="1">
+  <h1>RDK-X5 网络连接 / SSH / VNC 完整手册</h1>
+  <div class="sub">适用于 RDK-X5 官方桌面镜像（Ubuntu 22.04，lightdm 显示管理器），无头无 HDMI 显示器的远程开发与调试场景。</div>
+  <div class="meta">
     创建日期：<b>2026-09-02</b><span class="sep">|</span>调整日期：<b>2026-09-02</b>
   </div>
 </div>
 
-<div class="layout" data-doubao-translate-traverse-mark="1">
-  <nav class="toc" data-doubao-translate-traverse-mark="1">
-    <div class="toc-title" data-doubao-translate-traverse-mark="1">目录 · Contents</div>
-    <ul id="toc-list" data-doubao-translate-traverse-mark="1"><li data-doubao-translate-traverse-mark="1"><a href="#s1" data-target="s1" data-doubao-translate-traverse-mark="1">一、核心概念速查</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s2" data-target="s2" data-doubao-translate-traverse-mark="1">二、Windows 端常用命令（PowerShell / CMD 原生，不用 MobaXterm）</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s2-1" data-target="s2-1" class="t2" data-doubao-translate-traverse-mark="1">2.1 ping 测试网络连通性</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s2-2" data-target="s2-2" class="t2" data-doubao-translate-traverse-mark="1">2.2 Windows 原生 SSH 连接（PowerShell 推荐）</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s2-3" data-target="s2-3" class="t2" data-doubao-translate-traverse-mark="1">2.3 指定端口 SSH（如果改了默认 22 端口）</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s2-4" data-target="s2-4" class="t2" data-doubao-translate-traverse-mark="1">2.4 SSH 带 X11 转发（跑 rviz2 / rqt 用）</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s2-5" data-target="s2-5" class="t2" data-doubao-translate-traverse-mark="1">2.5 查看 Windows 本机 IP</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s2-6" data-target="s2-6" class="t2" data-doubao-translate-traverse-mark="1">2.6 查看板子 IP 是否在线（扫描局域网）</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s3" data-target="s3" data-doubao-translate-traverse-mark="1">三、RDK-X5 板子端常用命令</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s3-1" data-target="s3-1" class="t2" data-doubao-translate-traverse-mark="1">3.1 系统信息</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s3-2" data-target="s3-2" class="t2" data-doubao-translate-traverse-mark="1">3.2 网络相关</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s3-3" data-target="s3-3" class="t2" data-doubao-translate-traverse-mark="1">3.3 服务管理（systemctl）</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s3-4" data-target="s3-4" class="t2" data-doubao-translate-traverse-mark="1">3.4 开关机 / 重启</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s3-5" data-target="s3-5" class="t2" data-doubao-translate-traverse-mark="1">3.5 文件操作</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s3-6" data-target="s3-6" class="t2" data-doubao-translate-traverse-mark="1">3.6 权限相关</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s3-7" data-target="s3-7" class="t2" data-doubao-translate-traverse-mark="1">3.7 软件包管理（apt）</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s3-8" data-target="s3-8" class="t2" data-doubao-translate-traverse-mark="1">3.8 进程管理</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s4" data-target="s4" data-doubao-translate-traverse-mark="1">四、本次 VNC 最终成功方案（完整配置记录）</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s4-1" data-target="s4-1" class="t2" data-doubao-translate-traverse-mark="1">4.1 方案选型结论</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s4-2" data-target="s4-2" class="t2" data-doubao-translate-traverse-mark="1">4.2 已安装/配置的组件清单</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s4-3" data-target="s4-3" class="t2" data-doubao-translate-traverse-mark="1">4.3 完整配置步骤（可复现）</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s4-4" data-target="s4-4" class="t2" data-doubao-translate-traverse-mark="1">4.4 修改 VNC 桌面分辨率</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s5" data-target="s5" data-doubao-translate-traverse-mark="1">五、遇到的问题及解决方案汇总</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s6" data-target="s6" data-doubao-translate-traverse-mark="1">六、WiFi 热点 AP 模式配置（RDK-X5 自己开热点）</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s6-1" data-target="s6-1" class="t2" data-doubao-translate-traverse-mark="1">6.1 核心前提</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s6-2" data-target="s6-2" class="t2" data-doubao-translate-traverse-mark="1">6.2 安全切换流程（无头环境）</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s6-3" data-target="s6-3" class="t2" data-doubao-translate-traverse-mark="1">6.3 图形界面方式开热点（推荐，VNC 已可用）</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s6-4" data-target="s6-4" class="t2" data-doubao-translate-traverse-mark="1">6.4 命令行方式开热点</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s6-5" data-target="s6-5" class="t2" data-doubao-translate-traverse-mark="1">6.5 从 AP 切回 STA（连手机热点）</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s6-6" data-target="s6-6" class="t2" data-doubao-translate-traverse-mark="1">6.6 两种组网对比</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s7" data-target="s7" data-doubao-translate-traverse-mark="1">七、故障回滚 / 急救命令</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s7-1" data-target="s7-1" class="t2" data-doubao-translate-traverse-mark="1">7.1 VNC 黑屏 / Xorg 配置出错回滚</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s7-2" data-target="s7-2" class="t2" data-doubao-translate-traverse-mark="1">7.2 误装 gdm3 后卸载</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s7-3" data-target="s7-3" class="t2" data-doubao-translate-traverse-mark="1">7.3 WiFi 模式切错导致无线失联</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s7-4" data-target="s7-4" class="t2" data-doubao-translate-traverse-mark="1">7.4 查看系统日志排查问题</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s8" data-target="s8" data-doubao-translate-traverse-mark="1">八、日常使用最佳实践</a></li><li data-doubao-translate-traverse-mark="1"><a href="#s9" data-target="s9" data-doubao-translate-traverse-mark="1">九、快速命令速查表</a></li></ul>
+<div class="layout">
+  <nav class="toc">
+    <div class="toc-title">目录 · Contents</div>
+    <ul id="toc-list"></ul>
   </nav>
 
-  <main data-doubao-translate-traverse-mark="1">
+  <main>
     <!-- 一 -->
-    <section id="s1" data-doubao-translate-traverse-mark="1">
-      <h2 data-doubao-translate-traverse-mark="1"><span class="no" data-doubao-translate-traverse-mark="1">一</span>核心概念速查</h2>
-      <div class="table-wrap" data-doubao-translate-traverse-mark="1">
-        <table data-doubao-translate-traverse-mark="1">
-          <thead data-doubao-translate-traverse-mark="1"><tr data-doubao-translate-traverse-mark="1"><th data-doubao-translate-traverse-mark="1">项目</th><th data-doubao-translate-traverse-mark="1">SSH</th><th data-doubao-translate-traverse-mark="1">VNC</th></tr></thead>
-          <tbody data-doubao-translate-traverse-mark="1">
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">本质</td><td data-doubao-translate-traverse-mark="1">网络通信协议（Secure Shell）</td><td data-doubao-translate-traverse-mark="1">网络通信协议（Virtual Network Computing）</td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">默认端口</td><td data-doubao-translate-traverse-mark="1">22</td><td data-doubao-translate-traverse-mark="1">5900（:0 会话）/ 5901（:1 会话）</td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">服务端位置</td><td data-doubao-translate-traverse-mark="1">RDK-X5 板子（sshd）</td><td data-doubao-translate-traverse-mark="1">RDK-X5 板子（x11vnc）</td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">客户端位置</td><td data-doubao-translate-traverse-mark="1">Windows（MobaXterm / PowerShell / CMD）</td><td data-doubao-translate-traverse-mark="1">Windows（MobaXterm VNC / RealVNC Viewer）</td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">核心能力</td><td data-doubao-translate-traverse-mark="1">文字命令行 + 加密隧道；可 X11 转发单个 GUI 窗口</td><td data-doubao-translate-traverse-mark="1">传输<strong>整套完整桌面画面</strong>（截图流）</td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">图形运算位置</td><td data-doubao-translate-traverse-mark="1">X11 转发时渲染在 Windows 电脑</td><td data-doubao-translate-traverse-mark="1">全部渲染在 RDK-X5 板子内部</td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">看到什么</td><td data-doubao-translate-traverse-mark="1">黑框终端；可弹出单个软件窗口（无桌面背景/任务栏）</td><td data-doubao-translate-traverse-mark="1">完整 GNOME 桌面、图标、任务栏全部都有</td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">两者关系</td><td data-doubao-translate-traverse-mark="1">完全独立，互不依赖；可同时使用</td><td data-doubao-translate-traverse-mark="1">完全独立，互不依赖；可同时使用</td></tr>
+    <section id="s1">
+      <h2><span class="no">一</span>核心概念速查</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>项目</th><th>SSH</th><th>VNC</th></tr></thead>
+          <tbody>
+            <tr><td>本质</td><td>网络通信协议（Secure Shell）</td><td>网络通信协议（Virtual Network Computing）</td></tr>
+            <tr><td>默认端口</td><td>22</td><td>5900（:0 会话）/ 5901（:1 会话）</td></tr>
+            <tr><td>服务端位置</td><td>RDK-X5 板子（sshd）</td><td>RDK-X5 板子（x11vnc）</td></tr>
+            <tr><td>客户端位置</td><td>Windows（MobaXterm / PowerShell / CMD）</td><td>Windows（MobaXterm VNC / RealVNC Viewer）</td></tr>
+            <tr><td>核心能力</td><td>文字命令行 + 加密隧道；可 X11 转发单个 GUI 窗口</td><td>传输<strong>整套完整桌面画面</strong>（截图流）</td></tr>
+            <tr><td>图形运算位置</td><td>X11 转发时渲染在 Windows 电脑</td><td>全部渲染在 RDK-X5 板子内部</td></tr>
+            <tr><td>看到什么</td><td>黑框终端；可弹出单个软件窗口（无桌面背景/任务栏）</td><td>完整 GNOME 桌面、图标、任务栏全部都有</td></tr>
+            <tr><td>两者关系</td><td>完全独立，互不依赖；可同时使用</td><td>完全独立，互不依赖；可同时使用</td></tr>
           </tbody>
         </table>
       </div>
-      <div class="keyword-box" data-doubao-translate-traverse-mark="1">
-        <b data-doubao-translate-traverse-mark="1">一句话</b>
+      <div class="keyword-box">
+        <b>一句话</b>
         SSH = 远程敲命令的加密命令行；VNC = 远程"直播"开发板完整桌面画面。
       </div>
     </section>
 
     <!-- 二 -->
-    <section id="s2" data-doubao-translate-traverse-mark="1">
-      <h2 data-doubao-translate-traverse-mark="1"><span class="no" data-doubao-translate-traverse-mark="1">二</span>Windows 端常用命令（PowerShell / CMD 原生，不用 MobaXterm）</h2>
+    <section id="s2">
+      <h2><span class="no">二</span>Windows 端常用命令（PowerShell / CMD 原生，不用 MobaXterm）</h2>
 
-      <h3 id="s2-1" data-doubao-translate-traverse-mark="1">2.1 ping 测试网络连通性</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-powershell" data-doubao-translate-traverse-mark="1"><span class="lang-label" data-doubao-translate-traverse-mark="1">powershell</span>ping 192.168.193.118</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
-      <ul data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1"><strong>正常</strong>：收到回复，显示延迟时间</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>异常</strong>：<code>请求超时</code> = 网络不通，检查是否同一局域网、板子是否开机</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>前提</strong>：电脑和 RDK-X5 必须连<strong>同一个局域网</strong>（同手机热点 / 同路由器）</li>
+      <h3 id="s2-1">2.1 ping 测试网络连通性</h3>
+      <pre><span class="lang-label">powershell</span><code class="language-powershell">ping 192.168.193.118</code></pre>
+      <ul>
+        <li><strong>正常</strong>：收到回复，显示延迟时间</li>
+        <li><strong>异常</strong>：<code>请求超时</code> = 网络不通，检查是否同一局域网、板子是否开机</li>
+        <li><strong>前提</strong>：电脑和 RDK-X5 必须连<strong>同一个局域网</strong>（同手机热点 / 同路由器）</li>
       </ul>
 
-      <h3 id="s2-2" data-doubao-translate-traverse-mark="1">2.2 Windows 原生 SSH 连接（PowerShell 推荐）</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-powershell" data-doubao-translate-traverse-mark="1"><span class="lang-label" data-doubao-translate-traverse-mark="1">powershell</span>ssh sunrise@192.168.193.118</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
-      <ul data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1"><code>sunrise</code> = 板子用户名</li>
-        <li data-doubao-translate-traverse-mark="1"><code>192.168.193.118</code> = 板子 IP 地址</li>
-        <li data-doubao-translate-traverse-mark="1">首次连接提示 <code>Are you sure you want to continue connecting?</code>，输入 <code>yes</code> 回车</li>
-        <li data-doubao-translate-traverse-mark="1">然后输入板子用户密码（输入时屏幕不显示字符，正常），回车</li>
+      <h3 id="s2-2">2.2 Windows 原生 SSH 连接（PowerShell 推荐）</h3>
+      <pre><span class="lang-label">powershell</span><code class="language-powershell">ssh sunrise@192.168.193.118</code></pre>
+      <ul>
+        <li><code>sunrise</code> = 板子用户名</li>
+        <li><code>192.168.193.118</code> = 板子 IP 地址</li>
+        <li>首次连接提示 <code>Are you sure you want to continue connecting?</code>，输入 <code>yes</code> 回车</li>
+        <li>然后输入板子用户密码（输入时屏幕不显示字符，正常），回车</li>
       </ul>
 
-      <h3 id="s2-3" data-doubao-translate-traverse-mark="1">2.3 指定端口 SSH（如果改了默认 22 端口）</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-powershell" data-doubao-translate-traverse-mark="1"><span class="lang-label" data-doubao-translate-traverse-mark="1">powershell</span>ssh -p 2222 sunrise@192.168.193.118</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
+      <h3 id="s2-3">2.3 指定端口 SSH（如果改了默认 22 端口）</h3>
+      <pre><span class="lang-label">powershell</span><code class="language-powershell">ssh -p 2222 sunrise@192.168.193.118</code></pre>
 
-      <h3 id="s2-4" data-doubao-translate-traverse-mark="1">2.4 SSH 带 X11 转发（跑 rviz2 / rqt 用）</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-powershell" data-doubao-translate-traverse-mark="1"><span class="lang-label" data-doubao-translate-traverse-mark="1">powershell</span>ssh -X sunrise@192.168.193.118</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
-      <div class="callout warn" data-doubao-translate-traverse-mark="1"><span class="ct" data-doubao-translate-traverse-mark="1">⚠ 注意</span>Windows 原生 PowerShell 不带 X Server，需要安装 VcXsrv / Xming；MobaXterm 自带 X11 转发，直接用更方便。</div>
+      <h3 id="s2-4">2.4 SSH 带 X11 转发（跑 rviz2 / rqt 用）</h3>
+      <pre><span class="lang-label">powershell</span><code class="language-powershell">ssh -X sunrise@192.168.193.118</code></pre>
+      <div class="callout warn"><span class="ct">⚠ 注意</span>Windows 原生 PowerShell 不带 X Server，需要安装 VcXsrv / Xming；MobaXterm 自带 X11 转发，直接用更方便。</div>
 
-      <h3 id="s2-5" data-doubao-translate-traverse-mark="1">2.5 查看 Windows 本机 IP</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-powershell" data-doubao-translate-traverse-mark="1"><span class="lang-label" data-doubao-translate-traverse-mark="1">powershell</span>ipconfig</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
-      <p data-doubao-translate-traverse-mark="1">找 <code>无线局域网适配器 WLAN</code> 下的 <code>IPv4 地址</code>，确认和板子在同一网段。</p>
+      <h3 id="s2-5">2.5 查看 Windows 本机 IP</h3>
+      <pre><span class="lang-label">powershell</span><code class="language-powershell">ipconfig</code></pre>
+      <p>找 <code>无线局域网适配器 WLAN</code> 下的 <code>IPv4 地址</code>，确认和板子在同一网段。</p>
 
-      <h3 id="s2-6" data-doubao-translate-traverse-mark="1">2.6 查看板子 IP 是否在线（扫描局域网）</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-powershell" data-doubao-translate-traverse-mark="1"><span class="lang-label" data-doubao-translate-traverse-mark="1">powershell</span>arp -a</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
-      <p data-doubao-translate-traverse-mark="1">列出同一局域网所有设备的 IP 和 MAC 地址，可用来找板子 IP。</p>
+      <h3 id="s2-6">2.6 查看板子 IP 是否在线（扫描局域网）</h3>
+      <pre><span class="lang-label">powershell</span><code class="language-powershell">arp -a</code></pre>
+      <p>列出同一局域网所有设备的 IP 和 MAC 地址，可用来找板子 IP。</p>
     </section>
 
     <!-- 三 -->
-    <section id="s3" data-doubao-translate-traverse-mark="1">
-      <h2 data-doubao-translate-traverse-mark="1"><span class="no" data-doubao-translate-traverse-mark="1">三</span>RDK-X5 板子端常用命令</h2>
+    <section id="s3">
+      <h2><span class="no">三</span>RDK-X5 板子端常用命令</h2>
 
-      <h3 id="s3-1" data-doubao-translate-traverse-mark="1">3.1 系统信息</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bash<span class="hljs-comment"># 查看系统版本</span>
+      <h3 id="s3-1">3.1 系统信息</h3>
+      <pre><span class="lang-label">bash</span><code class="language-bash"># 查看系统版本
 lsb_release -a
-<span class="hljs-comment"># 查看内核版本</span>
-<span class="hljs-built_in">uname</span> -a
-<span class="hljs-comment"># 查看当前用户</span>
-<span class="hljs-built_in">whoami</span>
-<span class="hljs-comment"># 查看主机名</span>
-hostname</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
+# 查看内核版本
+uname -a
+# 查看当前用户
+whoami
+# 查看主机名
+hostname</code></pre>
 
-      <h3 id="s3-2" data-doubao-translate-traverse-mark="1">3.2 网络相关</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bash<span class="hljs-comment"># 查看所有网卡 IP 地址（最常用）</span>
+      <h3 id="s3-2">3.2 网络相关</h3>
+      <pre><span class="lang-label">bash</span><code class="language-bash"># 查看所有网卡 IP 地址（最常用）
 ip addr
-<span class="hljs-comment"># 查看无线网卡信息</span>
+# 查看无线网卡信息
 iwconfig
-<span class="hljs-comment"># 查看当前连接的 WiFi</span>
+# 查看当前连接的 WiFi
 nmcli device wifi list
-<span class="hljs-comment"># 查看网络连接状态</span>
+# 查看网络连接状态
 nmcli connection show
-<span class="hljs-comment"># 测试外网连通</span>
+# 测试外网连通
 ping -c 4 baidu.com
-<span class="hljs-comment"># 查看端口监听情况（确认 SSH 22、VNC 5900 是否在监听）</span>
+# 查看端口监听情况（确认 SSH 22、VNC 5900 是否在监听）
 sudo netstat -tlnp
-<span class="hljs-comment"># 或</span>
-ss -tlnp</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
+# 或
+ss -tlnp</code></pre>
 
-      <h3 id="s3-3" data-doubao-translate-traverse-mark="1">3.3 服务管理（systemctl）</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bash<span class="hljs-comment"># 查看服务状态</span>
+      <h3 id="s3-3">3.3 服务管理（systemctl）</h3>
+      <pre><span class="lang-label">bash</span><code class="language-bash"># 查看服务状态
 systemctl status lightdm
 systemctl status x11vnc.service
 systemctl status ssh
-<span class="hljs-comment"># 启动服务</span>
+# 启动服务
 sudo systemctl start x11vnc.service
-<span class="hljs-comment"># 停止服务</span>
+# 停止服务
 sudo systemctl stop x11vnc.service
-<span class="hljs-comment"># 重启服务</span>
+# 重启服务
 sudo systemctl restart lightdm
-<span class="hljs-comment"># 设置开机自启</span>
-sudo systemctl <span class="hljs-built_in">enable</span> x11vnc.service
-<span class="hljs-comment"># 取消开机自启</span>
-sudo systemctl <span class="hljs-built_in">disable</span> x11vnc.service
-<span class="hljs-comment"># 重新加载 systemd 配置（改了 .service 文件后必须执行）</span>
-sudo systemctl daemon-reload</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
+# 设置开机自启
+sudo systemctl enable x11vnc.service
+# 取消开机自启
+sudo systemctl disable x11vnc.service
+# 重新加载 systemd 配置（改了 .service 文件后必须执行）
+sudo systemctl daemon-reload</code></pre>
 
-      <h3 id="s3-4" data-doubao-translate-traverse-mark="1">3.4 开关机 / 重启</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bash<span class="hljs-comment"># 重启板子</span>
+      <h3 id="s3-4">3.4 开关机 / 重启</h3>
+      <pre><span class="lang-label">bash</span><code class="language-bash"># 重启板子
 sudo reboot
-<span class="hljs-comment"># 关机</span>
+# 关机
 sudo poweroff
-<span class="hljs-comment"># 或</span>
+# 或
 sudo shutdown -h now
-<span class="hljs-comment"># 只重启图形桌面（不重启整块板子，VNC 黑屏时可试）</span>
-sudo systemctl restart lightdm</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
+# 只重启图形桌面（不重启整块板子，VNC 黑屏时可试）
+sudo systemctl restart lightdm</code></pre>
 
-      <h3 id="s3-5" data-doubao-translate-traverse-mark="1">3.5 文件操作</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bash<span class="hljs-comment"># 编辑文件（nano 编辑器）</span>
+      <h3 id="s3-5">3.5 文件操作</h3>
+      <pre><span class="lang-label">bash</span><code class="language-bash"># 编辑文件（nano 编辑器）
 sudo nano /etc/gdm3/custom.conf
-<span class="hljs-comment"># Ctrl+O 保存 → 回车确认 → Ctrl+X 退出</span>
-<span class="hljs-comment"># 查看文件内容</span>
-<span class="hljs-built_in">cat</span> /usr/lib/systemd/system/x11vnc.service
-<span class="hljs-comment"># 查看文件末尾（看日志用）</span>
-<span class="hljs-built_in">tail</span> -f /var/log/Xorg.0.<span class="hljs-built_in">log</span>
-<span class="hljs-comment"># 查找文件</span>
-find / -name <span class="hljs-string">"x11vnc.service"</span>
-<span class="hljs-comment"># 重命名/移动文件</span>
-sudo <span class="hljs-built_in">mv</span> 原文件名 新文件名
-<span class="hljs-comment"># 删除文件</span>
-sudo <span class="hljs-built_in">rm</span> 文件名
-<span class="hljs-comment"># 创建目录</span>
-sudo <span class="hljs-built_in">mkdir</span> -p /etc/X11/xorg.conf.d</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
+# Ctrl+O 保存 → 回车确认 → Ctrl+X 退出
+# 查看文件内容
+cat /usr/lib/systemd/system/x11vnc.service
+# 查看文件末尾（看日志用）
+tail -f /var/log/Xorg.0.log
+# 查找文件
+find / -name "x11vnc.service"
+# 重命名/移动文件
+sudo mv 原文件名 新文件名
+# 删除文件
+sudo rm 文件名
+# 创建目录
+sudo mkdir -p /etc/X11/xorg.conf.d</code></pre>
 
-      <h3 id="s3-6" data-doubao-translate-traverse-mark="1">3.6 权限相关</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bash<span class="hljs-comment"># 切换到 root 用户</span>
+      <h3 id="s3-6">3.6 权限相关</h3>
+      <pre><span class="lang-label">bash</span><code class="language-bash"># 切换到 root 用户
 sudo -i
-<span class="hljs-comment"># 退出 root，回到普通用户</span>
-<span class="hljs-built_in">exit</span>
-<span class="hljs-comment"># 给文件添加执行权限</span>
-<span class="hljs-built_in">chmod</span> +x ~/.vnc/xstartup
-<span class="hljs-comment"># 以 root 身份执行单条命令</span>
-sudo 命令</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
+# 退出 root，回到普通用户
+exit
+# 给文件添加执行权限
+chmod +x ~/.vnc/xstartup
+# 以 root 身份执行单条命令
+sudo 命令</code></pre>
 
-      <h3 id="s3-7" data-doubao-translate-traverse-mark="1">3.7 软件包管理（apt）</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bash<span class="hljs-comment"># 更新软件源</span>
+      <h3 id="s3-7">3.7 软件包管理（apt）</h3>
+      <pre><span class="lang-label">bash</span><code class="language-bash"># 更新软件源
 sudo apt update
-<span class="hljs-comment"># 安装软件</span>
+# 安装软件
 sudo apt install 包名 -y
-<span class="hljs-comment"># 卸载软件</span>
+# 卸载软件
 sudo apt remove 包名 -y
-<span class="hljs-comment"># 搜索软件包</span>
-apt search 关键词</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
+# 搜索软件包
+apt search 关键词</code></pre>
 
-      <h3 id="s3-8" data-doubao-translate-traverse-mark="1">3.8 进程管理</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bash<span class="hljs-comment"># 查看所有进程</span>
+      <h3 id="s3-8">3.8 进程管理</h3>
+      <pre><span class="lang-label">bash</span><code class="language-bash"># 查看所有进程
 ps aux
-<span class="hljs-comment"># 查找特定进程</span>
+# 查找特定进程
 ps aux | grep x11vnc
-<span class="hljs-comment"># 强制结束进程</span>
-sudo <span class="hljs-built_in">kill</span> -9 进程号(PID)
-<span class="hljs-comment"># 按名称结束进程</span>
-sudo pkill hostapd</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
+# 强制结束进程
+sudo kill -9 进程号(PID)
+# 按名称结束进程
+sudo pkill hostapd</code></pre>
     </section>
 
     <!-- 四 -->
-    <section id="s4" data-doubao-translate-traverse-mark="1">
-      <h2 data-doubao-translate-traverse-mark="1"><span class="no" data-doubao-translate-traverse-mark="1">四</span>本次 VNC 最终成功方案（完整配置记录）</h2>
+    <section id="s4">
+      <h2><span class="no">四</span>本次 VNC 最终成功方案（完整配置记录）</h2>
 
-      <h3 id="s4-1" data-doubao-translate-traverse-mark="1">4.1 方案选型结论</h3>
-      <div class="table-wrap" data-doubao-translate-traverse-mark="1">
-        <table data-doubao-translate-traverse-mark="1">
-          <thead data-doubao-translate-traverse-mark="1"><tr data-doubao-translate-traverse-mark="1"><th data-doubao-translate-traverse-mark="1">方案</th><th data-doubao-translate-traverse-mark="1">结果</th><th data-doubao-translate-traverse-mark="1">原因</th></tr></thead>
-          <tbody data-doubao-translate-traverse-mark="1">
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">TigerVNC + GNOME 桌面</td><td data-doubao-translate-traverse-mark="1"><span class="badge err">❌ 失败，报 <code>Oh no!</code> 崩溃</span></td><td data-doubao-translate-traverse-mark="1">GNOME-Shell 不兼容纯软件虚拟显卡 Xvnc</td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">TigerVNC + XFCE 桌面</td><td data-doubao-translate-traverse-mark="1"><span class="badge warn">⚠️ 可用，但不是原版桌面</span></td><td data-doubao-translate-traverse-mark="1">界面换成 XFCE，所有命令/ROS 不受影响</td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1"><strong>x11vnc + lightdm + dummy 虚拟显卡</strong></td><td data-doubao-translate-traverse-mark="1"><span class="badge ok">✅ 成功，原版 GNOME 桌面</span></td><td data-doubao-translate-traverse-mark="1">系统本身先跑起 Xorg :0 会话，x11vnc 抓取已有画面</td></tr>
+      <h3 id="s4-1">4.1 方案选型结论</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>方案</th><th>结果</th><th>原因</th></tr></thead>
+          <tbody>
+            <tr><td>TigerVNC + GNOME 桌面</td><td><span class="badge err">❌ 失败，报 <code>Oh no!</code> 崩溃</span></td><td>GNOME-Shell 不兼容纯软件虚拟显卡 Xvnc</td></tr>
+            <tr><td>TigerVNC + XFCE 桌面</td><td><span class="badge warn">⚠️ 可用，但不是原版桌面</span></td><td>界面换成 XFCE，所有命令/ROS 不受影响</td></tr>
+            <tr><td><strong>x11vnc + lightdm + dummy 虚拟显卡</strong></td><td><span class="badge ok">✅ 成功，原版 GNOME 桌面</span></td><td>系统本身先跑起 Xorg :0 会话，x11vnc 抓取已有画面</td></tr>
           </tbody>
         </table>
       </div>
-      <div class="callout err" data-doubao-translate-traverse-mark="1"><span class="ct" data-doubao-translate-traverse-mark="1">⚠ 关键踩坑</span>
-        <p data-doubao-translate-traverse-mark="1">RDK-X5 官方镜像用的显示管理器是 <strong>lightdm</strong>，不是 gdm3。网上很多 PC 教程默认 gdm3，直接套用会失败。<strong>不要安装 gdm3</strong>，装了反而破坏环境。</p>
+      <div class="callout err"><span class="ct">⚠ 关键踩坑</span>
+        <p>RDK-X5 官方镜像用的显示管理器是 <strong>lightdm</strong>，不是 gdm3。网上很多 PC 教程默认 gdm3，直接套用会失败。<strong>不要安装 gdm3</strong>，装了反而破坏环境。</p>
       </div>
 
-      <h3 id="s4-2" data-doubao-translate-traverse-mark="1">4.2 已安装/配置的组件清单</h3>
-      <div class="table-wrap" data-doubao-translate-traverse-mark="1">
-        <table data-doubao-translate-traverse-mark="1">
-          <thead data-doubao-translate-traverse-mark="1"><tr data-doubao-translate-traverse-mark="1"><th data-doubao-translate-traverse-mark="1">组件</th><th data-doubao-translate-traverse-mark="1">作用</th><th data-doubao-translate-traverse-mark="1">状态</th></tr></thead>
-          <tbody data-doubao-translate-traverse-mark="1">
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">lightdm</td><td data-doubao-translate-traverse-mark="1">显示管理器，启动 Xorg :0 图形会话</td><td data-doubao-translate-traverse-mark="1">系统自带，active(running)</td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">x11vnc</td><td data-doubao-translate-traverse-mark="1">VNC 服务端，抓取 :0 画面通过 5900 端口对外</td><td data-doubao-translate-traverse-mark="1">系统自带，已 enable + start</td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">xserver-xorg-video-dummy-hwe-18.04</td><td data-doubao-translate-traverse-mark="1">虚拟显卡驱动，无头无 HDMI 时欺骗显卡输出</td><td data-doubao-translate-traverse-mark="1">已安装</td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">xserver-xorg-core-hwe-18.04</td><td data-doubao-translate-traverse-mark="1">Xorg 核心组件（dummy 驱动依赖）</td><td data-doubao-translate-traverse-mark="1">已安装</td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">/etc/.vnc/passwd</td><td data-doubao-translate-traverse-mark="1">VNC 登录密码文件（root 创建）</td><td data-doubao-translate-traverse-mark="1">已配置</td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">/etc/X11/xorg.conf.d/xorg.conf</td><td data-doubao-translate-traverse-mark="1">dummy 虚拟显卡配置文件</td><td data-doubao-translate-traverse-mark="1">已创建</td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">3 个原 xorg 配置文件</td><td data-doubao-translate-traverse-mark="1">重命名为 .disable 后缀，避免冲突</td><td data-doubao-translate-traverse-mark="1">已禁用</td></tr>
+      <h3 id="s4-2">4.2 已安装/配置的组件清单</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>组件</th><th>作用</th><th>状态</th></tr></thead>
+          <tbody>
+            <tr><td>lightdm</td><td>显示管理器，启动 Xorg :0 图形会话</td><td>系统自带，active(running)</td></tr>
+            <tr><td>x11vnc</td><td>VNC 服务端，抓取 :0 画面通过 5900 端口对外</td><td>系统自带，已 enable + start</td></tr>
+            <tr><td>xserver-xorg-video-dummy-hwe-18.04</td><td>虚拟显卡驱动，无头无 HDMI 时欺骗显卡输出</td><td>已安装</td></tr>
+            <tr><td>xserver-xorg-core-hwe-18.04</td><td>Xorg 核心组件（dummy 驱动依赖）</td><td>已安装</td></tr>
+            <tr><td>/etc/.vnc/passwd</td><td>VNC 登录密码文件（root 创建）</td><td>已配置</td></tr>
+            <tr><td>/etc/X11/xorg.conf.d/xorg.conf</td><td>dummy 虚拟显卡配置文件</td><td>已创建</td></tr>
+            <tr><td>3 个原 xorg 配置文件</td><td>重命名为 .disable 后缀，避免冲突</td><td>已禁用</td></tr>
           </tbody>
         </table>
       </div>
 
-      <h3 id="s4-3" data-doubao-translate-traverse-mark="1">4.3 完整配置步骤（可复现）</h3>
+      <h3 id="s4-3">4.3 完整配置步骤（可复现）</h3>
 
-      <h4 data-doubao-translate-traverse-mark="1">步骤 1：确认 lightdm 运行状态</h4>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bashsystemctl status lightdm</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
-      <div class="callout ok" data-doubao-translate-traverse-mark="1"><span class="ct" data-doubao-translate-traverse-mark="1">预期</span>active (running)，且能看到 <code data-doubao-translate-traverse-mark="1">/usr/lib/xorg/Xorg -core :0</code> 进程。</div>
+      <h4>步骤 1：确认 lightdm 运行状态</h4>
+      <pre><span class="lang-label">bash</span><code class="language-bash">systemctl status lightdm</code></pre>
+      <div class="callout ok"><span class="ct">预期</span>active (running)，且能看到 <code>/usr/lib/xorg/Xorg -core :0</code> 进程。</div>
 
-      <h4 data-doubao-translate-traverse-mark="1">步骤 2：设置 x11vnc 密码（必须 root 权限）</h4>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bashsudo -i
+      <h4>步骤 2：设置 x11vnc 密码（必须 root 权限）</h4>
+      <pre><span class="lang-label">bash</span><code class="language-bash">sudo -i
 vncpasswd /etc/.vnc/passwd
-<span class="hljs-comment"># 输入两次操作密码</span>
-<span class="hljs-comment"># Would you like to enter a view-only password? 输入 n</span>
-<span class="hljs-built_in">exit</span></code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
-      <div class="callout warn" data-doubao-translate-traverse-mark="1"><span class="ct" data-doubao-translate-traverse-mark="1">⚠ 注意</span>Linux 密码输入时屏幕不显示任何字符，不是没输入上，直接敲完回车。</div>
+# 输入两次操作密码
+# Would you like to enter a view-only password? 输入 n
+exit</code></pre>
+      <div class="callout warn"><span class="ct">⚠ 注意</span>Linux 密码输入时屏幕不显示任何字符，不是没输入上，直接敲完回车。</div>
 
-      <h4 data-doubao-translate-traverse-mark="1">步骤 3：启用系统自带 x11vnc 服务</h4>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bashsudo systemctl daemon-reload
-sudo systemctl <span class="hljs-built_in">enable</span> x11vnc.service
+      <h4>步骤 3：启用系统自带 x11vnc 服务</h4>
+      <pre><span class="lang-label">bash</span><code class="language-bash">sudo systemctl daemon-reload
+sudo systemctl enable x11vnc.service
 sudo systemctl start x11vnc.service
-systemctl status x11vnc.service</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
-      <div class="callout ok" data-doubao-translate-traverse-mark="1"><span class="ct" data-doubao-translate-traverse-mark="1">预期</span>active (running)，监听 5900 端口。出现两个 x11vnc 进程属于该镜像正常现象。</div>
+systemctl status x11vnc.service</code></pre>
+      <div class="callout ok"><span class="ct">预期</span>active (running)，监听 5900 端口。出现两个 x11vnc 进程属于该镜像正常现象。</div>
 
-      <h4 data-doubao-translate-traverse-mark="1">步骤 4：安装 dummy 虚拟显卡驱动</h4>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bashsudo apt update
-sudo apt install xserver-xorg-core-hwe-18.04 xserver-xorg-video-dummy-hwe-18.04 -y</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
+      <h4>步骤 4：安装 dummy 虚拟显卡驱动</h4>
+      <pre><span class="lang-label">bash</span><code class="language-bash">sudo apt update
+sudo apt install xserver-xorg-core-hwe-18.04 xserver-xorg-video-dummy-hwe-18.04 -y</code></pre>
 
-      <h4 data-doubao-translate-traverse-mark="1">步骤 5：禁用原有冲突的 Xorg 配置文件</h4>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bashsudo <span class="hljs-built_in">mv</span> /etc/X11/xorg.conf.d/xorg_dsi_ignore.conf /etc/X11/xorg.conf.d/xorg_dsi_ignore.conf.disable
-sudo <span class="hljs-built_in">mv</span> /etc/X11/xorg.conf.d/10-disable-screensaver.conf /etc/X11/xorg.conf.d/10-disable-screensaver.conf.disable
-sudo <span class="hljs-built_in">mv</span> /etc/X11/xorg.conf.d/1-resolution.conf /etc/X11/xorg.conf.d/1-resolution.conf.disable</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
+      <h4>步骤 5：禁用原有冲突的 Xorg 配置文件</h4>
+      <pre><span class="lang-label">bash</span><code class="language-bash">sudo mv /etc/X11/xorg.conf.d/xorg_dsi_ignore.conf /etc/X11/xorg.conf.d/xorg_dsi_ignore.conf.disable
+sudo mv /etc/X11/xorg.conf.d/10-disable-screensaver.conf /etc/X11/xorg.conf.d/10-disable-screensaver.conf.disable
+sudo mv /etc/X11/xorg.conf.d/1-resolution.conf /etc/X11/xorg.conf.d/1-resolution.conf.disable</code></pre>
 
-      <h4 data-doubao-translate-traverse-mark="1">步骤 6：创建 dummy 虚拟显卡配置文件</h4>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bashsudo nano /etc/X11/xorg.conf.d/xorg.conf</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
-      <p data-doubao-translate-traverse-mark="1">粘贴以下完整内容：</p>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-conf" data-doubao-translate-traverse-mark="1"><span class="lang-label" data-doubao-translate-traverse-mark="1">conf</span>Section "Device"
+      <h4>步骤 6：创建 dummy 虚拟显卡配置文件</h4>
+      <pre><span class="lang-label">bash</span><code class="language-bash">sudo nano /etc/X11/xorg.conf.d/xorg.conf</code></pre>
+      <p>粘贴以下完整内容：</p>
+      <pre><span class="lang-label">conf</span><code class="language-conf">Section "Device"
         Identifier "dummy_videocard"
         Option "NoDDC" "true"
         Option "IgnoreEDID" "true"
@@ -596,31 +597,31 @@ Section "Screen"
                 Modes "1920x1440" "1920x1200" "1920x1080" "1024x600_60.00"
                 Virtual 1920 1440
         EndSubSection
-EndSection</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
-      <p data-doubao-translate-traverse-mark="1"><code>Ctrl+O</code> 保存 → 回车 → <code>Ctrl+X</code> 退出。</p>
+EndSection</code></pre>
+      <p><code>Ctrl+O</code> 保存 → 回车 → <code>Ctrl+X</code> 退出。</p>
 
-      <h4 data-doubao-translate-traverse-mark="1">步骤 7：重启图形服务 + 重启板子</h4>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bashsudo systemctl restart lightdm
-sudo reboot</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
+      <h4>步骤 7：重启图形服务 + 重启板子</h4>
+      <pre><span class="lang-label">bash</span><code class="language-bash">sudo systemctl restart lightdm
+sudo reboot</code></pre>
 
-      <h4 data-doubao-translate-traverse-mark="1">步骤 8：Windows 端 VNC 连接</h4>
-      <ul data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1">MobaXterm → Session → VNC</li>
-        <li data-doubao-translate-traverse-mark="1">Remote hostname：<code>192.168.193.118</code></li>
-        <li data-doubao-translate-traverse-mark="1">Port：<strong>5900</strong>（不是 5901！）</li>
-        <li data-doubao-translate-traverse-mark="1">不勾选 SSL tunneling</li>
-        <li data-doubao-translate-traverse-mark="1">输入 vncpasswd 设置的密码</li>
+      <h4>步骤 8：Windows 端 VNC 连接</h4>
+      <ul>
+        <li>MobaXterm → Session → VNC</li>
+        <li>Remote hostname：<code>192.168.193.118</code></li>
+        <li>Port：<strong>5900</strong>（不是 5901！）</li>
+        <li>不勾选 SSL tunneling</li>
+        <li>输入 vncpasswd 设置的密码</li>
       </ul>
 
-      <h3 id="s4-4" data-doubao-translate-traverse-mark="1">4.4 修改 VNC 桌面分辨率</h3>
-      <p data-doubao-translate-traverse-mark="1">编辑 <code>/etc/X11/xorg.conf.d/xorg.conf</code>，三个关键点：</p>
-      <ol data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1"><code>Modeline</code>：该分辨率的时序参数（不能乱写，网上搜对应分辨率的 Modeline）</li>
-        <li data-doubao-translate-traverse-mark="1"><code>Modes</code>：写在最前面的分辨率优先使用</li>
-        <li data-doubao-translate-traverse-mark="1"><code>Virtual</code>：虚拟桌面画布，必须 ≥ 使用的分辨率</li>
+      <h3 id="s4-4">4.4 修改 VNC 桌面分辨率</h3>
+      <p>编辑 <code>/etc/X11/xorg.conf.d/xorg.conf</code>，三个关键点：</p>
+      <ol>
+        <li><code>Modeline</code>：该分辨率的时序参数（不能乱写，网上搜对应分辨率的 Modeline）</li>
+        <li><code>Modes</code>：写在最前面的分辨率优先使用</li>
+        <li><code>Virtual</code>：虚拟桌面画布，必须 ≥ 使用的分辨率</li>
       </ol>
-      <p data-doubao-translate-traverse-mark="1"><strong>示例：改成 1280×720（VNC 更流畅，推荐）</strong></p>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-conf" data-doubao-translate-traverse-mark="1"><span class="lang-label" data-doubao-translate-traverse-mark="1">conf</span>Section "Device"
+      <p><strong>示例：改成 1280×720（VNC 更流畅，推荐）</strong></p>
+      <pre><span class="lang-label">conf</span><code class="language-conf">Section "Device"
         Identifier "dummy_videocard"
         Option "NoDDC" "true"
         Option "IgnoreEDID" "true"
@@ -644,122 +645,122 @@ Section "Screen"
                 Modes "1280x720" "1920x1080"
                 Virtual 1280 720
         EndSubSection
-EndSection</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
-      <div class="callout warn" data-doubao-translate-traverse-mark="1"><span class="ct" data-doubao-translate-traverse-mark="1">⚠ 重要</span>保存后必须重启图形服务生效：</div>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bashsudo systemctl restart lightdm</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
+EndSection</code></pre>
+      <div class="callout warn"><span class="ct">⚠ 重要</span>保存后必须重启图形服务生效：</div>
+      <pre><span class="lang-label">bash</span><code class="language-bash">sudo systemctl restart lightdm</code></pre>
     </section>
 
     <!-- 五 -->
-    <section id="s5" data-doubao-translate-traverse-mark="1">
-      <h2 data-doubao-translate-traverse-mark="1"><span class="no" data-doubao-translate-traverse-mark="1">五</span>遇到的问题及解决方案汇总</h2>
+    <section id="s5">
+      <h2><span class="no">五</span>遇到的问题及解决方案汇总</h2>
 
-      <h3 data-doubao-translate-traverse-mark="1">问题 1：TigerVNC 连接后报 <code>Oh no! Something has gone wrong</code></h3>
-      <ul data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1"><strong>原因</strong>：GNOME-Shell 不兼容 TigerVNC 的纯软件虚拟显卡（Xvnc），GNOME 桌面崩溃</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>解决</strong>：放弃 TigerVNC + GNOME 组合，改用 x11vnc + lightdm + dummy 方案（即本文第四章）</li>
+      <h3>问题 1：TigerVNC 连接后报 <code>Oh no! Something has gone wrong</code></h3>
+      <ul>
+        <li><strong>原因</strong>：GNOME-Shell 不兼容 TigerVNC 的纯软件虚拟显卡（Xvnc），GNOME 桌面崩溃</li>
+        <li><strong>解决</strong>：放弃 TigerVNC + GNOME 组合，改用 x11vnc + lightdm + dummy 方案（即本文第四章）</li>
       </ul>
 
-      <h3 data-doubao-translate-traverse-mark="1">问题 2：<code>/etc/gdm3/custom.conf</code> 文件是空的</h3>
-      <ul data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1"><strong>原因</strong>：RDK-X5 官方镜像根本没有安装 gdm3，用的是 lightdm 显示管理器</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>解决</strong>：不要去改 gdm3 配置，直接用 lightdm；不要安装 gdm3</li>
+      <h3>问题 2：<code>/etc/gdm3/custom.conf</code> 文件是空的</h3>
+      <ul>
+        <li><strong>原因</strong>：RDK-X5 官方镜像根本没有安装 gdm3，用的是 lightdm 显示管理器</li>
+        <li><strong>解决</strong>：不要去改 gdm3 配置，直接用 lightdm；不要安装 gdm3</li>
       </ul>
 
-      <h3 data-doubao-translate-traverse-mark="1">问题 3：<code>Unit gdm3.service could not be found</code></h3>
-      <ul data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1"><strong>原因</strong>：同上，系统没有 gdm3</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>解决</strong>：确认 lightdm 存在并运行：<code>systemctl status lightdm</code></li>
+      <h3>问题 3：<code>Unit gdm3.service could not be found</code></h3>
+      <ul>
+        <li><strong>原因</strong>：同上，系统没有 gdm3</li>
+        <li><strong>解决</strong>：确认 lightdm 存在并运行：<code>systemctl status lightdm</code></li>
       </ul>
 
-      <h3 data-doubao-translate-traverse-mark="1">问题 4：vncpasswd 时报 <code>123456: command not found</code></h3>
-      <ul data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1"><strong>原因</strong>：敲完 <code>vncpasswd /etc/.vnc/passwd</code> 后没有等密码提示，直接手动敲了密码，bash 把密码当成命令执行</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>解决</strong>：先敲命令回车，等出现 <code>Password:</code> 提示后再输入密码（输入时屏幕不显示字符）</li>
+      <h3>问题 4：vncpasswd 时报 <code>123456: command not found</code></h3>
+      <ul>
+        <li><strong>原因</strong>：敲完 <code>vncpasswd /etc/.vnc/passwd</code> 后没有等密码提示，直接手动敲了密码，bash 把密码当成命令执行</li>
+        <li><strong>解决</strong>：先敲命令回车，等出现 <code>Password:</code> 提示后再输入密码（输入时屏幕不显示字符）</li>
       </ul>
 
-      <h3 data-doubao-translate-traverse-mark="1">问题 5：vncpasswd 误选了 view-only password（输入了 y）</h3>
-      <ul data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1"><strong>原因</strong>：操作失误</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>解决</strong>：按 <code>Ctrl+C</code> 终止当前交互，重新执行 <code>vncpasswd /etc/.vnc/passwd</code>，view-only 选 <code>n</code></li>
+      <h3>问题 5：vncpasswd 误选了 view-only password（输入了 y）</h3>
+      <ul>
+        <li><strong>原因</strong>：操作失误</li>
+        <li><strong>解决</strong>：按 <code>Ctrl+C</code> 终止当前交互，重新执行 <code>vncpasswd /etc/.vnc/passwd</code>，view-only 选 <code>n</code></li>
       </ul>
 
-      <h3 data-doubao-translate-traverse-mark="1">问题 6：VNC 连接黑屏 / 灰屏</h3>
-      <ul data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1"><strong>原因</strong>：板子无头无 HDMI，显卡没有输出画面；或 dummy 驱动配置错误</li>
-        <li data-doubao-translate-traverse-mark="1"><strong data-doubao-translate-traverse-mark="1">解决</strong>：
-          <ol data-doubao-translate-traverse-mark="1">
-            <li data-doubao-translate-traverse-mark="1">确认 dummy 驱动已安装：<code>dpkg -l | grep dummy</code></li>
-            <li data-doubao-translate-traverse-mark="1">确认 <code>/etc/X11/xorg.conf.d/xorg.conf</code> 配置正确</li>
-            <li data-doubao-translate-traverse-mark="1">重启图形服务：<code>sudo systemctl restart lightdm</code></li>
-            <li data-doubao-translate-traverse-mark="1">查看 Xorg 日志排查：<code>cat /var/log/Xorg.0.log | grep -i error</code></li>
+      <h3>问题 6：VNC 连接黑屏 / 灰屏</h3>
+      <ul>
+        <li><strong>原因</strong>：板子无头无 HDMI，显卡没有输出画面；或 dummy 驱动配置错误</li>
+        <li><strong>解决</strong>：
+          <ol>
+            <li>确认 dummy 驱动已安装：<code>dpkg -l | grep dummy</code></li>
+            <li>确认 <code>/etc/X11/xorg.conf.d/xorg.conf</code> 配置正确</li>
+            <li>重启图形服务：<code>sudo systemctl restart lightdm</code></li>
+            <li>查看 Xorg 日志排查：<code>cat /var/log/Xorg.0.log | grep -i error</code></li>
           </ol>
         </li>
       </ul>
 
-      <h3 data-doubao-translate-traverse-mark="1">问题 7：SSH 连接报 <code>Network error: Connection timed out</code></h3>
-      <ul data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1"><strong>原因</strong>：板子正在重启（执行了 <code>sudo reboot</code>），或网络不通</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>解决</strong>：等待 40~60 秒板子完全启动后重连；检查电脑和板子是否同一局域网</li>
+      <h3>问题 7：SSH 连接报 <code>Network error: Connection timed out</code></h3>
+      <ul>
+        <li><strong>原因</strong>：板子正在重启（执行了 <code>sudo reboot</code>），或网络不通</li>
+        <li><strong>解决</strong>：等待 40~60 秒板子完全启动后重连；检查电脑和板子是否同一局域网</li>
       </ul>
 
-      <h3 data-doubao-translate-traverse-mark="1">问题 8：x11vnc 服务出现两个进程</h3>
-      <ul data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1"><strong>原因</strong>：该镜像 x11vnc.service 的 <code>-loop</code> 参数导致，属于已知正常现象</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>解决</strong>：不用管，不影响功能</li>
+      <h3>问题 8：x11vnc 服务出现两个进程</h3>
+      <ul>
+        <li><strong>原因</strong>：该镜像 x11vnc.service 的 <code>-loop</code> 参数导致，属于已知正常现象</li>
+        <li><strong>解决</strong>：不用管，不影响功能</li>
       </ul>
 
-      <h3 data-doubao-translate-traverse-mark="1">问题 9：VNC 窗口内 <code>Ctrl+Alt+T</code> 打不开终端</h3>
-      <ul data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1"><strong>原因</strong>：VNC 快捷键被 Windows 系统拦截</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>解决</strong>：桌面空白处右键 → Open Terminal，或在 VNC 菜单里发送快捷键</li>
+      <h3>问题 9：VNC 窗口内 <code>Ctrl+Alt+T</code> 打不开终端</h3>
+      <ul>
+        <li><strong>原因</strong>：VNC 快捷键被 Windows 系统拦截</li>
+        <li><strong>解决</strong>：桌面空白处右键 → Open Terminal，或在 VNC 菜单里发送快捷键</li>
       </ul>
 
-      <h3 data-doubao-translate-traverse-mark="1">问题 10：修改 xorg.conf 后 VNC 分辨率没变</h3>
-      <ul data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1"><strong>原因</strong>：只重启了 x11vnc，没有重启 lightdm（Xorg 配置由 lightdm 加载）</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>解决</strong>：<code>sudo systemctl restart lightdm</code></li>
+      <h3>问题 10：修改 xorg.conf 后 VNC 分辨率没变</h3>
+      <ul>
+        <li><strong>原因</strong>：只重启了 x11vnc，没有重启 lightdm（Xorg 配置由 lightdm 加载）</li>
+        <li><strong>解决</strong>：<code>sudo systemctl restart lightdm</code></li>
       </ul>
     </section>
 
     <!-- 六 -->
-    <section id="s6" data-doubao-translate-traverse-mark="1">
-      <h2 data-doubao-translate-traverse-mark="1"><span class="no" data-doubao-translate-traverse-mark="1">六</span>WiFi 热点 AP 模式配置（RDK-X5 自己开热点）</h2>
+    <section id="s6">
+      <h2><span class="no">六</span>WiFi 热点 AP 模式配置（RDK-X5 自己开热点）</h2>
 
-      <h3 id="s6-1" data-doubao-translate-traverse-mark="1">6.1 核心前提</h3>
-      <ul data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1">RDK-X5 的 WiFi 网卡<strong>不支持 STA（连别人 WiFi）和 AP（自己开热点）同时并发</strong>，二选一</li>
-        <li data-doubao-translate-traverse-mark="1">开启 AP 后，板子断开当前 WiFi，<strong>当前 SSH/VNC 连接必然断开</strong>（正常现象）</li>
-        <li data-doubao-translate-traverse-mark="1">开启 AP 后板子<strong>没有外网</strong>，只是本地局域网，SSH/VNC/ROS2 通信不受影响</li>
-        <li data-doubao-translate-traverse-mark="1">板子 AP 模式下固定 IP：<code>192.168.4.1</code></li>
+      <h3 id="s6-1">6.1 核心前提</h3>
+      <ul>
+        <li>RDK-X5 的 WiFi 网卡<strong>不支持 STA（连别人 WiFi）和 AP（自己开热点）同时并发</strong>，二选一</li>
+        <li>开启 AP 后，板子断开当前 WiFi，<strong>当前 SSH/VNC 连接必然断开</strong>（正常现象）</li>
+        <li>开启 AP 后板子<strong>没有外网</strong>，只是本地局域网，SSH/VNC/ROS2 通信不受影响</li>
+        <li>板子 AP 模式下固定 IP：<code>192.168.4.1</code></li>
       </ul>
 
-      <h3 id="s6-2" data-doubao-translate-traverse-mark="1">6.2 安全切换流程（无头环境）</h3>
-      <ol data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1"><strong>当前连手机热点、SSH 正常时</strong>，提前把 AP 所有配置文件全部写好（只配置，不启动）</li>
-        <li data-doubao-translate-traverse-mark="1">确认配置无误后，执行启动 AP 的命令 → 旧 SSH 断开（预期）</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>Windows 右下角手动断开手机热点，连接 RDK-X5 的新热点</strong></li>
-        <li data-doubao-translate-traverse-mark="1">Windows 连上板子热点后，<strong>新建 SSH 会话，IP 改成 <code>192.168.4.1</code></strong>，重新连接</li>
-        <li data-doubao-translate-traverse-mark="1">VNC 同样用 <code>192.168.4.1:5900</code></li>
+      <h3 id="s6-2">6.2 安全切换流程（无头环境）</h3>
+      <ol>
+        <li><strong>当前连手机热点、SSH 正常时</strong>，提前把 AP 所有配置文件全部写好（只配置，不启动）</li>
+        <li>确认配置无误后，执行启动 AP 的命令 → 旧 SSH 断开（预期）</li>
+        <li><strong>Windows 右下角手动断开手机热点，连接 RDK-X5 的新热点</strong></li>
+        <li>Windows 连上板子热点后，<strong>新建 SSH 会话，IP 改成 <code>192.168.4.1</code></strong>，重新连接</li>
+        <li>VNC 同样用 <code>192.168.4.1:5900</code></li>
       </ol>
 
-      <h3 id="s6-3" data-doubao-translate-traverse-mark="1">6.3 图形界面方式开热点（推荐，VNC 已可用）</h3>
-      <p data-doubao-translate-traverse-mark="1">VNC 进入 GNOME 桌面：</p>
-      <ol data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1">右上角 WiFi 图标 → <code>Wi-Fi Settings</code></li>
-        <li data-doubao-translate-traverse-mark="1">点右上角 ➕ → <code>Wi-Fi (shared)</code></li>
-        <li data-doubao-translate-traverse-mark="1">填写 SSID（如 <code>RDK-X5</code>）、密码（至少 8 位）</li>
-        <li data-doubao-translate-traverse-mark="1">保存并开启 → VNC 断开（正常）</li>
-        <li data-doubao-translate-traverse-mark="1">Windows 切 WiFi 连 <code>RDK-X5</code> → 用 <code>192.168.4.1</code> 重连 SSH/VNC</li>
+      <h3 id="s6-3">6.3 图形界面方式开热点（推荐，VNC 已可用）</h3>
+      <p>VNC 进入 GNOME 桌面：</p>
+      <ol>
+        <li>右上角 WiFi 图标 → <code>Wi-Fi Settings</code></li>
+        <li>点右上角 ➕ → <code>Wi-Fi (shared)</code></li>
+        <li>填写 SSID（如 <code>RDK-X5</code>）、密码（至少 8 位）</li>
+        <li>保存并开启 → VNC 断开（正常）</li>
+        <li>Windows 切 WiFi 连 <code>RDK-X5</code> → 用 <code>192.168.4.1</code> 重连 SSH/VNC</li>
       </ol>
 
-      <h3 id="s6-4" data-doubao-translate-traverse-mark="1">6.4 命令行方式开热点</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bash<span class="hljs-comment"># 1. 安装依赖</span>
+      <h3 id="s6-4">6.4 命令行方式开热点</h3>
+      <pre><span class="lang-label">bash</span><code class="language-bash"># 1. 安装依赖
 sudo apt update
 sudo apt install hostapd isc-dhcp-server -y
-<span class="hljs-comment"># 2. 创建热点配置</span>
-sudo nano /etc/hostapd.conf</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
-      <p data-doubao-translate-traverse-mark="1">粘贴：</p>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-conf" data-doubao-translate-traverse-mark="1"><span class="lang-label" data-doubao-translate-traverse-mark="1">conf</span>interface=wlan0
+# 2. 创建热点配置
+sudo nano /etc/hostapd.conf</code></pre>
+      <p>粘贴：</p>
+      <pre><span class="lang-label">conf</span><code class="language-conf">interface=wlan0
 driver=nl80211
 ssid=RDK-X5
 hw_mode=g
@@ -769,133 +770,133 @@ wpa=2
 wpa_key_mgmt=WPA-PSK
 wpa_passphrase=12345678
 wpa_pairwise=CCMP
-rsn_pairwise=CCMP</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bash<span class="hljs-comment"># 3. 配置 DHCP（自动给连入设备分配 IP）</span>
-sudo nano /etc/dhcp/dhcpd.conf</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
-      <p data-doubao-translate-traverse-mark="1">末尾添加：</p>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-conf" data-doubao-translate-traverse-mark="1"><span class="lang-label" data-doubao-translate-traverse-mark="1">conf</span>subnet 192.168.4.0 netmask 255.255.255.0 {
+rsn_pairwise=CCMP</code></pre>
+      <pre><span class="lang-label">bash</span><code class="language-bash"># 3. 配置 DHCP（自动给连入设备分配 IP）
+sudo nano /etc/dhcp/dhcpd.conf</code></pre>
+      <p>末尾添加：</p>
+      <pre><span class="lang-label">conf</span><code class="language-conf">subnet 192.168.4.0 netmask 255.255.255.0 {
 range 192.168.4.2 192.168.4.100;
 option routers 192.168.4.1;
 option domain-name-servers 8.8.8.8;
-}</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bash<span class="hljs-comment"># 4. 设置 wlan0 静态 IP 并启动热点（执行后旧连接断开）</span>
+}</code></pre>
+      <pre><span class="lang-label">bash</span><code class="language-bash"># 4. 设置 wlan0 静态 IP 并启动热点（执行后旧连接断开）
 sudo ifconfig wlan0 192.168.4.1 netmask 255.255.255.0 up
 sudo hostapd -B /etc/hostapd.conf
-sudo systemctl start isc-dhcp-server</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
+sudo systemctl start isc-dhcp-server</code></pre>
 
-      <h3 id="s6-5" data-doubao-translate-traverse-mark="1">6.5 从 AP 切回 STA（连手机热点）</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bashsudo pkill hostapd
+      <h3 id="s6-5">6.5 从 AP 切回 STA（连手机热点）</h3>
+      <pre><span class="lang-label">bash</span><code class="language-bash">sudo pkill hostapd
 sudo systemctl stop isc-dhcp-server
-sudo systemctl restart NetworkManager</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
-      <p data-doubao-translate-traverse-mark="1">然后正常搜索 WiFi 连手机热点，SSH 用原来的 IP 重连。</p>
+sudo systemctl restart NetworkManager</code></pre>
+      <p>然后正常搜索 WiFi 连手机热点，SSH 用原来的 IP 重连。</p>
 
-      <h3 id="s6-6" data-doubao-translate-traverse-mark="1">6.6 两种组网对比</h3>
-      <div class="table-wrap" data-doubao-translate-traverse-mark="1">
-        <table data-doubao-translate-traverse-mark="1">
-          <thead data-doubao-translate-traverse-mark="1"><tr data-doubao-translate-traverse-mark="1"><th data-doubao-translate-traverse-mark="1">组网方式</th><th data-doubao-translate-traverse-mark="1">板子角色</th><th data-doubao-translate-traverse-mark="1">板子有外网吗</th><th data-doubao-translate-traverse-mark="1">适用场景</th></tr></thead>
-          <tbody data-doubao-translate-traverse-mark="1">
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">手机热点（STA 模式）</td><td data-doubao-translate-traverse-mark="1">WiFi 客户端</td><td data-doubao-translate-traverse-mark="1"><span class="badge ok">✅ 有</span></td><td data-doubao-translate-traverse-mark="1">开发阶段，需要 apt 下载、git clone</td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">RDK-X5 开热点（AP 模式）</td><td data-doubao-translate-traverse-mark="1">无线路由器</td><td data-doubao-translate-traverse-mark="1"><span class="badge err">❌ 无</span></td><td data-doubao-translate-traverse-mark="1">比赛现场，独立局域网，ROS2 通信更稳定</td></tr>
+      <h3 id="s6-6">6.6 两种组网对比</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>组网方式</th><th>板子角色</th><th>板子有外网吗</th><th>适用场景</th></tr></thead>
+          <tbody>
+            <tr><td>手机热点（STA 模式）</td><td>WiFi 客户端</td><td><span class="badge ok">✅ 有</span></td><td>开发阶段，需要 apt 下载、git clone</td></tr>
+            <tr><td>RDK-X5 开热点（AP 模式）</td><td>无线路由器</td><td><span class="badge err">❌ 无</span></td><td>比赛现场，独立局域网，ROS2 通信更稳定</td></tr>
           </tbody>
         </table>
       </div>
-      <div class="callout info" data-doubao-translate-traverse-mark="1"><span class="ct" data-doubao-translate-traverse-mark="1">💡 建议</span>开发下载代码用手机热点；现场调试机器人/跑 ROS2 切 RDK 的 AP 热点。</div>
+      <div class="callout info"><span class="ct">💡 建议</span>开发下载代码用手机热点；现场调试机器人/跑 ROS2 切 RDK 的 AP 热点。</div>
     </section>
 
     <!-- 七 -->
-    <section id="s7" data-doubao-translate-traverse-mark="1">
-      <h2 data-doubao-translate-traverse-mark="1"><span class="no" data-doubao-translate-traverse-mark="1">七</span>故障回滚 / 急救命令</h2>
+    <section id="s7">
+      <h2><span class="no">七</span>故障回滚 / 急救命令</h2>
 
-      <h3 id="s7-1" data-doubao-translate-traverse-mark="1">7.1 VNC 黑屏 / Xorg 配置出错回滚</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bash<span class="hljs-comment"># 删除 dummy 配置</span>
-sudo <span class="hljs-built_in">rm</span> /etc/X11/xorg.conf.d/xorg.conf
-<span class="hljs-comment"># 恢复原配置文件（把 .disable 改回 .conf）</span>
-sudo <span class="hljs-built_in">mv</span> /etc/X11/xorg.conf.d/xorg_dsi_ignore.conf.disable /etc/X11/xorg.conf.d/xorg_dsi_ignore.conf
-sudo <span class="hljs-built_in">mv</span> /etc/X11/xorg.conf.d/10-disable-screensaver.conf.disable /etc/X11/xorg.conf.d/10-disable-screensaver.conf
-sudo <span class="hljs-built_in">mv</span> /etc/X11/xorg.conf.d/1-resolution.conf.disable /etc/X11/xorg.conf.d/1-resolution.conf
-<span class="hljs-comment"># 卸载 dummy 驱动</span>
+      <h3 id="s7-1">7.1 VNC 黑屏 / Xorg 配置出错回滚</h3>
+      <pre><span class="lang-label">bash</span><code class="language-bash"># 删除 dummy 配置
+sudo rm /etc/X11/xorg.conf.d/xorg.conf
+# 恢复原配置文件（把 .disable 改回 .conf）
+sudo mv /etc/X11/xorg.conf.d/xorg_dsi_ignore.conf.disable /etc/X11/xorg.conf.d/xorg_dsi_ignore.conf
+sudo mv /etc/X11/xorg.conf.d/10-disable-screensaver.conf.disable /etc/X11/xorg.conf.d/10-disable-screensaver.conf
+sudo mv /etc/X11/xorg.conf.d/1-resolution.conf.disable /etc/X11/xorg.conf.d/1-resolution.conf
+# 卸载 dummy 驱动
 sudo apt remove xserver-xorg-video-dummy-hwe-18.04 -y
-sudo reboot</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
+sudo reboot</code></pre>
 
-      <h3 id="s7-2" data-doubao-translate-traverse-mark="1">7.2 误装 gdm3 后卸载</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bashsudo apt remove gdm3 -y
-sudo <span class="hljs-built_in">rm</span> -f /etc/gdm3/custom.conf
+      <h3 id="s7-2">7.2 误装 gdm3 后卸载</h3>
+      <pre><span class="lang-label">bash</span><code class="language-bash">sudo apt remove gdm3 -y
+sudo rm -f /etc/gdm3/custom.conf
 sudo systemctl set-default multi-user.target
-sudo reboot</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
+sudo reboot</code></pre>
 
-      <h3 id="s7-3" data-doubao-translate-traverse-mark="1">7.3 WiFi 模式切错导致无线失联</h3>
-      <ul data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1"><strong>优先</strong>：插网线走有线 SSH（eth0），有线不受 WiFi 模式影响</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>备选</strong>：Micro-USB 走 USB 虚拟网卡（RNDIS）</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>终极兜底</strong>：Micro USB 串口，任何 WiFi 玩崩都能串口进命令行</li>
+      <h3 id="s7-3">7.3 WiFi 模式切错导致无线失联</h3>
+      <ul>
+        <li><strong>优先</strong>：插网线走有线 SSH（eth0），有线不受 WiFi 模式影响</li>
+        <li><strong>备选</strong>：Micro-USB 走 USB 虚拟网卡（RNDIS）</li>
+        <li><strong>终极兜底</strong>：Micro USB 串口，任何 WiFi 玩崩都能串口进命令行</li>
       </ul>
 
-      <h3 id="s7-4" data-doubao-translate-traverse-mark="1">7.4 查看系统日志排查问题</h3>
-      <pre data-doubao-translate-traverse-mark="1"><code class="language-bash hljs" data-highlighted="yes" data-doubao-translate-traverse-mark="1">bash<span class="hljs-comment"># Xorg 图形日志（VNC 黑屏必看）</span>
-<span class="hljs-built_in">cat</span> /var/log/Xorg.0.<span class="hljs-built_in">log</span>
-<span class="hljs-built_in">cat</span> /var/log/Xorg.0.<span class="hljs-built_in">log</span> | grep -i error
-<span class="hljs-comment"># lightdm 日志</span>
-<span class="hljs-built_in">cat</span> /var/log/lightdm/lightdm.log
-<span class="hljs-comment"># 系统服务日志</span>
+      <h3 id="s7-4">7.4 查看系统日志排查问题</h3>
+      <pre><span class="lang-label">bash</span><code class="language-bash"># Xorg 图形日志（VNC 黑屏必看）
+cat /var/log/Xorg.0.log
+cat /var/log/Xorg.0.log | grep -i error
+# lightdm 日志
+cat /var/log/lightdm/lightdm.log
+# 系统服务日志
 journalctl -u x11vnc.service
 journalctl -u lightdm
-<span class="hljs-comment"># 最近一次启动的所有日志</span>
-journalctl -b</code><button class="copy-btn" data-doubao-translate-traverse-mark="1">复制</button></pre>
+# 最近一次启动的所有日志
+journalctl -b</code></pre>
     </section>
 
     <!-- 八 -->
-    <section id="s8" data-doubao-translate-traverse-mark="1">
-      <h2 data-doubao-translate-traverse-mark="1"><span class="no" data-doubao-translate-traverse-mark="1">八</span>日常使用最佳实践</h2>
-      <ol data-doubao-translate-traverse-mark="1">
-        <li data-doubao-translate-traverse-mark="1"><strong>主力开发用 SSH</strong>：编译、启动 ROS、改配置、重启板子，全部 SSH 完成</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>rviz2 / rqt 走 MobaXterm SSH 的 X11 转发</strong>，不要放到 VNC 窗口运行（性能差）</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>VNC 仅用于</strong>：OpenCV 图像预览（<code>cv2.imshow</code>）、文件浏览、简单图形设置</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>VNC 内打开终端</strong>：桌面空白处右键 → Open Terminal（<code>Ctrl+Alt+T</code> 大概率失效）</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>板子重启后</strong>：VNC 是开机自启的，不需要手动敲命令，等 40~60 秒直接连 <code>IP:5900</code></li>
-        <li data-doubao-translate-traverse-mark="1"><strong>Micro-B（USB）口</strong>：只在烧录系统镜像或应急抢救时用，日常开发不用插</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>修改 xorg.conf 后</strong>：必须 <code>sudo systemctl restart lightdm</code>，只重启 x11vnc 不生效</li>
-        <li data-doubao-translate-traverse-mark="1"><strong>比赛现场</strong>：提前在家把 AP 热点配置写好测试一遍，不要到现场第一次切</li>
+    <section id="s8">
+      <h2><span class="no">八</span>日常使用最佳实践</h2>
+      <ol>
+        <li><strong>主力开发用 SSH</strong>：编译、启动 ROS、改配置、重启板子，全部 SSH 完成</li>
+        <li><strong>rviz2 / rqt 走 MobaXterm SSH 的 X11 转发</strong>，不要放到 VNC 窗口运行（性能差）</li>
+        <li><strong>VNC 仅用于</strong>：OpenCV 图像预览（<code>cv2.imshow</code>）、文件浏览、简单图形设置</li>
+        <li><strong>VNC 内打开终端</strong>：桌面空白处右键 → Open Terminal（<code>Ctrl+Alt+T</code> 大概率失效）</li>
+        <li><strong>板子重启后</strong>：VNC 是开机自启的，不需要手动敲命令，等 40~60 秒直接连 <code>IP:5900</code></li>
+        <li><strong>Micro-B（USB）口</strong>：只在烧录系统镜像或应急抢救时用，日常开发不用插</li>
+        <li><strong>修改 xorg.conf 后</strong>：必须 <code>sudo systemctl restart lightdm</code>，只重启 x11vnc 不生效</li>
+        <li><strong>比赛现场</strong>：提前在家把 AP 热点配置写好测试一遍，不要到现场第一次切</li>
       </ol>
     </section>
 
     <!-- 九 -->
-    <section id="s9" data-doubao-translate-traverse-mark="1">
-      <h2 data-doubao-translate-traverse-mark="1"><span class="no" data-doubao-translate-traverse-mark="1">九</span>快速命令速查表</h2>
-      <div class="table-wrap" data-doubao-translate-traverse-mark="1">
-        <table data-doubao-translate-traverse-mark="1">
-          <thead data-doubao-translate-traverse-mark="1"><tr data-doubao-translate-traverse-mark="1"><th data-doubao-translate-traverse-mark="1">目的</th><th data-doubao-translate-traverse-mark="1">命令</th></tr></thead>
-          <tbody data-doubao-translate-traverse-mark="1">
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">Windows 测连通</td><td data-doubao-translate-traverse-mark="1"><code>ping 192.168.193.118</code></td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">Windows 原生 SSH</td><td data-doubao-translate-traverse-mark="1"><code>ssh sunrise@192.168.193.118</code></td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">板子看 IP</td><td data-doubao-translate-traverse-mark="1"><code>ip addr</code></td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">板子看 WiFi</td><td data-doubao-translate-traverse-mark="1"><code>nmcli device wifi list</code></td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">重启板子</td><td data-doubao-translate-traverse-mark="1"><code>sudo reboot</code></td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">重启图形桌面</td><td data-doubao-translate-traverse-mark="1"><code>sudo systemctl restart lightdm</code></td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">看 VNC 服务状态</td><td data-doubao-translate-traverse-mark="1"><code>systemctl status x11vnc.service</code></td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">看显示管理器状态</td><td data-doubao-translate-traverse-mark="1"><code>systemctl status lightdm</code></td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">看端口监听</td><td data-doubao-translate-traverse-mark="1"><code>ss -tlnp</code></td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">编辑文件</td><td data-doubao-translate-traverse-mark="1"><code>sudo nano 文件路径</code></td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">切 root</td><td data-doubao-translate-traverse-mark="1"><code>sudo -i</code></td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">退出 root</td><td data-doubao-translate-traverse-mark="1"><code>exit</code></td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">杀进程</td><td data-doubao-translate-traverse-mark="1"><code>sudo kill -9 PID</code></td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">看 Xorg 错误日志</td><td data-doubao-translate-traverse-mark="1"><code>cat /var/log/Xorg.0.log | grep -i error</code></td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">VNC 连接地址</td><td data-doubao-translate-traverse-mark="1"><code>192.168.193.118:5900</code></td></tr>
-            <tr data-doubao-translate-traverse-mark="1"><td data-doubao-translate-traverse-mark="1">AP 模式 SSH 地址</td><td data-doubao-translate-traverse-mark="1"><code>ssh sunrise@192.168.4.1</code></td></tr>
+    <section id="s9">
+      <h2><span class="no">九</span>快速命令速查表</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>目的</th><th>命令</th></tr></thead>
+          <tbody>
+            <tr><td>Windows 测连通</td><td><code>ping 192.168.193.118</code></td></tr>
+            <tr><td>Windows 原生 SSH</td><td><code>ssh sunrise@192.168.193.118</code></td></tr>
+            <tr><td>板子看 IP</td><td><code>ip addr</code></td></tr>
+            <tr><td>板子看 WiFi</td><td><code>nmcli device wifi list</code></td></tr>
+            <tr><td>重启板子</td><td><code>sudo reboot</code></td></tr>
+            <tr><td>重启图形桌面</td><td><code>sudo systemctl restart lightdm</code></td></tr>
+            <tr><td>看 VNC 服务状态</td><td><code>systemctl status x11vnc.service</code></td></tr>
+            <tr><td>看显示管理器状态</td><td><code>systemctl status lightdm</code></td></tr>
+            <tr><td>看端口监听</td><td><code>ss -tlnp</code></td></tr>
+            <tr><td>编辑文件</td><td><code>sudo nano 文件路径</code></td></tr>
+            <tr><td>切 root</td><td><code>sudo -i</code></td></tr>
+            <tr><td>退出 root</td><td><code>exit</code></td></tr>
+            <tr><td>杀进程</td><td><code>sudo kill -9 PID</code></td></tr>
+            <tr><td>看 Xorg 错误日志</td><td><code>cat /var/log/Xorg.0.log | grep -i error</code></td></tr>
+            <tr><td>VNC 连接地址</td><td><code>192.168.193.118:5900</code></td></tr>
+            <tr><td>AP 模式 SSH 地址</td><td><code>ssh sunrise@192.168.4.1</code></td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <footer data-doubao-translate-traverse-mark="1">
+    <footer>
       RDK-X5 网络连接 / SSH / VNC 完整手册 · 创建于 2026-09-02 · 调整于 2026-09-02 ·
       <a href="https://github.com/Ian-cyy" target="_blank" rel="noopener">GitHub: Ian-cyy</a>
     </footer>
   </main>
 </div>
 
-<button class="back-top" id="backTop" title="回到顶部" data-doubao-translate-traverse-mark="1">↑</button>
+<button class="back-top" id="backTop" title="回到顶部">↑</button>
 
-<script data-doubao-translate-traverse-mark="1">
+<script>
   // 生成目录
   const tocList = document.getElementById('toc-list');
   const sections = document.querySelectorAll('main section');

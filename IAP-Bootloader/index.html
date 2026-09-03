@@ -462,7 +462,7 @@ D:\Python\python.exe iap_upload.py D:/你的/app.bin COM18</code></pre>
                   ↑ 进入升级模式: LED 闪烁, 等待上位机</code></pre>
 
     <p><code>main.c</code> 里的固定模板（USER CODE 2，换芯片不用改）：</p>
-    <pre><code class="language-c"><span class="lang-label">c</span>led_all_off();
+    <pre><span class="lang-label">c</span><code class="language-c">led_all_off();
 if (!IAP_Port_IsButtonPressed())
     IAP_JumpToApplication();
 IAP_Init();
@@ -548,13 +548,13 @@ main.c         固定模板, 只调 iap / iap_port 函数</code></pre>
       <li><b>复制 <code>IAP/</code> 文件夹</b>到新工程，加入 Keil 工程并添加 <code>../IAP</code> 到 include 路径</li>
       <li><b>改 <code>iap.h</code></b> 三个宏:</li>
     </ol>
-    <pre><code class="language-c"><span class="lang-label">c</span>#define IAP_APP_BASE        0x08004000UL   /* App 起始地址(和 BL 分区对应) */
+    <pre><span class="lang-label">c</span><code class="language-c">#define IAP_APP_BASE        0x08004000UL   /* App 起始地址(和 BL 分区对应) */
 #define IAP_APP_END         0x08020000UL   /* App 结束地址 = 芯片 Flash 上限 */
 #define IAP_FLASH_PAGE_SIZE 2048UL         /* 芯片 Flash 页大小 */</code></pre>
     <ol start="3">
       <li><b>改 <code>iap_port.c</code></b> 顶部:</li>
     </ol>
-    <pre><code class="language-c"><span class="lang-label">c</span>#define IAP_UART  huart2   /* 改成你的 UART 句柄(OTA 用) */</code></pre>
+    <pre><span class="lang-label">c</span><code class="language-c">#define IAP_UART  huart2   /* 改成你的 UART 句柄(OTA 用) */</code></pre>
     <p>以及按键引脚、LED 等硬件适配。</p>
     <ol start="4">
       <li><b>CubeMX 配置</b>: 重配 USART 引脚、波特率(和上位机一致)、按键引脚</li>
@@ -779,7 +779,7 @@ GND            → GND(共地)</code></pre>
       <li>因此 App 的 <code>system_stm32g4xx.c</code> 里 <code>USER_VECT_TAB_ADDRESS</code> 处于注释状态时也能正常工作（依赖 Bootloader 已设好 VTOR）</li>
       <li>若希望 App 自包含（不依赖 Bootloader），可在 <code>system_stm32g4xx.c</code> 里定义:</li>
     </ul>
-    <pre><code class="language-c"><span class="lang-label">c</span>#define USER_VECT_TAB_ADDRESS
+    <pre><span class="lang-label">c</span><code class="language-c">#define USER_VECT_TAB_ADDRESS
 #define VECT_TAB_OFFSET 0x4000</code></pre>
 
     <h3>中断状态</h3>
