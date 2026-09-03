@@ -1,0 +1,402 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STM32F407VET6 引脚分配与功能总表（LQFP100）</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#171e2e; --panel2:#1d2639; --line:#2a3450;
+    --txt:#e6ebf5; --mut:#93a0bd; --acc:#4da3ff;
+    --c-tim:#7ee787; --c-uart:#79b8ff; --c-spi:#56d4dd; --c-i2c:#ffab5e;
+    --c-can:#ff7b72; --c-adc:#ff9fce; --c-usb:#c792ea; --c-eth:#7adcf0;
+    --c-sdio:#d0a06e; --c-fsmc:#b4a0ff; --c-dcmi:#a8cc5c; --c-dbg:#8b9bb4;
+    --c-sys:#f2cc60; --c-pwr:#6b7794;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;font-size:14px;line-height:1.55;}
+  header{background:linear-gradient(135deg,#12203a,#1a2c52 60%,#14324b);border-bottom:1px solid var(--line);
+    padding:22px 28px 18px;}
+  header h1{margin:0;font-size:22px;letter-spacing:.5px;}
+  header .sub{color:var(--mut);margin-top:6px;font-size:13px;}
+  .chips{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;}
+  .chips span{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:20px;
+    padding:3px 12px;font-size:12px;color:var(--txt);}
+  .chips b{color:var(--acc);font-weight:600;}
+  main{padding:20px 28px 60px;max-width:1500px;margin:0 auto;}
+  h2{font-size:17px;margin:28px 0 12px;padding-left:10px;border-left:4px solid var(--acc);}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:8px;}
+
+  /* ===== 引脚图 ===== */
+  .pkg{display:flex;flex-direction:column;gap:6px;user-select:none;}
+  .pkg-row{display:flex;gap:6px;}
+  .pkg-side{display:flex;flex-direction:column;gap:2px;justify-content:center;flex:1;}
+  .pin{display:flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:5px;padding:2px 8px;font-size:12px;white-space:nowrap;color:var(--txt);}
+  .pin .no{color:var(--mut);font-weight:600;min-width:22px;}
+  .pin .nm{font-weight:600;font-family:Consolas,"Courier New",monospace;}
+  .pin.pwr .nm{color:#aab6d0;}
+  .pin.spec .nm{color:var(--c-sys);}
+  .pin.dbg .nm{color:var(--c-dbg);}
+  .pin.gpio .nm{color:var(--txt);}
+  .pkg-core{flex:0 0 110px;display:flex;align-items:center;justify-content:center;
+    border:2px dashed var(--line);border-radius:10px;color:var(--mut);font-size:12px;text-align:center;line-height:1.6;}
+  @media(max-width:900px){ .pkg-side{min-width:0;} .pin{font-size:11px;padding:1px 5px;} }
+
+  /* ===== 表格 ===== */
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;}
+  .toolbar input{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    border-radius:8px;padding:7px 12px;font-size:13px;width:260px;outline:none;}
+  .toolbar input:focus{border-color:var(--acc);}
+  .filter-group{display:flex;flex-wrap:wrap;gap:6px;}
+  .fbtn{background:var(--panel2);border:1px solid var(--line);color:var(--mut);
+    border-radius:16px;padding:4px 11px;font-size:12px;cursor:pointer;}
+  .fbtn.active{background:var(--acc);color:#06121f;border-color:var(--acc);font-weight:600;}
+  .tbl-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;max-height:820px;}
+  table{border-collapse:collapse;width:100%;min-width:1150px;font-size:13px;}
+  thead th{position:sticky;top:0;background:#131b2c;color:var(--mut);font-weight:600;z-index:2;
+    text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);font-size:12px;white-space:nowrap;}
+  tbody td{padding:7px 10px;border-bottom:1px solid #202943;vertical-align:top;}
+  tbody tr:hover{background:#1b2438;}
+  td.pin-no{font-weight:700;color:var(--acc);width:52px;}
+  td.pin-nm{font-family:Consolas,"Courier New",monospace;font-weight:700;white-space:nowrap;width:84px;}
+  td.pin-type{white-space:nowrap;color:var(--mut);font-size:12px;width:60px;}
+  .af{display:flex;flex-wrap:wrap;gap:4px;}
+  .afc{font-size:11px;padding:1px 7px;border-radius:9px;white-space:nowrap;border:1px solid transparent;}
+  .af-TIM{background:rgba(126,231,135,.12);color:var(--c-tim);border-color:rgba(126,231,135,.35);}
+  .af-UART{background:rgba(121,184,255,.12);color:var(--c-uart);border-color:rgba(121,184,255,.35);}
+  .af-SPI{background:rgba(86,212,221,.12);color:var(--c-spi);border-color:rgba(86,212,221,.35);}
+  .af-I2C{background:rgba(255,171,94,.12);color:var(--c-i2c);border-color:rgba(255,171,94,.35);}
+  .af-CAN{background:rgba(255,123,114,.12);color:var(--c-can);border-color:rgba(255,123,114,.35);}
+  .af-ADC{background:rgba(255,159,206,.12);color:var(--c-adc);border-color:rgba(255,159,206,.35);}
+  .af-USB{background:rgba(199,146,234,.12);color:var(--c-usb);border-color:rgba(199,146,234,.35);}
+  .af-ETH{background:rgba(122,220,240,.12);color:var(--c-eth);border-color:rgba(122,220,240,.35);}
+  .af-SDIO{background:rgba(208,160,110,.12);color:var(--c-sdio);border-color:rgba(208,160,110,.35);}
+  .af-FSMC{background:rgba(180,160,255,.12);color:var(--c-fsmc);border-color:rgba(180,160,255,.35);}
+  .af-DCMI{background:rgba(168,204,92,.12);color:var(--c-dcmi);border-color:rgba(168,204,92,.35);}
+  .af-DBG{background:rgba(139,155,180,.12);color:var(--c-dbg);border-color:rgba(139,155,180,.35);}
+  .af-SYS{background:rgba(242,204,96,.12);color:var(--c-sys);border-color:rgba(242,204,96,.35);}
+  .note{color:var(--mut);font-size:12px;max-width:250px;}
+  .stat{color:var(--mut);font-size:12px;margin-left:auto;}
+  tr.pwr td.pin-nm{color:#aab6d0;}
+  tr.spec td.pin-nm{color:var(--c-sys);}
+  tr.dbg td.pin-nm{color:var(--c-dbg);}
+
+  /* ===== 外设速查 ===== */
+  .periph{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;}
+  .pbox{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;}
+  .pbox h3{margin:0 0 7px;font-size:14px;color:var(--acc);}
+  .pbox table{min-width:0;width:100%;font-size:12.5px;}
+  .pbox td{padding:2px 4px;border:none;border-bottom:1px dashed #26304e;}
+  .pbox tr:last-child td{border:none;}
+  .pbox td:first-child{color:var(--mut);white-space:nowrap;}
+  .pbox td:last-child{font-family:Consolas,"Courier New",monospace;}
+  ul.tips{margin:6px 0;padding-left:18px;color:var(--txt);}
+  ul.tips li{margin:4px 0;}
+  ul.tips b{color:var(--acc);}
+  footer{color:var(--mut);font-size:12px;padding:10px 28px 30px;text-align:center;}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px;font-size:12px;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;color:var(--mut);}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+  a{color:var(--acc);}
+</style>
+</head>
+<body>
+
+<div class="pin-topnav" style="background:#0e1630;padding:8px 28px;font-size:13px;display:flex;gap:18px;border-bottom:1px solid rgba(255,255,255,.08);">
+  <a href="../../" style="color:#7fb3e0;text-decoration:none;">&#8592; 返回笔记主页</a>
+  <a href="../" style="color:#7fb3e0;text-decoration:none;">&#8593; STM32 引脚目录</a>
+</div>
+
+<header>
+  <h1>STM32F407VET6 引脚分配与功能总表</h1>
+  <div class="sub">基于 ST 官方数据手册 DS8626（Rev 10）Figure 13 引脚图与 Table 7 / Table 9 复用功能表整理 · 封装 LQFP100（14×14 mm，0.5mm 间距）</div>
+  <div class="chips">
+    <span>内核 <b>Cortex-M4F @168MHz</b></span>
+    <span>Flash <b>512 KB</b></span>
+    <span>SRAM <b>192 KB</b>（含 4 KB 备份）</span>
+    <span>GPIO <b>82 个</b>（PA–PE 各 16 + PH0/PH1）</span>
+    <span>引脚 <b>100</b></span>
+    <span>ADC <b>3×12bit</b> / DAC <b>2×12bit</b></span>
+    <span>定时器 <b>TIM1–14</b></span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ================= 引脚图 ================= -->
+  <h2>① LQFP100 引脚分布图（俯视图）</h2>
+  <div class="card">
+    <div class="pkg" id="pkg"></div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--c-sys)"></i>电源 / 复位 / 启动 / 晶振</span>
+      <span><i class="dot" style="background:var(--c-dbg)"></i>调试接口</span>
+      <span><i class="dot" style="background:var(--txt)"></i>GPIO</span>
+      <span><i class="dot" style="background:#aab6d0"></i>电源 / 地</span>
+    </div>
+  </div>
+
+  <!-- ================= 引脚总表 ================= -->
+  <h2>② 100 引脚功能总表（可按引脚号 / 引脚名 / 外设搜索）</h2>
+  <div class="toolbar">
+    <input id="search" type="text" placeholder="搜索：PA9 / USART1_TX / CAN / ADC3 / 68 ...">
+    <div class="filter-group" id="filters"></div>
+    <span class="stat" id="count"></span>
+  </div>
+  <div class="tbl-wrap">
+    <table id="pintable">
+      <thead>
+        <tr>
+          <th>引脚</th><th>名称</th><th>类型</th>
+          <th style="width:180px">复位后功能 / 说明</th>
+          <th>复用功能（AF，需 GPIOx_AFR 配置）</th>
+          <th>附加功能 / 注意事项</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- ================= 外设速查 ================= -->
+  <h2>③ 常用外设引脚速查表</h2>
+  <div class="card">
+    <div class="periph" id="periph"></div>
+  </div>
+
+  <!-- ================= 注意事项 ================= -->
+  <h2>④ 硬件设计注意事项</h2>
+  <div class="card">
+    <ul class="tips">
+      <li><b>供电：</b>VDD（11/19/28/50/75/76/100）接 2.7–3.6V（推荐 3.3V）；VSS（10/27/74/99）接地；VDDA（22）与 VSSA（20）必须连接，保证 ADC 精度；VBAT（6）接备份电池或 VDD。</li>
+      <li><b>VCAP_1（49）/ VCAP_2（73）：</b>内核稳压器滤波脚，必须各接 2.2µF 电容到 GND，严禁接电源。</li>
+      <li><b>VREF+（21）：</b>ADC 参考电压，一般接 VDDA（3.3V）。LQFP100 无 VREF- 引脚（内部接 VSSA）。</li>
+      <li><b>时钟：</b>PH0（12）= HSE 晶振输入，PH1（13）= HSE 晶振输出（4–26MHz，常用 8MHz）；PC14（8）/PC15（9）= LSE 32.768kHz 低速晶振（不用时可直接复用为 GPIO）。</li>
+      <li><b>启动：</b>BOOT0（94）+ BOOT1（PB2，37）决定启动模式：00→Flash，10→系统存储器（串口 ISP 引导），11→SRAM。BOOT0 需接 10k 下拉，默认从 Flash 启动。</li>
+      <li><b>复位：</b>NRST（14）低有效，建议外接 100nF 电容到地。</li>
+      <li><b>调试：</b>默认 SWD（PA13=SWDIO，PA14=SWCLK）；JTAG 占用 PA15/PB3/PB4。不用 JTAG 时可通过 SWJ_CFG 释放 PA15/PB3/PB4 为普通 GPIO。</li>
+      <li><b>PC13/PC14/PC15：</b>由电源开关供电，输出驱动能力仅 3mA、速度≤2MHz，不要用来驱动 LED 等大电流负载。</li>
+      <li><b>USB：</b>OTG_FS 在 PA9（VBUS）/PA11（DM）/PA12（DP）/PA10（ID）；OTG_HS 需 ULPI 外接 PHY（PA/PC 上的 ULPI 信号）或内部 FS 模式（PB14=DM，PB15=DP，PB13=VBUS，PB12=ID）。</li>
+      <li><b>以太网：</b>VET6 支持 ETH（MII/RMII），RMII 常用接法：PA1=REF_CLK，PA2=MDIO，PA7=CRS_DV，PC1=MDC，PC4=RXD0，PC5=RXD1，PB11=TX_EN，PB12=TXD0，PB13=TXD1（配合 LAN8720）。</li>
+      <li><b>5V 容限（FT）：</b>表中绝大多数 GPIO 为 FT（5V 耐压），可直连 5V 逻辑；PA4/PA5/PA6/PA7 等模拟脚与 TTa 脚除外，注意参考手册。</li>
+      <li><b>复用配置：</b>所有 GPIO 复用功能需通过 GPIOx_AFRL/AFRH 寄存器选择对应 AF 编号，建议用 STM32CubeMX 可视化配置引脚并生成初始化代码。</li>
+    </ul>
+  </div>
+
+</main>
+
+<footer>数据来源：ST 官方《STM32F405xx / STM32F407xx Datasheet》（DS8626 Rev 10）· 引脚复用以 RM0090 参考手册为准</footer>
+
+<script>
+/* ================= 引脚数据 =================
+   n:引脚号  nm:名称  ty:类型  cat:GPIO/SPEC/PWR/DBG
+   ds:复位后功能/说明  af:{分类:[复用列表]}  ad:附加功能  no:注意事项
+*/
+const PIN=[
+{n:1,nm:"PE2",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{SYS:["TRACECLK"],FSMC:["FSMC_A23"],ETH:["ETH_MII_TXD3"]}},
+{n:2,nm:"PE3",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{SYS:["TRACED0"],FSMC:["FSMC_A19"]}},
+{n:3,nm:"PE4",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{SYS:["TRACED1"],FSMC:["FSMC_A20"],DCMI:["DCMI_D4"]}},
+{n:4,nm:"PE5",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{SYS:["TRACED2"],FSMC:["FSMC_A21"],TIM:["TIM9_CH1"],DCMI:["DCMI_D6"]}},
+{n:5,nm:"PE6",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{SYS:["TRACED3"],FSMC:["FSMC_A22"],TIM:["TIM9_CH2"],DCMI:["DCMI_D7"]}},
+{n:6,nm:"VBAT",ty:"S",cat:"SPEC",ds:"备份电源（接电池或 VDD）",ad:"RTC 与备份域供电"},
+{n:7,nm:"PC13",ty:"I/O FT",cat:"GPIO",ds:"GPIO（受电源开关限制）",ad:"RTC_OUT / RTC_TAMP1 / RTC_TS",no:"驱动≤3mA，速度≤2MHz"},
+{n:8,nm:"PC14",ty:"I/O FT",cat:"GPIO",ds:"GPIO / OSC32_IN",ad:"LSE 32.768kHz 晶振输入",no:"不用 LSE 可作 GPIO，限 3mA"},
+{n:9,nm:"PC15",ty:"I/O FT",cat:"GPIO",ds:"GPIO / OSC32_OUT",ad:"LSE 32.768kHz 晶振输出",no:"不用 LSE 可作 GPIO，限 3mA"},
+{n:10,nm:"VSS",ty:"S",cat:"PWR",ds:"数字地"},
+{n:11,nm:"VDD",ty:"S",cat:"PWR",ds:"数字电源 3.3V"},
+{n:12,nm:"PH0",ty:"I/O FT",cat:"SPEC",ds:"OSC_IN",ad:"HSE 高速晶振输入（4–26MHz）",no:"兼作 PH0-OSC_IN"},
+{n:13,nm:"PH1",ty:"I/O FT",cat:"SPEC",ds:"OSC_OUT",ad:"HSE 高速晶振输出",no:"兼作 PH1-OSC_OUT"},
+{n:14,nm:"NRST",ty:"I",cat:"SPEC",ds:"复位（低有效，内置上拉）",no:"建议外接 100nF 到地"},
+{n:15,nm:"PC0",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{USB:["OTG_HS_ULPI_STP"]},ad:"ADC123_IN10"},
+{n:16,nm:"PC1",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{ETH:["ETH_MDC"]},ad:"ADC123_IN11"},
+{n:17,nm:"PC2",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{SPI:["SPI2_MISO / I2S2ext_SD"],USB:["OTG_HS_ULPI_DIR"],ETH:["ETH_MII_TXD2"]},ad:"ADC123_IN12"},
+{n:18,nm:"PC3",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{SPI:["SPI2_MOSI / I2S2_SD"],USB:["OTG_HS_ULPI_NXT"],ETH:["ETH_MII_TX_CLK"]},ad:"ADC123_IN13"},
+{n:19,nm:"VDD",ty:"S",cat:"PWR",ds:"数字电源 3.3V"},
+{n:20,nm:"VSSA",ty:"S",cat:"PWR",ds:"模拟地（ADC 参考地）"},
+{n:21,nm:"VREF+",ty:"S",cat:"SPEC",ds:"ADC 参考电压正（接 VDDA）",no:"LQFP100 无 VREF-（内部接 VSSA）"},
+{n:22,nm:"VDDA",ty:"S",cat:"PWR",ds:"模拟电源 3.3V"},
+{n:23,nm:"PA0",ty:"I/O FT",cat:"GPIO",ds:"GPIO / WKUP（唤醒）",af:{TIM:["TIM2_CH1_ETR","TIM5_CH1","TIM8_ETR"],UART:["USART2_CTS","UART4_TX"],ETH:["ETH_MII_CRS"]},ad:"ADC1_IN0 · WKUP"},
+{n:24,nm:"PA1",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM2_CH2","TIM5_CH2"],UART:["USART2_RTS","UART4_RX"],ETH:["ETH_MII_RX_CLK / RMII_REF_CLK"]},ad:"ADC1_IN1"},
+{n:25,nm:"PA2",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM2_CH3","TIM5_CH3","TIM9_CH1"],UART:["USART2_TX"],ETH:["ETH_MDIO"]},ad:"ADC1_IN2"},
+{n:26,nm:"PA3",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM2_CH4","TIM5_CH4","TIM9_CH2"],UART:["USART2_RX"],USB:["OTG_HS_ULPI_D0"],ETH:["ETH_MII_COL"]},ad:"ADC1_IN3"},
+{n:27,nm:"VSS",ty:"S",cat:"PWR",ds:"数字地"},
+{n:28,nm:"VDD",ty:"S",cat:"PWR",ds:"数字电源 3.3V"},
+{n:29,nm:"PA4",ty:"I/O",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{SPI:["SPI1_NSS","SPI3_NSS / I2S3_WS"],UART:["USART2_CK"],USB:["OTG_HS_SOF"],DCMI:["DCMI_HSYNC"]},ad:"DAC1_OUT · ADC1_IN4",no:"模拟脚（TTa）"},
+{n:30,nm:"PA5",ty:"I/O",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM2_CH1_ETR","TIM8_CH1N"],SPI:["SPI1_SCK"],USB:["OTG_HS_ULPI_CK"]},ad:"DAC2_OUT · ADC1_IN5",no:"模拟脚（TTa）"},
+{n:31,nm:"PA6",ty:"I/O",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_BKIN","TIM3_CH1","TIM8_BKIN","TIM13_CH1"],SPI:["SPI1_MISO"],DCMI:["DCMI_PIXCLK"]},ad:"ADC1_IN6",no:"模拟脚（TTa）"},
+{n:32,nm:"PA7",ty:"I/O",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_CH1N","TIM3_CH2","TIM8_CH1N","TIM14_CH1"],SPI:["SPI1_MOSI"],ETH:["ETH_MII_RX_DV / RMII_CRS_DV"]},ad:"ADC1_IN7",no:"模拟脚（TTa）"},
+{n:33,nm:"PC4",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{ETH:["ETH_MII_RXD0 / RMII_RXD0"]},ad:"ADC12_IN14"},
+{n:34,nm:"PC5",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{ETH:["ETH_MII_RXD1 / RMII_RXD1"]},ad:"ADC12_IN15"},
+{n:35,nm:"PB0",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_CH2N","TIM3_CH3","TIM8_CH2N"],USB:["OTG_HS_ULPI_D1"],ETH:["ETH_MII_RXD2"]},ad:"ADC12_IN8"},
+{n:36,nm:"PB1",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_CH3N","TIM3_CH4","TIM8_CH3N"],USB:["OTG_HS_ULPI_D2"],ETH:["ETH_MII_RXD3"]},ad:"ADC12_IN9"},
+{n:37,nm:"PB2",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",ad:"BOOT1（配合 BOOT0 选择启动模式）",no:"默认无 AF 复用"},
+{n:38,nm:"PE7",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_ETR"],FSMC:["FSMC_D4"]}},
+{n:39,nm:"PE8",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_CH1N"],FSMC:["FSMC_D5"]}},
+{n:40,nm:"PE9",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_CH1"],FSMC:["FSMC_D6"]}},
+{n:41,nm:"PE10",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_CH2N"],FSMC:["FSMC_D7"]}},
+{n:42,nm:"PE11",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_CH2"],FSMC:["FSMC_D8"]}},
+{n:43,nm:"PE12",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_CH3N"],FSMC:["FSMC_D9"]}},
+{n:44,nm:"PE13",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_CH3"],FSMC:["FSMC_D10"]}},
+{n:45,nm:"PE14",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_CH4"],FSMC:["FSMC_D11"]}},
+{n:46,nm:"PE15",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_BKIN"],FSMC:["FSMC_D12"]}},
+{n:47,nm:"PB10",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM2_CH3"],I2C:["I2C2_SCL"],SPI:["SPI2_SCK / I2S2_CK"],UART:["USART3_TX"],USB:["OTG_HS_ULPI_D3"],ETH:["ETH_MII_RX_ER"]}},
+{n:48,nm:"PB11",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM2_CH4"],I2C:["I2C2_SDA"],UART:["USART3_RX"],USB:["OTG_HS_ULPI_D4"],ETH:["ETH_MII_TX_EN / RMII_TX_EN"]}},
+{n:49,nm:"VCAP_1",ty:"S",cat:"SPEC",ds:"内核稳压器滤波电容",no:"必须接 2.2µF 到 GND，勿接电源"},
+{n:50,nm:"VDD",ty:"S",cat:"PWR",ds:"数字电源 3.3V"},
+{n:51,nm:"PB12",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_BKIN"],I2C:["I2C2_SMBA"],SPI:["SPI2_NSS / I2S2_WS"],UART:["USART3_CK"],CAN:["CAN2_RX"],USB:["OTG_HS_ULPI_D5","OTG_HS_ID"],ETH:["ETH_MII_TXD0 / RMII_TXD0"]}},
+{n:52,nm:"PB13",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_CH1N"],SPI:["SPI2_SCK / I2S2_CK"],UART:["USART3_CTS"],CAN:["CAN2_TX"],USB:["OTG_HS_ULPI_D6"],ETH:["ETH_MII_TXD1 / RMII_TXD1"]},ad:"OTG_HS_VBUS"},
+{n:53,nm:"PB14",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_CH2N","TIM8_CH2N","TIM12_CH1"],SPI:["SPI2_MISO / I2S2ext_SD"],UART:["USART3_RTS"]},ad:"OTG_HS_DM",no:"USB HS 数据线"},
+{n:54,nm:"PB15",ty:"I/O FT",cat:"GPIO",ds:"GPIO / RTC_REFIN",af:{TIM:["TIM1_CH3N","TIM8_CH3N","TIM12_CH2"],SPI:["SPI2_MOSI / I2S2_SD"]},ad:"OTG_HS_DP",no:"USB HS 数据线"},
+{n:55,nm:"PD8",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{UART:["USART3_TX"],FSMC:["FSMC_D13"]}},
+{n:56,nm:"PD9",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{UART:["USART3_RX"],FSMC:["FSMC_D14"]}},
+{n:57,nm:"PD10",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{UART:["USART3_CK"],FSMC:["FSMC_D15"]}},
+{n:58,nm:"PD11",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{UART:["USART3_CTS"],FSMC:["FSMC_A16"]}},
+{n:59,nm:"PD12",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM4_CH1"],UART:["USART3_RTS"],FSMC:["FSMC_A17"]}},
+{n:60,nm:"PD13",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM4_CH2"],FSMC:["FSMC_A18"]}},
+{n:61,nm:"PD14",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM4_CH3"],FSMC:["FSMC_D0"]}},
+{n:62,nm:"PD15",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM4_CH4"],FSMC:["FSMC_D1"]}},
+{n:63,nm:"PC6",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM3_CH1","TIM8_CH1"],SPI:["I2S2_MCK"],UART:["USART6_TX"],SDIO:["SDIO_D6"],DCMI:["DCMI_D0"]}},
+{n:64,nm:"PC7",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM3_CH2","TIM8_CH2"],SPI:["I2S3_MCK"],UART:["USART6_RX"],SDIO:["SDIO_D7"],DCMI:["DCMI_D1"]}},
+{n:65,nm:"PC8",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM3_CH3","TIM8_CH3"],UART:["USART6_CK"],SDIO:["SDIO_D0"],DCMI:["DCMI_D2"]}},
+{n:66,nm:"PC9",ty:"I/O FT",cat:"GPIO",ds:"GPIO / MCO2（时钟输出）",af:{TIM:["TIM3_CH4","TIM8_CH4"],I2C:["I2C3_SDA"],SPI:["I2S_CKIN"],SDIO:["SDIO_D1"],DCMI:["DCMI_D3"]}},
+{n:67,nm:"PA8",ty:"I/O FT",cat:"GPIO",ds:"GPIO / MCO1（时钟输出）",af:{TIM:["TIM1_CH1"],I2C:["I2C3_SCL"],UART:["USART1_CK"],USB:["OTG_FS_SOF"]}},
+{n:68,nm:"PA9",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_CH2"],I2C:["I2C3_SMBA"],UART:["USART1_TX"],DCMI:["DCMI_D0"]},ad:"OTG_FS_VBUS",no:"USB FS VBUS 检测"},
+{n:69,nm:"PA10",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_CH3"],UART:["USART1_RX"],DCMI:["DCMI_D1"]},ad:"OTG_FS_ID",no:"USB FS ID"},
+{n:70,nm:"PA11",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_CH4"],UART:["USART1_CTS"],CAN:["CAN1_RX"]},ad:"OTG_FS_DM",no:"USB FS 数据负"},
+{n:71,nm:"PA12",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM1_ETR"],UART:["USART1_RTS"],CAN:["CAN1_TX"]},ad:"OTG_FS_DP",no:"USB FS 数据正"},
+{n:72,nm:"PA13",ty:"I/O FT",cat:"DBG",ds:"JTMS-SWDIO",af:{DBG:["JTMS / SWDIO"]},no:"SWD 数据线，复位默认"},
+{n:73,nm:"VCAP_2",ty:"S",cat:"SPEC",ds:"内核稳压器滤波电容",no:"必须接 2.2µF 到 GND，勿接电源"},
+{n:74,nm:"VSS",ty:"S",cat:"PWR",ds:"数字地"},
+{n:75,nm:"VDD",ty:"S",cat:"PWR",ds:"数字电源 3.3V"},
+{n:76,nm:"PA14",ty:"I/O FT",cat:"DBG",ds:"JTCK-SWCLK",af:{DBG:["JTCK / SWCLK"]},no:"SWD 时钟，复位默认"},
+{n:77,nm:"PA15",ty:"I/O FT",cat:"DBG",ds:"JTDI（复位后 JTAG 占用）",af:{DBG:["JTDI"],TIM:["TIM2_CH1_ETR"],SPI:["SPI1_NSS","SPI3_NSS / I2S3_WS"]},no:"关 JTAG 后可作 GPIO"},
+{n:78,nm:"PC10",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{SPI:["SPI3_SCK / I2S3_CK"],UART:["USART3_TX","UART4_TX"],SDIO:["SDIO_D2"],DCMI:["DCMI_D8"]}},
+{n:79,nm:"PC11",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{SPI:["SPI3_MISO / I2S3ext_SD"],UART:["USART3_RX","UART4_RX"],SDIO:["SDIO_D3"],DCMI:["DCMI_D4"]}},
+{n:80,nm:"PC12",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{SPI:["SPI3_MOSI / I2S3_SD"],UART:["USART3_CK","UART5_TX"],SDIO:["SDIO_CK"],DCMI:["DCMI_D9"]}},
+{n:81,nm:"PD0",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{CAN:["CAN1_RX"],FSMC:["FSMC_D2"]}},
+{n:82,nm:"PD1",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{CAN:["CAN1_TX"],FSMC:["FSMC_D3"]}},
+{n:83,nm:"PD2",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM3_ETR"],UART:["UART5_RX"],SDIO:["SDIO_CMD"],DCMI:["DCMI_D11"]}},
+{n:84,nm:"PD3",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{UART:["USART2_CTS"],FSMC:["FSMC_CLK"]}},
+{n:85,nm:"PD4",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{UART:["USART2_RTS"],FSMC:["FSMC_NOE"]}},
+{n:86,nm:"PD5",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{UART:["USART2_TX"],FSMC:["FSMC_NWE"]}},
+{n:87,nm:"PD6",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{UART:["USART2_RX"],FSMC:["FSMC_NWAIT"]}},
+{n:88,nm:"PD7",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{UART:["USART2_CK"],FSMC:["FSMC_NE1 / NCE2"]}},
+{n:89,nm:"PB3",ty:"I/O FT",cat:"DBG",ds:"JTDO / TRACESWO（复位后 JTAG 占用）",af:{DBG:["JTDO / TRACESWO"],TIM:["TIM2_CH2"],SPI:["SPI1_SCK","SPI3_SCK / I2S3_CK"]},no:"关 JTAG 后可作 GPIO"},
+{n:90,nm:"PB4",ty:"I/O FT",cat:"DBG",ds:"NJTRST（复位后 JTAG 占用）",af:{DBG:["NJTRST"],TIM:["TIM3_CH1"],SPI:["SPI1_MISO","SPI3_MISO / I2S3ext_SD"]},no:"关 JTAG 后可作 GPIO"},
+{n:91,nm:"PB5",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM3_CH2"],I2C:["I2C1_SMBA"],SPI:["SPI1_MOSI","SPI3_MOSI / I2S3_SD"],CAN:["CAN2_RX"],USB:["OTG_HS_ULPI_D7"],ETH:["ETH_PPS_OUT"],DCMI:["DCMI_D10"]}},
+{n:92,nm:"PB6",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM4_CH1"],I2C:["I2C1_SCL"],UART:["USART1_TX"],CAN:["CAN2_TX"],DCMI:["DCMI_D5"]}},
+{n:93,nm:"PB7",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM4_CH2"],I2C:["I2C1_SDA"],UART:["USART1_RX"],FSMC:["FSMC_NL"],DCMI:["DCMI_VSYNC"]}},
+{n:94,nm:"BOOT0",ty:"I",cat:"SPEC",ds:"启动模式选择（内置弱下拉）",no:"BOOT0=0→Flash；=1 时由 BOOT1(PB2) 选系统存储器/SRAM。需外接 10k 下拉"},
+{n:95,nm:"PB8",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM4_CH3","TIM10_CH1"],I2C:["I2C1_SCL"],CAN:["CAN1_RX"],ETH:["ETH_MII_TXD3"],SDIO:["SDIO_D4"],DCMI:["DCMI_D6"]}},
+{n:96,nm:"PB9",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM4_CH4","TIM11_CH1"],I2C:["I2C1_SDA"],SPI:["SPI2_NSS / I2S2_WS"],CAN:["CAN1_TX"],SDIO:["SDIO_D5"],DCMI:["DCMI_D7"]}},
+{n:97,nm:"PE0",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{TIM:["TIM4_ETR"],FSMC:["FSMC_NBL0"],DCMI:["DCMI_D2"]}},
+{n:98,nm:"PE1",ty:"I/O FT",cat:"GPIO",ds:"GPIO（复位后浮空输入）",af:{FSMC:["FSMC_NBL1"],DCMI:["DCMI_D3"]}},
+{n:99,nm:"VSS",ty:"S",cat:"PWR",ds:"数字地"},
+{n:100,nm:"VDD",ty:"S",cat:"PWR",ds:"数字电源 3.3V"},
+];
+
+const CAT={TIM:"定时器",UART:"USART/UART",SPI:"SPI/I2S",I2C:"I2C",CAN:"CAN",ADC:"ADC/DAC",USB:"USB OTG",ETH:"以太网",SDIO:"SDIO",FSMC:"FSMC",DCMI:"DCMI",DBG:"调试",SYS:"系统"};
+
+/* ===== 渲染引脚图 ===== */
+(function(){
+  const byN={};PIN.forEach(p=>byN[p.n]=p);
+  const cls=p=>p.cat==="PWR"?"pwr":p.cat==="SPEC"?"spec":p.cat==="DBG"?"dbg":"gpio";
+  const cell=n=>{const p=byN[n];return `<div class="pin ${cls(p)}"><span class="no">${n}</span><span class="nm">${p.nm}</span></div>`;};
+  const left=PIN.filter(p=>p.n>=1&&p.n<=25).map(p=>cell(p.n)).join("");
+  const bottom=PIN.filter(p=>p.n>=26&&p.n<=50).map(p=>cell(p.n)).join("");
+  const right=PIN.filter(p=>p.n>=51&&p.n<=75).sort((a,b)=>b.n-a.n).map(p=>cell(p.n)).join("");
+  const top=PIN.filter(p=>p.n>=76&&p.n<=100).sort((a,b)=>b.n-a.n).map(p=>cell(p.n)).join("");
+  document.getElementById("pkg").innerHTML=
+    `<div class="pkg-row"><div class="pkg-side">${left}</div>`+
+    `<div class="pkg-core">STM32F407VET6<br>LQFP100</div>`+
+    `<div class="pkg-side">${right}</div></div>`+
+    `<div class="pkg-row"><div class="pkg-side" style="flex-direction:row;flex-wrap:wrap">${top}</div></div>`+
+    `<div class="pkg-row"><div class="pkg-side" style="flex-direction:row;flex-wrap:wrap">${bottom}</div></div>`;
+})();
+
+/* ===== 渲染引脚总表 ===== */
+const tbody=document.getElementById("tbody");
+function rowHtml(p){
+  let af="";
+  for(const k in p.af){
+    p.af[k].forEach(t=>{af+=`<span class="afc af-${k}">${t}</span>`;});
+  }
+  if(!af)af='<span class="note">— 无复用功能</span>';
+  let ad=p.ad?`<div>${p.ad}</div>`:"";
+  if(p.no)ad+=`<div class="note">⚠ ${p.no}</div>`;
+  return `<tr class="${p.cat.toLowerCase()}" data-n="${p.n}" data-t="${(p.nm+" "+p.ds+" "+(p.ad||"")+" "+Object.values(p.af||{}).flat().join(" ")).toLowerCase()}">`+
+    `<td class="pin-no">${p.n}</td><td class="pin-nm">${p.nm}</td><td class="pin-type">${p.ty}</td>`+
+    `<td>${p.ds}</td><td><div class="af">${af}</div></td>`+
+    `<td>${ad||'<span class="note">—</span>'}</td></tr>`;
+}
+function render(list){
+  tbody.innerHTML=list.map(rowHtml).join("");
+  document.getElementById("count").textContent=`共 ${list.length} / ${PIN.length} 引脚`;
+}
+render(PIN);
+
+/* ===== 搜索 / 外设过滤 ===== */
+const filters=document.getElementById("filters");
+const fkeys={ALL:"全部",UART:"串口",SPI:"SPI/I2S",I2C:"I2C",CAN:"CAN",USB:"USB",ETH:"以太网",TIM:"定时器",ADC:"ADC",FSMC:"FSMC",SDIO:"SDIO",DCMI:"DCMI",DBG:"调试"};
+let fActive="ALL";
+Object.entries(fkeys).forEach(([k,v])=>{
+  const b=document.createElement("button");
+  b.className="fbtn"+(k==="ALL"?" active":"");
+  b.textContent=v;
+  b.onclick=()=>{
+    fActive=k;fActive=(fActive==="ALL")?"ALL":k;
+    document.querySelectorAll(".fbtn").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    apply();
+  };
+  filters.appendChild(b);
+});
+function pinText(p){
+  return (p.n+" "+p.nm+" "+p.ds+" "+(p.ad||"")+" "+Object.values(p.af||{}).flat().join(" ")).toLowerCase();
+}
+function apply(){
+  const q=document.getElementById("search").value.trim().toLowerCase();
+  let list=PIN.filter(p=>{
+    if(fActive!=="ALL" && !Object.keys(p.af||{}).includes(fActive) && !(fActive==="ADC"&&(p.ad||"").includes("ADC")) && !(fActive==="DBG"&&p.cat==="DBG"))return false;
+    if(fActive==="ADC" && !(p.ad||"").includes("ADC") && !(p.ad||"").includes("DAC"))return false;
+    return !q || pinText(p).includes(q);
+  });
+  render(list);
+}
+document.getElementById("search").addEventListener("input",apply);
+
+/* ===== 外设速查 ===== */
+const PERIPH=[
+{title:"USART1",rows:[["TX",["PA9","PB6"]],["RX",["PA10","PB7"]],["CK",["PA8"]],["CTS/RTS",["PA11/PA12"]]]},
+{title:"USART2",rows:[["TX",["PA2","PD5"]],["RX",["PA3","PD6"]],["CK",["PA4","PD7"]],["CTS/RTS",["PA0/PA1 · PD3/PD4"]]]},
+{title:"USART3",rows:[["TX",["PB10","PC10","PD8"]],["RX",["PB11","PC11","PD9"]],["CK",["PB12","PC12","PD10"]],["CTS/RTS",["PB13/PB14 · PD11/PD12"]]]},
+{title:"UART4 / UART5",rows:[["UART4_TX",["PA0","PC10"]],["UART4_RX",["PA1","PC11"]],["UART5_TX",["PC12"]],["UART5_RX",["PD2"]]]},
+{title:"USART6",rows:[["TX",["PC6","PG14"]],["RX",["PC7","PG9"]],["CK",["PC8"]],["注意",["PG 仅 LQFP144+"]]]},
+{title:"SPI1",rows:[["SCK",["PA5","PB3"]],["MISO",["PA6","PB4"]],["MOSI",["PA7","PB5"]],["NSS",["PA4","PA15"]]]},
+{title:"SPI2",rows:[["SCK",["PB10","PB13"]],["MISO",["PC2","PB14"]],["MOSI",["PC3","PB15"]],["NSS",["PB9","PB12"]]]},
+{title:"SPI3",rows:[["SCK",["PC10","PB3"]],["MISO",["PC11","PB4"]],["MOSI",["PC12","PB5"]],["NSS",["PA15","PA4"]]]},
+{title:"I2C1",rows:[["SCL",["PB6","PB8"]],["SDA",["PB7","PB9"]],["SMBA",["PB5"]]]},
+{title:"I2C2",rows:[["SCL",["PB10"]],["SDA",["PB11"]],["SMBA",["PB12"]]]},
+{title:"I2C3",rows:[["SCL",["PA8"]],["SDA",["PC9"]],["SMBA",["PA9"]]]},
+{title:"CAN1",rows:[["RX",["PA11","PB8","PD0"]],["TX",["PA12","PB9","PD1"]]]},
+{title:"CAN2",rows:[["RX",["PB5","PB12"]],["TX",["PB6","PB13"]]]},
+{title:"ADC1",rows:[["IN0-7",["PA0-PA7"]],["IN8/9",["PB0/PB1"]],["IN10-13",["PC0-PC3"]],["IN14/15",["PC4/PC5"]]]},
+{title:"ADC2",rows:[["IN0-7",["PA0-PA7"]],["IN8/9",["PB0/PB1"]],["IN14/15",["PC4/PC5"]]]},
+{title:"ADC3",rows:[["IN10-13",["PC0-PC3"]]]},
+{title:"DAC",rows:[["DAC1_OUT",["PA4"]],["DAC2_OUT",["PA5"]]]},
+{title:"USB OTG FS",rows:[["DP",["PA12"]],["DM",["PA11"]],["ID",["PA10"]],["VBUS",["PA9"]],["SOF",["PA8"]]]},
+{title:"USB OTG HS",rows:[["DP/DM(内部FS)",["PB15/PB14"]],["VBUS/ID",["PB13/PB12"]],["ULPI",["PA3,PA5,PC0,PC2,PC3,PC5,PB0-3,PB5,PB10-13 等"]]]},
+{title:"以太网 ETH(RMII常用)",rows:[["REF_CLK",["PA1"]],["MDIO/MDC",["PA2/PC1"]],["CRS_DV",["PA7"]],["RXD0/RXD1",["PC4/PC5"]],["TX_EN/TXD0/TXD1",["PB11/PB12/PB13"]]]},
+{title:"SDIO",rows:[["CK",["PC12"]],["CMD",["PD2"]],["D0-D3",["PC8/PC9/PC10/PC11"]],["D4-D7",["PB8/PB9/PC6/PC7"]]]},
+{title:"FSMC",rows:[["地址",["PD11-13(A16-18),PE2-6(A23-19),PF0-5(A0-5)"]],["数据",["PD0/1(D2/3),PD8-10(D13-15),PD14/15(D0/1),PE7-15(D4-12)"]],["控制",["PD3-7, PE0/1(NBL), PE2-6"]]]},
+{title:"DCMI(摄像头)",rows:[["D0-D3",["PA9/PC6/PC8/PC9"]],["D4-D7",["PE4/PE6/PB7/PB9"]],["D8-D11",["PC10/PC12/PD2/PD7"]],["HSYNC/VSYNC/PIXCLK",["PA4/PB7/PA6"]]]},
+{title:"定时器 PWM 关键脚",rows:[["TIM1",["PE9(1)/PE11(2)/PE13(3)/PE14(4)"]],["TIM2",["PA0-3(1-4)"]],["TIM3",["PA6/PA7/PB0/PB1 或 PC6-9"]],["TIM4",["PB6-9 或 PD12-15"]],["TIM8",["PC6-9"]]]},
+{title:"调试 / 时钟",rows:[["SWD",["PA13(SWDIO)/PA14(SWCLK)"]],["JTAG",["PA13-15, PB3, PB4"]],["MCO1/MCO2",["PA8/PC9"]],["HSE / LSE",["PH0/PH1 · PC14/PC15"]]]},
+];
+document.getElementById("periph").innerHTML=PERIPH.map(x=>{
+  const rows=x.rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1].map(s=>`<div>${s}</div>`).join("")}</td></tr>`).join("");
+  return `<div class="pbox"><h3>${x.title}</h3><table>${rows}</table></div>`;
+}).join("");
+</script>
+</body>
+</html>

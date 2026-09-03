@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STM32 引脚速查</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        .back-top {
+            margin-bottom: 8px;
+        }
+        .back-top a {
+            color: #0969da;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .back-top a:hover {
+            text-decoration: underline;
+        }
+        .subtitle {
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+        .nav-list {
+            list-style: none;
+        }
+        .nav-list li {
+            background: #fff;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            transition: box-shadow 0.2s;
+        }
+        .nav-list li:hover {
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .nav-list a {
+            display: block;
+            padding: 18px 24px;
+            text-decoration: none;
+            color: #333;
+            font-size: 16px;
+        }
+        .nav-list a .title {
+            font-weight: 600;
+        }
+        .nav-list a .desc {
+            display: block;
+            color: #999;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        footer {
+            text-align: center;
+            color: #bbb;
+            font-size: 12px;
+            margin-top: 60px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="back-top"><a href="../">← 返回笔记主页</a></p>
+        <h1>STM32 引脚速查</h1>
+        <p class="subtitle">各型号芯片引脚分布图 + 引脚功能总表（可搜索 / 按功能筛选）</p>
+
+        <ul class="nav-list">
+            <li>
+                <a href="./f103/">
+                    <span class="title">STM32F103C8T6（LQFP48）</span>
+                    <span class="desc">Cortex-M3 @72MHz · Flash 64KB · GPIO 37 · USART 3 / SPI 2 / I2C 2 / CAN 1</span>
+                </a>
+            </li>
+            <li>
+                <a href="./f407/">
+                    <span class="title">STM32F407VET6（LQFP100）</span>
+                    <span class="desc">Cortex-M4 @168MHz · Flash 512KB · 多功能引脚复用表</span>
+                </a>
+            </li>
+            <li>
+                <a href="./g431/">
+                    <span class="title">STM32G431RBT6（LQFP64）</span>
+                    <span class="desc">Cortex-M4 @170MHz · Flash 128KB · 蓝桥杯嵌入式指定芯片</span>
+                </a>
+            </li>
+        </ul>
+
+        <footer>
+            <p style="margin-top:6px;">Powered by GitHub Pages</p>
+        </footer>
+    </div>
+</body>
+</html>
