@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STM32G431 串口 IAP 在线升级系统</title>
+<style>
+  :root{
+    --accent:#0e8a6d;
+    --accent-dark:#0a6b55;
+    --accent-soft:#e5f5f0;
+    --bg:#f6f8f7;
+    --card:#ffffff;
+    --border:#e3e8e6;
+    --text:#232a28;
+    --text-2:#5a6562;
+    --code-bg:#0f1a17;
+    --code-text:#d9e6e2;
+    --warn-bg:#fff7e6;
+    --warn-border:#f0c060;
+    --ok-bg:#e8f7ef;
+    --ok-border:#4cbf87;
+    --info-bg:#eaf3fb;
+    --info-border:#7fb3e0;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth; scroll-padding-top:110px;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.75;
+    font-size:15px;
+  }
+  a{color:var(--accent-dark); text-decoration:none;}
+  a:hover{text-decoration:underline;}
+
+  /* ---------- Header ---------- */
+  .hero{
+    background:linear-gradient(135deg,#0a6b55 0%,#0e8a6d 55%,#14a584 100%);
+    color:#fff;
+    padding:34px 40px 30px;
+    position:relative;
+  }
+  .hero .top{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;}
+  .hero .tag{
+    display:inline-block;
+    background:rgba(255,255,255,.16);
+    border:1px solid rgba(255,255,255,.35);
+    border-radius:20px;
+    padding:3px 14px;
+    font-size:12.5px;
+    letter-spacing:.5px;
+  }
+  .hero .links{display:flex; gap:10px; flex-wrap:wrap;}
+  .hero .btn{
+    display:inline-flex; align-items:center; gap:6px;
+    background:rgba(255,255,255,.14);
+    border:1px solid rgba(255,255,255,.35);
+    border-radius:8px;
+    padding:6px 14px;
+    color:#fff; text-decoration:none;
+    font-size:13.5px;
+    transition:background .15s;
+  }
+  .hero .btn:hover{background:rgba(255,255,255,.26); text-decoration:none;}
+  .hero h1{margin:0 0 8px; font-size:26px; font-weight:700; letter-spacing:.5px;}
+  .hero .sub{font-size:14px; opacity:.94; max-width:1000px;}
+
+  /* ---------- Tabs ---------- */
+  .tabbar{
+    position:sticky; top:0; z-index:40;
+    background:#0f1a17;
+    display:flex;
+    gap:4px;
+    padding:10px 24px;
+    flex-wrap:wrap;
+    box-shadow:0 2px 8px rgba(10,40,32,.25);
+  }
+  .tabbar button{
+    background:transparent;
+    border:none;
+    color:#9fb8b1;
+    font-size:14.5px;
+    padding:9px 18px;
+    border-radius:8px;
+    cursor:pointer;
+    font-family:inherit;
+    transition:background .15s,color .15s;
+    border-bottom:2px solid transparent;
+  }
+  .tabbar button:hover{background:#1a2b26; color:#fff;}
+  .tabbar button.active{background:#1c342d; color:#5ee0b4; border-bottom-color:#5ee0b4; font-weight:600;}
+
+  /* ---------- Main ---------- */
+  main{max-width:1060px; margin:0 auto; padding:28px 24px 80px;}
+  .panel{display:none;}
+  .panel.active{display:block; animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  section.block{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:28px 32px;
+    margin-bottom:24px;
+    box-shadow:0 1px 3px rgba(20,40,33,.04);
+  }
+  .panel .subtitle{
+    font-size:13px; color:var(--text-2); margin:-8px 0 16px;
+  }
+  h2{
+    font-size:21px;
+    margin:0 0 6px;
+    padding-bottom:12px;
+    border-bottom:2px solid var(--accent);
+    color:var(--accent-dark);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  h2 .no{
+    background:var(--accent); color:#fff;
+    min-width:30px; height:30px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:15px; flex:none;
+  }
+  h3{font-size:17px; margin:24px 0 10px; color:#12483a;}
+  h3::before{content:"▍"; color:var(--accent); margin-right:6px;}
+  h4{font-size:15px; margin:16px 0 8px; color:#2c3a35;}
+  p{margin:10px 0;}
+  ul,ol{margin:10px 0; padding-left:24px;}
+  li{margin:5px 0;}
+  strong{color:#0b3b2e;}
+  code{
+    font-family:Consolas,"Courier New",monospace;
+    background:#eaf1ee; color:#0a6b55;
+    padding:2px 6px; border-radius:5px; font-size:13px;
+  }
+  td code{white-space:nowrap;}
+
+  /* ---------- Tables ---------- */
+  .table-wrap{overflow-x:auto; margin:14px 0; border:1px solid var(--border); border-radius:10px;}
+  table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:520px;}
+  thead th{
+    background:var(--accent-soft); color:var(--accent-dark);
+    text-align:left; font-weight:600;
+    padding:9px 13px;
+    border-bottom:2px solid var(--accent);
+    white-space:nowrap;
+  }
+  tbody td{padding:8px 13px; border-bottom:1px solid #edf1ef; vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:nth-child(even){background:#fafcfb;}
+  tbody tr:hover{background:#f0f7f4;}
+
+  /* ---------- Code ---------- */
+  pre{
+    position:relative;
+    background:var(--code-bg);
+    color:var(--code-text);
+    border-radius:10px;
+    padding:15px 18px;
+    overflow-x:auto;
+    line-height:1.6;
+    font-size:13px;
+    margin:14px 0;
+  }
+  pre code{background:none; padding:0; color:inherit; font-size:inherit;}
+  pre .lang-label{
+    position:absolute; top:9px; right:12px;
+    font-size:10.5px; color:#6d8b82;
+    background:#1a2b26; padding:2px 8px; border-radius:6px;
+    letter-spacing:.5px;
+  }
+  pre.ascii{line-height:1.5;}
+  pre.ascii code{white-space:pre;}
+
+  /* ---------- Callouts ---------- */
+  .callout{
+    border-radius:10px; padding:13px 17px; margin:15px 0;
+    border-left:4px solid; font-size:14px;
+  }
+  .callout .ct{font-weight:700; display:block; margin-bottom:3px; font-size:13.5px;}
+  .callout.warn{background:var(--warn-bg); border-color:var(--warn-border);} .callout.warn .ct{color:#8a6116;}
+  .callout.ok{background:var(--ok-bg); border-color:var(--ok-border);} .callout.ok .ct{color:#1d7a4c;}
+  .callout.err{background:var(--err-bg,#fdeeee); border-color:var(--err-border,#e58686);} .callout.err .ct{color:#a33;}
+  .callout.info{background:var(--info-bg); border-color:var(--info-border);} .callout.info .ct{color:#2b6aa3;}
+  .callout p{margin:4px 0;}
+
+  .kv{margin:6px 0;}
+  .kv b{color:var(--accent-dark);}
+
+  footer{text-align:center; color:var(--text-2); font-size:13px; padding:16px 0 50px;}
+  footer a{color:var(--accent-dark);}
+
+  @media (max-width:820px){
+    .hero{padding:24px 18px;}
+    .tabbar{padding:8px 10px;}
+    .tabbar button{padding:7px 12px; font-size:13.5px;}
+    main{padding:16px 12px 60px;}
+    section.block{padding:20px 16px;}
+  }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</head>
+<body>
+
+<!-- ======================= Header ======================= -->
+<div class="hero">
+  <div class="top">
+    <span class="tag">STM32G431 · IAP · 串口 OTA · 蓝桥杯 CT117E</span>
+    <div class="links">
+      <a class="btn" href="../" title="返回学习笔记主页">⌂ 主界面</a>
+      <a class="btn" href="https://github.com/Ian-cyy/IAP-Bootloader" target="_blank" rel="noopener" title="GitHub 仓库">GitHub · Ian-cyy/IAP-Bootloader</a>
+    </div>
+  </div>
+  <h1>STM32G431 串口 IAP 在线升级系统</h1>
+  <div class="sub">基于 <b>STM32G431RBT6</b> 的串口在线升级（IAP, In-Application Programming）系统。板子上电后由 Bootloader 决定进入 App 或进入升级模式，通过 <b>USART2</b>（可外接蓝牙/2.4G 无线模块）接收 PC 上位机发送的固件，写入 Flash 后跳转运行。</div>
+</div>
+
+<!-- ======================= Tabs ======================= -->
+<div class="tabbar">
+  <button data-tab="main" class="active">主界面 · 项目总览</button>
+  <button data-tab="bl">Bootloader 固件</button>
+  <button data-tab="tool">PC 上位机工具</button>
+  <button data-tab="app">App 工程</button>
+</div>
+
+<main>
+
+<!-- ============================================================ -->
+<!-- ======================= 主界面 ======================= -->
+<!-- ============================================================ -->
+<div class="panel active" id="tab-main">
+
+  <section class="block">
+    <h2><span class="no">总</span>项目总览</h2>
+    <div class="subtitle">README.md · 根目录总览文档</div>
+
+    <h3>特性</h3>
+    <ul>
+      <li><strong>无线 OTA</strong>：USART2(PA2/PA3) 外接蓝牙 / 2.4G 模块，隔空升级不用接线</li>
+      <li><strong>可靠传输</strong>：逐帧 CRC16 + ACK/NAK 重传 + 整包校验，通过才允许跳转</li>
+      <li><strong>分层可移植</strong>：核心逻辑(<code>iap.c</code>)与硬件适配(<code>iap_port.c</code>)分离，换 MCU 只改移植层</li>
+      <li><strong>指示灯提示</strong>：BL 模式下 LED 闪烁，直观确认状态</li>
+    </ul>
+
+    <h3>开发平台</h3>
+    <p>本工程面向 <strong>蓝桥杯嵌入式竞赛开发板（CT117E）</strong>：</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>资源</th><th>配置</th></tr></thead>
+        <tbody>
+          <tr><td>主控</td><td>STM32G431RBT6 (Cortex-M4, 128KB Flash, 32KB RAM)</td></tr>
+          <tr><td>屏幕</td><td>2.4 寸 TFT LCD（并行接口）</td></tr>
+          <tr><td>LED</td><td>PC8~PC15 + PD2 锁存</td></tr>
+          <tr><td>按键</td><td>PB0 等</td></tr>
+          <tr><td>串口</td><td>USART1(PA9/10, 板载USB) + USART2(PA2/3, 引出)</td></tr>
+          <tr><td>其他</td><td>电位器(ADC)、RTC、PWM 等</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout info"><span class="ct">本项目用到的板载资源</span><b>USART2(PA2/PA3, OTA 串口)</b>、PB0(进 BL 按键)、LED(BL 模式指示)。</div>
+
+    <h4>双串口说明</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>串口</th><th>引脚</th><th>波特率</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>USART1</td><td>PA9(TX) / PA10(RX)</td><td>115200</td><td>板载 USB：通过板载 GD32 芯片转 Type-C，接 DAPLink 烧录/调试</td></tr>
+          <tr><td><b>USART2</b></td><td><b>PA2(TX) / PA3(RX)</b></td><td>115200</td><td>引出排针，外接 <b>蓝牙 / 2.4G 无线串口模块</b>，用于 <b>OTA 在线升级</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout info"><span class="ct">说明</span>IAP 升级走 <b>USART2</b>（<code>iap_port.c</code> 里 <code>IAP_UART = huart2</code>）。接无线模块后可实现<b>无线 OTA</b>，不用连 USB 线。</div>
+  </section>
+
+  <section class="block">
+    <h2><span class="no">1</span>目录结构</h2>
+    <pre><code class="language-plaintext">IAP Bootloader/
+├── README.md                          ← 本文档(总览)
+├── bootloader/                        ← Bootloader 固件工程 (Keil)
+│   ├── README.md                      ← Bootloader 详解 / 移植指南
+│   ├── Core/                          ← CubeMX 生成代码(main/usart/gpio...)
+│   ├── IAP/                           ← IAP 核心逻辑 + 移植层(可整体复制)
+│   ├── bsp/                           ← 板级支持(led)
+│   └── MDK-ARM/                       ← Keil 工程文件
+├── iap_tool/                          ← PC 上位机工具 (Python)
+│   ├── README.md                      ← 上位机使用说明
+│   └── iap_upload.py                  ← 烧录脚本
+└── national_competition_test_1/       ← App 固件工程(示例, 完整 Keil 工程)
+    ├── README.md                      ← App 工程说明
+    ├── Core/  MDK-ARM/  ...           ← CubeMX + Keil 工程文件</code></pre>
+  </section>
+
+  <section class="block">
+    <h2><span class="no">2</span>工作原理</h2>
+    <pre class="ascii"><code class="language-plaintext">上电复位
+  │
+  ├─ 未按按键 ───────────► 跳转到 App 运行
+  │                          (若 App 无效则驻留 BL, 作为安全兜底)
+  │
+  └─ 按住按键(PB0) ──────► 进入 Bootloader 升级模式
+                           等待上位机: 握手→擦除→数据→校验→跳转</code></pre>
+    <ul>
+      <li><b>Bootloader</b> 占用 Flash 前 16KB，负责引导 + 串口升级</li>
+      <li><b>App</b> 从 0x08004000 开始，正常运行业务逻辑</li>
+      <li>升级通过 <b>USART2 (PA2/PA3)</b> 进行（可外接蓝牙/2.4G 无线模块实现无线 OTA），协议带 CRC 校验和 ACK/NAK 重传</li>
+    </ul>
+
+    <h3>内存分布</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>区域</th><th>起始地址</th><th>结束地址</th><th>大小</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>Bootloader</td><td>0x08000000</td><td>0x08003FFF</td><td>16KB</td><td>引导 + IAP 升级代码</td></tr>
+          <tr><td>App</td><td>0x08004000</td><td>0x0801FFFF</td><td>112KB</td><td>应用固件</td></tr>
+          <tr><td>RAM</td><td>0x20000000</td><td>0x20007FFF</td><td>32KB</td><td>数据区</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn"><span class="ct">⚠ 注</span>当前为 <b>BL 单区 + App 单区</b>，未实现 A/B 双备份(升级失败无回滚)。</div>
+  </section>
+
+  <section class="block">
+    <h2><span class="no">3</span>快速上手</h2>
+
+    <h3>1. 烧录 Bootloader（一次性）</h3>
+    <ul>
+      <li>用 Keil 打开 <code>bootloader/MDK-ARM/bootloader.uvprojx</code>，编译</li>
+      <li>通过板载 USB（USART1/GD32→Type-C）连 DAPLink 下载到板子</li>
+      <li>之后 App 升级走无线 OTA，不再需要下载器</li>
+    </ul>
+
+    <h3>2. 编译 App</h3>
+    <ul>
+      <li>用 Keil 打开 <code>national_competition_test_1</code> 工程</li>
+      <li>确认链接地址为 <code>0x08004000</code>，编译生成 <code>.bin</code></li>
+      <li>生成 bin 的 Keil5 配置：<code>Options for Target → User → After Build</code> 填 <code>fromelf --bin -o "$L@L.bin" "#L"</code>（详见 App 工程 README）</li>
+    </ul>
+
+    <h3>3. 串口升级</h3>
+    <p>有线（USB 转 TTL 接 PA2/PA3，或接无线模块对端）:</p>
+    <pre><code class="language-bash">cd iap_tool
+D:\Python\python.exe iap_upload.py D:/你的/app.bin COM18</code></pre>
+    <ul>
+      <li>按提示进入 Bootloader 模式（按住 PB0 上电，LED 闪烁）</li>
+      <li>回车开始烧录，等待"已跳转 App"</li>
+    </ul>
+    <p>详细步骤、无线模块配对见各子目录 README。</p>
+  </section>
+
+  <section class="block">
+    <h2><span class="no">4</span>通信协议（简述）</h2>
+    <pre><code class="language-plaintext">帧格式:  AA 55  CMD  LEN_LO  LEN_HI  DATA[0~256]  CRC_LO  CRC_HI</code></pre>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>CMD</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>0x01</td><td>握手</td></tr>
+          <tr><td>0x02</td><td>擦除 App 区</td></tr>
+          <tr><td>0x03</td><td>写数据块(≤256B)</td></tr>
+          <tr><td>0x04</td><td>结束 + 整包 CRC 校验</td></tr>
+          <tr><td>0x05</td><td>跳转 App</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul>
+      <li>校验: CRC16-CCITT(0x1021, 初值 0xFFFF)</li>
+      <li>回复: <code>0x06</code>=ACK, <code>0x15</code>=NAK</li>
+      <li>波特率: 115200, 8N1</li>
+    </ul>
+  </section>
+
+  <section class="block">
+    <h2><span class="no">5</span>详细文档</h2>
+    <ul>
+      <li><a href="#bl" onclick="switchTab('bl')">Bootloader 固件详解与移植指南</a></li>
+      <li><a href="#tool" onclick="switchTab('tool')">PC 上位机使用说明</a></li>
+      <li><a href="#app" onclick="switchTab('app')">App 工程说明</a></li>
+    </ul>
+  </section>
+</div>
+
+<!-- ============================================================ -->
+<!-- ======================= Bootloader ======================= -->
+<!-- ============================================================ -->
+<div class="panel" id="tab-bl">
+
+  <section class="block">
+    <h2><span class="no">子</span>Bootloader 固件详解与移植指南</h2>
+    <div class="subtitle">bootloader/README.md</div>
+    <p>STM32G431RBT6 的 Bootloader（蓝桥杯嵌入式 CT117E 开发板），占用 Flash 前 16KB。负责引导 App，并通过 <b>USART2 (PA2/PA3)</b> 实现串口在线升级（可接蓝牙/2.4G 无线模块做无线 OTA）。</p>
+
+    <h3>工程结构</h3>
+    <pre><code class="language-plaintext">bootloader/
+├── Core/
+│   ├── Inc/                      CubeMX 生成的头文件
+│   └── Src/
+│       ├── main.c                主流程(固定模板, 只调 IAP/移植层函数)
+│       ├── usart.c               USART1/2 初始化(115200, USART2 PA2/PA3 用于 OTA)
+│       ├── gpio.c                按键 PB0、LED 引脚配置
+│       └── stm32g4xx_it.c        中断服务(USART1/USART2_IRQHandler)
+├── IAP/                          核心 + 移植层(可整体复制到其他工程)
+│   ├── iap.h                     配置宏 + 协议常量 + 核心 API
+│   ├── iap.c                     状态机 / CRC16 / Flash擦写 / 命令处理 / 跳转
+│   ├── iap_port.h                移植层接口声明
+│   └── iap_port.c                串口/按键/LED 适配(移植时只改这里)
+├── bsp/
+│   ├── led.c / led.h             板级 LED 驱动(PC8~PC15 + PD2 锁存)
+└── MDK-ARM/                      Keil 工程 + scatter 文件</code></pre>
+
+    <h3>引脚配置</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>功能</th><th>引脚</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>USART2_TX</td><td>PA2</td><td>OTA 升级串口发送(接无线模块 RX)</td></tr>
+          <tr><td>USART2_RX</td><td>PA3</td><td>OTA 升级串口接收(接无线模块 TX)</td></tr>
+          <tr><td>USART1_TX/RX</td><td>PA9/PA10</td><td>板载 USB(GD32→Type-C)，接 DAPLink 烧录/调试</td></tr>
+          <tr><td>按键</td><td>PB0</td><td>低有效, 上电按住进入升级模式</td></tr>
+          <tr><td>LED</td><td>PC8~PC15 + PD2</td><td>指示灯(PD2 为锁存信号)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout info"><span class="ct">说明</span>IAP 升级走 <b>USART2</b>。PA2/PA3 引出排针，可接 <b>蓝牙 / 2.4G 无线串口模块</b>实现无线 OTA。</div>
+
+    <h3>系统配置</h3>
+    <ul>
+      <li>主时钟: <b>HSI 16MHz</b>(不使用 HSE/PLL)</li>
+      <li>串口: <b>USART2, 115200, 8N1</b>, 中断优先级 6（USART1 优先级 5 用于板载 USB）</li>
+      <li>Flash: 页大小 <b>2KB</b>, 编程粒度 <b>64bit 双字</b></li>
+    </ul>
+
+    <h3>内存分区</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>区域</th><th>地址范围</th><th>大小</th></tr></thead>
+        <tbody>
+          <tr><td>Bootloader</td><td>0x08000000 ~ 0x08003FFF</td><td>16KB (scatter 里 0x4000)</td></tr>
+          <tr><td>App</td><td>0x08004000 ~ 0x0801FFFF</td><td>112KB</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>分区依据 <code>MDK-ARM/bootloader/bootloader.sct</code>:</p>
+    <pre><code class="language-plaintext">LR_IROM1 0x08000000 0x00004000   ← Bootloader 只占 16KB</code></pre>
+    <p>App 区从 <code>0x08004000</code> 开始，对应 <code>iap.h</code> 里的 <code>IAP_APP_BASE</code>。</p>
+  </section>
+
+  <section class="block">
+    <h2><span class="no">1</span>启动流程</h2>
+    <pre class="ascii"><code class="language-plaintext">main():
+  HAL_Init() → SystemClock_Config() → MX_GPIO_Init()
+  → MX_USART1_UART_Init() → MX_USART2_UART_Init()
+    │
+    ├─ IAP_Port_IsButtonPressed() 为假(没按键) → IAP_JumpToApplication() 跳 App
+    │
+    └─ 按键按下 → IAP_Init() → IAP_Port_RxStart() → while(IAP_Process())
+                  ↑ 进入升级模式: LED 闪烁, 等待上位机</code></pre>
+
+    <p><code>main.c</code> 里的固定模板（USER CODE 2，换芯片不用改）：</p>
+    <pre><code class="language-c"><span class="lang-label">c</span>led_all_off();
+if (!IAP_Port_IsButtonPressed())
+    IAP_JumpToApplication();
+IAP_Init();
+IAP_Port_RxStart();
+while (1) { IAP_Process(); /* LED 闪烁 */ }</code></pre>
+
+    <p>跳转流程（<code>iap.c</code> 的 <code>IAP_JumpToApplication</code>）:</p>
+    <ol>
+      <li>检查 App 起始地址第一个字(SP)是否在 RAM 范围</li>
+      <li>关中断 → 设 <code>SCB-&gt;VTOR = 0x08004000</code> → 切换 MSP → 恢复中断</li>
+      <li>跳转到 App 复位入口</li>
+    </ol>
+    <div class="callout warn"><span class="ct">⚠ 注意</span>跳转前必须 <code>__enable_irq()</code>，否则 App 中断全关(会卡死在 HAL_Delay)。</div>
+  </section>
+
+  <section class="block">
+    <h2><span class="no">2</span>通信协议</h2>
+
+    <h3>帧格式</h3>
+    <pre class="ascii"><code class="language-plaintext">字节:   0     1     2    3    4    5...5+LEN-1   5+LEN    6+LEN
+      ┌─────┬─────┬────┬─────┬─────┬─────────────┬────────┬────────┐
+      │ 0xAA│ 0x55│ CMD│LEN_LO│LEN_HI│   DATA      │CRC_LO  │ CRC_HI │
+      └─────┴─────┴────┴─────┴─────┴─────────────┴────────┴────────┘
+        帧头    命令  数据长度(小端,≤256)  数据      CRC16(小端)</code></pre>
+
+    <h3>命令</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>CMD</th><th>含义</th><th>DATA 内容</th><th>回复</th></tr></thead>
+        <tbody>
+          <tr><td>0x01</td><td>握手</td><td>空</td><td>ACK</td></tr>
+          <tr><td>0x02</td><td>擦除 App 区</td><td>空</td><td>ACK/NAK</td></tr>
+          <tr><td>0x03</td><td>写数据块</td><td>≤256B 数据</td><td>ACK/NAK</td></tr>
+          <tr><td>0x04</td><td>结束</td><td>总长度(4B)+整包CRC(2B)</td><td>ACK/NAK</td></tr>
+          <tr><td>0x05</td><td>跳转 App</td><td>空</td><td>ACK(校验通过才放行)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>回复: <code>0x06</code>=ACK, <code>0x15</code>=NAK。</p>
+
+    <h3>CRC16</h3>
+    <ul>
+      <li>算法: CRC16-CCITT, 多项式 <code>0x1021</code>, 初值 <code>0xFFFF</code></li>
+      <li>每帧对"帧头~DATA"做 CRC；整包对所有数据字节累加做 CRC</li>
+    </ul>
+
+    <h3>升级时序</h3>
+    <pre class="ascii"><code class="language-plaintext">PC 上位机                     Bootloader
+    │                             │
+    ├── 握手(0x01) ──────────────►│ 回 ACK(进 BL 先发 "BL\r\n")
+    ├── 擦除(0x02) ──────────────►│ 按页擦 App 区, 回 ACK
+    ├── 数据帧(0x03) ◄─ACK────────┤ 每 8B 一个双字写 Flash, 回 ACK
+    │     ... 循环 256B/帧 ...
+    ├── 结束(0x04, 带整包CRC) ───►│ 补写余数+整包校验, 回 ACK
+    ├── 跳转(0x05) ─────────────►│ 校验通过才 ACK, 然后跳转 App
+    │                             │</code></pre>
+  </section>
+
+  <section class="block">
+    <h2><span class="no">3</span>编译与烧录</h2>
+    <ol>
+      <li>用 Keil 打开 <code>MDK-ARM/bootloader.uvprojx</code>，编译（目标 <code>bootloader</code>）</li>
+      <li>通过板载 USB（USART1/GD32→Type-C）连接 DAPLink，Keil 里 <b>Download</b> 烧录到芯片</li>
+      <li>之后 App 的升级就走 USART2 无线 OTA，不再需要下载器</li>
+    </ol>
+
+    <h3>分层架构（核心思想）</h3>
+    <pre class="ascii"><code class="language-plaintext">iap.c(核心)     协议/状态机/CRC/Flash/跳转    —— 与硬件无关, 不碰 UART
+    │ 依赖
+iap_port.h     移植层接口
+    │ 实现
+iap_port.c     串口收发/按键/LED/延时          —— 唯一要改的硬件适配
+    │
+main.c         固定模板, 只调 iap / iap_port 函数</code></pre>
+    <div class="callout ok"><span class="ct">好处</span>换 MCU 或换 UART 时，核心逻辑一行不用改。</div>
+  </section>
+
+  <section class="block">
+    <h2><span class="no">4</span>移植指南（换 STM32 或换工程）</h2>
+
+    <h3>步骤</h3>
+    <ol>
+      <li><b>复制 <code>IAP/</code> 文件夹</b>到新工程，加入 Keil 工程并添加 <code>../IAP</code> 到 include 路径</li>
+      <li><b>改 <code>iap.h</code></b> 三个宏:</li>
+    </ol>
+    <pre><code class="language-c"><span class="lang-label">c</span>#define IAP_APP_BASE        0x08004000UL   /* App 起始地址(和 BL 分区对应) */
+#define IAP_APP_END         0x08020000UL   /* App 结束地址 = 芯片 Flash 上限 */
+#define IAP_FLASH_PAGE_SIZE 2048UL         /* 芯片 Flash 页大小 */</code></pre>
+    <ol start="3">
+      <li><b>改 <code>iap_port.c</code></b> 顶部:</li>
+    </ol>
+    <pre><code class="language-c"><span class="lang-label">c</span>#define IAP_UART  huart2   /* 改成你的 UART 句柄(OTA 用) */</code></pre>
+    <p>以及按键引脚、LED 等硬件适配。</p>
+    <ol start="4">
+      <li><b>CubeMX 配置</b>: 重配 USART 引脚、波特率(和上位机一致)、按键引脚</li>
+      <li><b>若 Flash 擦除/编程 API 不同</b>(如 F4 扇区、H7 块): 改 <code>iap.c</code> 里的 <code>iap_erase_app</code> 和双字编程部分</li>
+      <li><b>上位机</b>: <code>iap_tool/iap_upload.py</code> 里把 <code>BAUD</code> 改成和固件一致</li>
+    </ol>
+
+    <h3>各芯片 Flash 差异速查</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>芯片</th><th>Flash 起始</th><th>总大小</th><th>擦除单元</th><th>编程粒度</th></tr></thead>
+        <tbody>
+          <tr><td>G431</td><td>0x08000000</td><td>128KB</td><td>2KB 页</td><td>64bit 双字</td></tr>
+          <tr><td>G0</td><td>0x08000000</td><td>64KB</td><td>2KB 页</td><td>64bit 双字</td></tr>
+          <tr><td>L4</td><td>0x08000000</td><td>128KB+</td><td>2KB 页</td><td>64bit 双字</td></tr>
+          <tr><td>F407</td><td>0x08000000</td><td>1MB</td><td>16KB 扇区</td><td>32bit 字</td></tr>
+          <tr><td>F1</td><td>0x08000000</td><td>64KB+</td><td>1KB 页</td><td>16bit 半字</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2><span class="no">5</span>常见问题</h2>
+    <ul>
+      <li><b>握手失败</b>: 确认板子已进 BL(按住按键上电,LED 闪烁)、串口号/波特率正确、无线模块已配对</li>
+      <li><b>用串口助手先发过握手会残留 <code>BL\r\n</code></b>: 上位机脚本在回车后会 <code>reset_input_buffer()</code> 清掉，无影响</li>
+      <li><b>App 起不来</b>: 检查跳转前是否 <code>__enable_irq()</code>; 检查 App 是否链接在 <code>0x08004000</code></li>
+      <li><b>超 16KB</b>: Bootloader 代码 + 库过大，需扩大分区(改 scatter + <code>iap.h</code> + App 地址)</li>
+      <li><b>无线 OTA 不稳定</b>: 降低波特率或用有线 USB 转 TTL 排查</li>
+    </ul>
+  </section>
+</div>
+
+<!-- ============================================================ -->
+<!-- ======================= 上位机工具 ======================= -->
+<!-- ============================================================ -->
+<div class="panel" id="tab-tool">
+
+  <section class="block">
+    <h2><span class="no">子</span>PC 上位机工具（iap_upload.py）</h2>
+    <div class="subtitle">iap_tool/README.md</div>
+    <p>Python 编写的串口 IAP 烧录工具，通过 <b>USART2 (PA2/PA3)</b> 与 Bootloader 通信（可接蓝牙/2.4G 无线模块做无线 OTA），把 App 的 <code>.bin</code> 文件写入芯片。</p>
+
+    <h3>环境依赖</h3>
+    <ul>
+      <li>Python 3.x</li>
+      <li>pyserial 库</li>
+    </ul>
+    <p>安装 pyserial:</p>
+    <pre><code class="language-bash">pip install pyserial</code></pre>
+    <p>如果 <code>pip</code> 不在 PATH，用完整路径:</p>
+    <pre><code class="language-bash">D:\Python\python.exe -m pip install pyserial</code></pre>
+
+    <h3>使用方法</h3>
+    <pre><code class="language-bash">python iap_upload.py &lt;bin文件绝对路径&gt; [串口号]</code></pre>
+    <p>示例（Windows，Python 完整路径）：</p>
+    <pre><code class="language-bash">D:\Python\python.exe iap_upload.py D:/project/app/app.bin COM18</code></pre>
+    <ul>
+      <li>第一个参数: App 固件 <code>.bin</code> 的绝对路径(路径含空格用引号包起来)</li>
+      <li>第二个参数(可选): 串口号; 不填则自动列出可用串口供选择</li>
+      <li><b>不传 bin 参数时</b>会交互式询问路径（运行后粘贴即可，可用绝对路径）</li>
+    </ul>
+
+    <h3>操作流程</h3>
+    <ol>
+      <li>运行脚本，输入/传入 bin 路径，选择串口</li>
+      <li>提示"请确保目标板已进入 Bootloader 模式..."</li>
+      <li><b>按住按键(PB0) → 上电 → 松手</b>, 等 LED 连续闪烁(即已进 BL)</li>
+      <li>按回车开始烧录</li>
+      <li>等待输出 <code>握手成功 → 擦除完成 → 进度 → 整包校验通过 → 已跳转 App</code></li>
+      <li>脚本自动延时 3 秒后退出（失败也会停留 3 秒便于查看）</li>
+    </ol>
+
+    <h3>接线</h3>
+    <p>板子 OTA 串口是 <b>USART2 (PA2/PA3)</b>:</p>
+    <pre><code class="language-plaintext">板子 PA2(TX)  → 无线模块 RX
+板子 PA3(RX)  → 无线模块 TX
+GND            → GND(共地)</code></pre>
+    <ul>
+      <li><b>无线 OTA</b>: PA2/PA3 接蓝牙或 2.4G 无线串口模块，PC 端也接一个同款模块，即可隔空升级
+        <ul>
+          <li>两个无线模块波特率都要设为 <b>115200</b>，且配对在<b>同一通道/频段</b></li>
+          <li>蓝牙需先配对连接；2.4G 模块需设置相同地址/通道</li>
+        </ul>
+      </li>
+      <li><b>有线调试</b>: 板载 USART1(PA9/PA10) 通过 GD32→Type-C 连 DAPLink，用于烧录 Bootloader 本体和调试</li>
+    </ul>
+  </section>
+
+  <section class="block">
+    <h2><span class="no">1</span>协议实现</h2>
+
+    <h3>帧格式</h3>
+    <pre class="ascii"><code class="language-plaintext">字节:   0     1     2    3    4    5...5+LEN-1   5+LEN    6+LEN
+      ┌─────┬─────┬────┬─────┬─────┬─────────────┬────────┬────────┐
+      │ 0xAA│ 0x55│ CMD│LEN_LO│LEN_HI│   DATA      │CRC_LO  │ CRC_HI │
+      └─────┴─────┴────┴─────┴─────┴─────────────┴────────┴────────┘
+        帧头    命令  数据长度(小端,≤256)  数据      CRC16(小端)</code></pre>
+
+    <h3>命令</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>CMD</th><th>含义</th><th>DATA</th><th>期望回复</th></tr></thead>
+        <tbody>
+          <tr><td>0x01</td><td>握手</td><td>空</td><td>ACK</td></tr>
+          <tr><td>0x02</td><td>擦除</td><td>空</td><td>ACK</td></tr>
+          <tr><td>0x03</td><td>数据块</td><td>≤256B</td><td>ACK</td></tr>
+          <tr><td>0x04</td><td>结束</td><td>总长(4B)+整包CRC(2B)</td><td>ACK</td></tr>
+          <tr><td>0x05</td><td>跳转</td><td>空</td><td>ACK</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>烧录流程</h3>
+    <pre><code class="language-plaintext">握手(0x01) → 擦除(0x02) → 数据帧(0x03, 每帧256B) → 结束(0x04, 带整包CRC) → 跳转(0x05)</code></pre>
+    <ul>
+      <li>每发一帧等待回复: <code>0x06</code>=ACK 继续, <code>0x15</code>=NAK 或超时重发(最多 3 次)</li>
+      <li>CRC16-CCITT(0x1021, 初值 0xFFFF): 每帧校验 + 整包累加校验</li>
+      <li>波特率 <code>115200</code>, 与固件一致</li>
+    </ul>
+
+    <h3>脚本函数</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>函数</th><th>作用</th></tr></thead>
+        <tbody>
+          <tr><td><code>crc16(data, init)</code></td><td>CRC16-CCITT 计算，支持累加(传上次结果)</td></tr>
+          <tr><td><code>build_frame(cmd, data)</code></td><td>组帧：头 + 命令 + 长度 + 数据 + CRC</td></tr>
+          <tr><td><code>send_wait(ser, frame)</code></td><td>发一帧并等 ACK，超时/NAK 重发(最多3次)</td></tr>
+          <tr><td><code>pick_port()</code></td><td>列出并选择可用串口</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>关键参数</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>参数</th><th>值</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><code>BAUD</code></td><td>115200</td><td>波特率, 和固件 usart.c 一致</td></tr>
+          <tr><td><code>BLOCK</code></td><td>256</td><td>每帧数据字节数</td></tr>
+          <tr><td><code>MAX_RETRY</code></td><td>3</td><td>单帧最大重发次数</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2><span class="no">2</span>常见问题</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>现象</th><th>原因</th><th>解决</th></tr></thead>
+        <tbody>
+          <tr><td>握手失败</td><td>没进 BL / 串口号错 / 波特率不符</td><td>确认 LED 闪烁、换 COM 口、检查接线</td></tr>
+          <tr><td>无线 OTA 握手失败</td><td>模块未配对 / 波特率不一致</td><td>两端模块同通道、同波特率(115200)</td></tr>
+          <tr><td>端口被占用</td><td>串口助手还开着</td><td>先关掉串口助手再运行</td></tr>
+          <tr><td>数据帧失败</td><td>接线松 / 无线模块丢包</td><td>检查线, 重新完整烧录; 无线可降波特率</td></tr>
+          <tr><td>烧一半失败</td><td>中途断开</td><td>重新进 BL 完整烧一遍</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- ============================================================ -->
+<!-- ======================= App 工程 ======================= -->
+<!-- ============================================================ -->
+<div class="panel" id="tab-app">
+
+  <section class="block">
+    <h2><span class="no">子</span>App 工程说明（national_competition_test_1）</h2>
+    <div class="subtitle">national_competition_test_1/README.md</div>
+    <p>应用固件示例工程，通过 Bootloader 引导运行，并支持串口在线升级。</p>
+
+    <h3>功能定位</h3>
+    <ul>
+      <li>本工程是 <b>App（应用固件）</b>，从 <code>0x08004000</code> 开始运行</li>
+      <li>上电后由 Bootloader 判定：未按按键 → 直接跳转到 App；按住按键 → 进入升级模式</li>
+      <li>App 本身不包含引导逻辑，启动完全依赖 Bootloader</li>
+    </ul>
+
+    <h3>功能简介</h3>
+    <p>蓝桥杯嵌入式练习程序，主要功能：</p>
+    <ul>
+      <li><b>LCD 显示</b>：IDLE / PARA / OUTP / RECD 等多个界面</li>
+      <li><b>按键交互</b>：模式切换、参数选择、密码校验</li>
+      <li><b>ADC</b>：读取电位器等模拟量</li>
+      <li><b>RTC</b>：日期时间显示与记录</li>
+      <li><b>PWM</b>：PA6 / PA7 输出</li>
+      <li><b>串口</b>：USART1 收发命令</li>
+    </ul>
+
+    <h3>链接地址要求</h3>
+    <p>App 必须链接在 Bootloader 分区之后。当前分区：</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>区域</th><th>地址范围</th><th>大小</th></tr></thead>
+        <tbody>
+          <tr><td>Bootloader</td><td>0x08000000 ~ 0x08003FFF</td><td>16KB</td></tr>
+          <tr><td><b>App</b></td><td><b>0x08004000</b> ~ 0x0801FFFF</td><td>112KB</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Keil scatter 文件关键行：</p>
+    <pre><code class="language-plaintext">LR_IROM1 0x08004000 0x0001C000  {
+  ER_IROM1 0x08004000 0x0001C000  {
+   *.o (RESET, +First)
+   ...
+  }
+  ...
+}</code></pre>
+    <div class="callout warn"><span class="ct">⚠ 注意</span>如果 Bootloader 分区大小变了，App 链接地址必须跟着改。</div>
+  </section>
+
+  <section class="block">
+    <h2><span class="no">1</span>与 Bootloader 的配合</h2>
+
+    <h3>中断向量表 (VTOR)</h3>
+    <ul>
+      <li>Bootloader 跳转前会设置 <code>SCB-&gt;VTOR = 0x08004000</code></li>
+      <li>因此 App 的 <code>system_stm32g4xx.c</code> 里 <code>USER_VECT_TAB_ADDRESS</code> 处于注释状态时也能正常工作（依赖 Bootloader 已设好 VTOR）</li>
+      <li>若希望 App 自包含（不依赖 Bootloader），可在 <code>system_stm32g4xx.c</code> 里定义:</li>
+    </ul>
+    <pre><code class="language-c"><span class="lang-label">c</span>#define USER_VECT_TAB_ADDRESS
+#define VECT_TAB_OFFSET 0x4000</code></pre>
+
+    <h3>中断状态</h3>
+    <ul>
+      <li>Bootloader 跳转前会恢复全局中断（<code>__enable_irq()</code>），App 启动时中断状态与上电复位一致，无需额外处理</li>
+    </ul>
+
+    <h3>串口配置</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>串口</th><th>引脚</th><th>波特率</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>USART1</td><td>App 工程自定义</td><td>9600</td><td>App 自身业务通信</td></tr>
+          <tr><td>USART2</td><td>PA2/PA3</td><td>115200</td><td><b>Bootloader OTA 升级串口</b>（App 不参与）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul>
+      <li>两者是<b>不同的 USART</b>，引脚、波特率、用途互不冲突</li>
+      <li>升级时由 Bootloader 使用 USART2，App 不参与</li>
+    </ul>
+  </section>
+
+  <section class="block">
+    <h2><span class="no">2</span>使用 Bootloader 升级</h2>
+
+    <h3>1. 用 Keil5 生成 .bin</h3>
+    <p>配置一条"编译后自动生成 bin"的命令：</p>
+    <ol>
+      <li>Keil 菜单 <b>Options for Target → User</b> 标签页</li>
+      <li>找到 <b>After Build/Rebuild</b>，勾选某一条 <b>User Command</b></li>
+      <li>填入：</li>
+    </ol>
+    <pre><code class="language-bash">fromelf --bin -o "$L@L.bin" "#L"</code></pre>
+    <p>4. 编译完成后，输出目录里自动生成 <code>&lt;工程名&gt;.bin</code></p>
+
+    <h3>命令解析</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>部分</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td><code>fromelf</code></td><td>ARM 编译器自带的镜像转换工具</td></tr>
+          <tr><td><code>--bin</code></td><td>输出原始二进制格式</td></tr>
+          <tr><td><code>-o "文件"</code></td><td>指定输出文件名</td></tr>
+          <tr><td><code>$L</code></td><td>Keil 变量：输出目录</td></tr>
+          <tr><td><code>@L</code></td><td>Keil 变量：目标文件名（不含扩展名）</td></tr>
+          <tr><td><code>#L</code></td><td>Keil 变量：链接产物 <code>.axf</code> 的完整路径</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn"><span class="ct">⚠ 若报错</span>若报错 <code>CreateProcess failed</code> 或找不到 <code>fromelf</code>，说明它不在 PATH 里，改用<b>完整路径</b>：<pre><code class="language-bash">"D:\004\51\ARM\ARMCC\Bin\fromelf.exe" --bin -o "$L@L.bin" "#L"</code></pre>（路径以你实际安装位置为准）</div>
+
+    <h3>2. 串口升级</h3>
+    <pre><code class="language-bash">python ..\iap_tool\iap_upload.py ..\national_competition_test_1\MDK-ARM\national_competition_test_1\national_competition_test_1.bin COM18</code></pre>
+    <ol>
+      <li>先把生成的 <code>.bin</code> 路径传给脚本（可换你自己的串口号）</li>
+      <li><b>按住按键(PB0)上电</b>进入 Bootloader 模式，LED 闪烁</li>
+      <li>脚本提示后按回车，等待 <code>握手成功 → 擦除完成 → 进度 → 整包校验通过 → 已跳转 App</code></li>
+    </ol>
+    <p>详细说明见 <code>../iap_tool/README.md</code>。</p>
+  </section>
+
+  <section class="block">
+    <h2><span class="no">3</span>注意事项</h2>
+    <ul>
+      <li>App <code>.bin</code> 大小不能超过 App 区(112KB)</li>
+      <li>App 链接地址固定为 <code>0x08004000</code>，<b>不会覆盖</b> Bootloader 区(0x08000000~0x08003FFF)</li>
+      <li>升级中途掉电/失败会导致 App 损坏（当前无 A/B 备份），需要重新进 BL 完整烧录</li>
+      <li>重新编译后若地址配置变化，需重新烧录 Bootloader 并同步 App 地址</li>
+    </ul>
+  </section>
+</div>
+
+<footer>
+  STM32G431 串口 IAP 在线升级系统 · <a href="https://github.com/Ian-cyy/IAP-Bootloader" target="_blank" rel="noopener">GitHub: Ian-cyy/IAP-Bootloader</a>
+</footer>
+
+</main>
+
+<script>
+  // Tab 切换
+  function switchTab(name){
+    document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+    if (document.querySelector('#tab-' + name)) {
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+  }
+  document.querySelectorAll('.tabbar button').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+  // 暴露给主界面"详细文档"链接
+  window.switchTab = switchTab;
+
+  // 代码块复制按钮
+  document.querySelectorAll('pre').forEach(pre => {
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.textContent = '复制';
+    Object.assign(btn.style, {
+      position:'absolute', top:'9px', right:'12px', display:'none',
+      fontSize:'11px', color:'#cfe0db', background:'#1a2b26',
+      border:'1px solid #2c423a', padding:'2px 10px', borderRadius:'6px', cursor:'pointer', zIndex:2
+    });
+    btn.addEventListener('mouseenter', ()=> btn.style.background='#27453b');
+    btn.addEventListener('mouseleave', ()=> btn.style.background='#1a2b26');
+    pre.addEventListener('mouseenter', ()=> btn.style.display='block');
+    pre.addEventListener('mouseleave', ()=> btn.style.display='none');
+    btn.addEventListener('click', () => {
+      navigator.clipboard.writeText(pre.querySelector('code').innerText).then(() => {
+        btn.textContent = '已复制 ✓';
+        setTimeout(() => btn.textContent = '复制', 1500);
+      });
+    });
+    pre.appendChild(btn);
+  });
+</script>
+</body>
+</html>
