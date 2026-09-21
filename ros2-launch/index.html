@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROS2 launch.py 练习笔记（从零到入门）</title>
+<style>
+  :root{
+    --accent:#0e8a6d;
+    --accent-dark:#0a6b55;
+    --accent-soft:#e5f5f0;
+    --bg:#f6f8f7;
+    --card:#ffffff;
+    --border:#e3e8e6;
+    --text:#232a28;
+    --text-2:#5a6562;
+    --code-bg:#0f1a17;
+    --code-text:#d9e6e2;
+    --warn-bg:#fff7e6;
+    --warn-border:#f0c060;
+    --ok-bg:#e8f7ef;
+    --ok-border:#4cbf87;
+    --info-bg:#eaf3fb;
+    --info-border:#7fb3e0;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.78;
+    font-size:15px;
+  }
+  a{color:var(--accent-dark); text-decoration:none;}
+  a:hover{text-decoration:underline;}
+
+  .hero{
+    position:relative;
+    background:linear-gradient(135deg,#0a6b55 0%,#0e8a6d 55%,#14a584 100%);
+    color:#fff;
+    padding:34px 40px 30px;
+  }
+  .hero .gh-btn{
+    position:absolute; right:40px; top:50%; transform:translateY(-50%);
+    background:rgba(255,255,255,.14);
+    border:1px solid rgba(255,255,255,.4);
+    color:#fff; border-radius:10px;
+    padding:9px 18px; font-size:13.5px; font-weight:600;
+    display:inline-flex; align-items:center; gap:7px;
+    letter-spacing:.5px; text-decoration:none;
+    transition:background .2s;
+  }
+  .hero .gh-btn:hover{background:rgba(255,255,255,.26); text-decoration:none;}
+  .hero .hero-actions{position:absolute; right:40px; top:50%; transform:translateY(-50%); display:flex; gap:10px;}
+  .hero .hero-actions .gh-btn{position:static; transform:none;}
+  .hero .tag{
+    display:inline-block;
+    background:rgba(255,255,255,.16);
+    border:1px solid rgba(255,255,255,.35);
+    border-radius:20px;
+    padding:3px 14px;
+    font-size:12.5px;
+    letter-spacing:.5px;
+    margin-bottom:12px;
+  }
+  .hero h1{margin:0 0 8px; font-size:26px; font-weight:700; letter-spacing:.5px;}
+  .hero .sub{font-size:14px; opacity:.94; max-width:1000px;}
+  .hero .sub b{color:#b8f0dc;}
+
+  .layout{display:flex; max-width:none; margin:0 auto; gap:26px; padding:26px 40px 60px; align-items:flex-start;}
+
+  .toc{
+    position:sticky; top:20px; flex:0 0 230px;
+    background:var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:16px 14px; max-height:calc(100vh - 40px); overflow:auto;
+  }
+  .toc .toc-title{font-size:13px; font-weight:700; color:var(--accent-dark); margin-bottom:10px; padding-bottom:8px; border-bottom:2px solid var(--accent-soft); letter-spacing:.5px;}
+  .toc a{display:block; font-size:13px; color:#3d4a46; padding:5px 9px; border-radius:7px; margin:1px 0; line-height:1.5;}
+  .toc a:hover{background:var(--accent-soft); color:var(--accent-dark); text-decoration:none;}
+  .toc a.active{background:var(--accent-soft); color:var(--accent-dark); font-weight:600;}
+  .toc a.lv2{padding-left:20px; font-size:12.5px; color:#5a6b65;}
+
+  main{flex:1; min-width:0;}
+  section.block{
+    background:var(--card); border:1px solid var(--border); border-radius:14px;
+    padding:24px 28px; margin-bottom:20px;
+    box-shadow:0 1px 3px rgba(20,40,33,.04);
+  }
+  h2{
+    font-size:20px; margin:0 0 4px; padding-bottom:11px;
+    border-bottom:2px solid var(--accent); color:var(--accent-dark);
+    display:flex; align-items:center; gap:10px;
+  }
+  h2 .no{
+    background:var(--accent); color:#fff; min-width:30px; height:30px;
+    border-radius:8px; display:inline-flex; align-items:center; justify-content:center;
+    font-size:15px; flex:none;
+  }
+  h3{font-size:16.5px; margin:22px 0 9px; color:#12483a;}
+  h3::before{content:"▍"; color:var(--accent); margin-right:6px;}
+  h4{font-size:15px; margin:16px 0 8px; color:#2c3a35;}
+  h4::before{content:"◆ "; color:var(--accent);}
+  p{margin:10px 0;}
+  ul,ol{margin:10px 0; padding-left:24px;}
+  li{margin:5px 0;}
+  strong{color:#0b3b2e;}
+  code{
+    font-family:Consolas,"Courier New",monospace;
+    background:#eaf1ee; color:#0a6b55;
+    padding:2px 6px; border-radius:5px; font-size:13px;
+  }
+  td code{white-space:nowrap;}
+
+  .table-wrap{overflow-x:auto; margin:14px 0; border:1px solid var(--border); border-radius:10px;}
+  table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:460px;}
+  .table-wrap.auto{overflow-x:visible;}
+  .table-wrap.auto table{min-width:0; table-layout:fixed;}
+  .table-wrap.auto td code{white-space:normal; word-break:break-word;}
+  thead th{
+    background:var(--accent-soft); color:var(--accent-dark);
+    text-align:left; font-weight:600; padding:9px 13px;
+    border-bottom:2px solid var(--accent); white-space:nowrap;
+  }
+  tbody td{padding:8px 13px; border-bottom:1px solid #edf1ef; vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:nth-child(even){background:#fafcfb;}
+  tbody tr:hover{background:#f0f7f4;}
+  thead th.center, tbody td.center{text-align:center;}
+
+  pre{
+    position:relative;
+    background:var(--code-bg); color:var(--code-text);
+    border-radius:10px; padding:15px 18px; overflow-x:auto;
+    line-height:1.6; font-size:13px; margin:14px 0;
+  }
+  pre code{background:none; padding:0; color:inherit; font-size:inherit;}
+  pre .lang-label{
+    position:absolute; top:9px; right:12px;
+    font-size:10.5px; color:#6d8b82; background:#1a2b26;
+    padding:2px 8px; border-radius:6px; letter-spacing:.5px;
+  }
+  pre.ascii{line-height:1.5;}
+  pre.ascii code{white-space:pre;}
+
+  .callout{
+    border-radius:10px; padding:13px 17px; margin:15px 0;
+    border-left:4px solid; font-size:14px;
+  }
+  .callout .ct{font-weight:700; display:block; margin-bottom:3px; font-size:13.5px;}
+  .callout.warn{background:var(--warn-bg); border-color:var(--warn-border);} .callout.warn .ct{color:#8a6116;}
+  .callout.ok{background:var(--ok-bg); border-color:var(--ok-border);} .callout.ok .ct{color:#1d7a4c;}
+  .callout.info{background:var(--info-bg); border-color:var(--info-border);} .callout.info .ct{color:#2b6aa3;}
+  .callout p{margin:4px 0;}
+
+  .learn{
+    background:var(--accent-soft);
+    border:1px dashed var(--accent);
+    border-radius:10px;
+    padding:11px 15px;
+    margin:13px 0;
+    font-size:14px;
+  }
+  .learn b{color:var(--accent-dark);}
+
+  .toplink{
+    position:fixed; right:26px; bottom:26px; z-index:50;
+    background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:10px 14px; font-size:13px; cursor:pointer;
+    box-shadow:0 3px 10px rgba(10,60,48,.3);
+    display:none; font-family:inherit;
+  }
+  .toplink:hover{background:var(--accent-dark);}
+
+  footer{text-align:center; color:var(--text-2); font-size:13px; padding:4px 0 40px;}
+
+  @media (max-width:900px){
+    .layout{flex-direction:column; padding:20px 18px 50px;}
+    .toc{position:static; flex:none; max-height:none; width:100%;}
+    .hero{padding:24px 18px;}
+    .hero .gh-btn{position:static; transform:none; margin-top:12px;}
+    section.block{padding:20px 16px;}
+  }
+
+  @media print{
+    body{background:#fff;}
+    .toc{display:none;}
+    .layout{max-width:none; padding:0; gap:0; display:block;}
+    section.block{border:none; box-shadow:none; padding:8px 0 4px; margin:0 0 8px;}
+    .hero{background:#0e8a6d !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; padding:8px 0 6px;}
+    .hero .gh-btn{display:none !important;}
+    .hero .tag{display:none;}
+    .hero h1{font-size:19px; margin:0 0 3px;}
+    .hero .sub{font-size:12px; line-height:1.5;}
+    h2{font-size:16.5px; margin:0 0 5px; padding-bottom:5px; page-break-after:avoid;}
+    h3{font-size:14.5px; margin:12px 0 5px; page-break-after:avoid;}
+    h4{font-size:13.5px; margin:9px 0 4px; page-break-after:avoid;}
+    p,ul,ol{margin:5px 0;}
+    pre{margin:9px 0;}
+    .table-wrap{page-break-inside:avoid;}
+    .callout{margin:9px 0; page-break-inside:avoid;}
+    .toplink{display:none !important;}
+  }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</head>
+<body>
+
+<div class="hero">
+  <div class="tag">ROS2 · launch.py · 树莓派 · ament_python</div>
+  <h1>ROS2 launch.py 练习笔记（从零到入门）</h1>
+  <div class="sub">整理日期：<b>2026-09-17</b> · 环境：树莓派 + ROS2（<code>~/ros2_learn_ws_01</code>）· 配套：手敲练习 01~05 已完成，06 为补充示例。</div>
+  <div class="hero-actions">
+    <a class="gh-btn" href="../" title="返回学习笔记主页">⌂ 主界面</a>
+    <a class="gh-btn" href="https://github.com/Ian-cyy" target="_blank" rel="noopener" title="GitHub: Ian-cyy">GitHub ↗</a>
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="toc" id="toc">
+    <div class="toc-title">目录</div>
+    <a href="#s0" data-i="0">0. 准备工作（一次性）</a>
+    <a href="#s1" data-i="1">1. import 速查表</a>
+    <a href="#s2" data-i="2">2. 六个练习</a>
+    <a href="#s21" data-i="3" class="lv2">01 启动单节点</a>
+    <a href="#s22" data-i="4" class="lv2">02 参数 + 传参</a>
+    <a href="#s23" data-i="5" class="lv2">03 两个节点</a>
+    <a href="#s24" data-i="6" class="lv2">04 包含其他 launch</a>
+    <a href="#s25" data-i="7" class="lv2">05 分组 + 命名空间</a>
+    <a href="#s26" data-i="8" class="lv2">06 延时与事件</a>
+    <a href="#s3" data-i="9">3. 常用 API 速查</a>
+    <a href="#s4" data-i="10">4. 运行与验证</a>
+    <a href="#s5" data-i="11">5. 踩坑记录</a>
+    <a href="#s6" data-i="12">6. 下一步建议</a>
+  </nav>
+
+  <main>
+
+    <section class="block" id="s0">
+      <h2><span class="no">0</span>准备工作（一次性）</h2>
+
+      <h3>0.1 创建包</h3>
+      <pre><span class="lang-label">bash</span><code class="language-bash">cd ~/ros2_learn_ws_01/src
+ros2 pkg create --build-type ament_python python_launch_demo --dependencies rclpy std_msgs</code></pre>
+      <p>目录结构：</p>
+      <pre><code class="language-plaintext">python_launch_demo/
+├── package.xml
+├── setup.py
+├── setup.cfg
+├── resource/python_launch_demo
+├── python_launch_demo/          ← Python 模块（节点代码放这里）
+│   ├── __init__.py
+│   ├── talker.py
+│   └── listener.py
+└── launch/                      ← launch 文件放这里
+    ├── 01_one_node.launch.py
+    └── ...</code></pre>
+
+      <h3>0.2 talker.py</h3>
+      <pre><span class="lang-label">python</span><code class="language-python">import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+
+
+class Talker(Node):
+    def __init__(self):
+        super().__init__('talker')
+        self.declare_parameter('msg', 'hello,ros2')
+        self.declare_parameter('rate_hz', 1.0)
+        self.pub = self.create_publisher(String, 'chatter', 10)
+        rate = self.get_parameter('rate_hz').value
+        self.timer = self.create_timer(1.0 / rate, self.tick)
+        self.count = 0
+
+    def tick(self):
+        text = f"{self.get_parameter('msg').value} #{self.count}"
+        self.pub.publish(String(data=text))          # 注意: data 不是 date
+        self.get_logger().info(f'publish: {text}')
+        self.count += 1
+
+
+def main():
+    rclpy.init()
+    node = Talker()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    node.destroy_node()                              # 注意: 有括号
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()</code></pre>
+
+      <h3>0.3 listener.py</h3>
+      <pre><span class="lang-label">python</span><code class="language-python">import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+
+
+class Listener(Node):
+    def __init__(self):
+        super().__init__('listener')                 # 注意: super() 有括号
+        self.sub = self.create_subscription(String, 'chatter', self.cb, 10)
+
+    def cb(self, msg):
+        self.get_logger().info(f'receive: {msg.data}')
+
+
+def main():
+    rclpy.init()
+    node = Listener()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    node.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()</code></pre>
+
+      <h3>0.4 setup.py 关键两处</h3>
+      <pre><span class="lang-label">python</span><code class="language-python">import os
+from glob import glob
+
+from setuptools import find_packages, setup
+
+package_name = 'python_launch_demo'      # ★ 包名四处一致: package_name/目录/resource/entry_points前缀
+
+setup(
+    name=package_name,
+    version='0.0.0',
+    packages=find_packages(exclude=['test']),
+    data_files=[
+        ('share/ament_index/resource_index/packages',
+            ['resource/' + package_name]),
+        ('share/' + package_name, ['package.xml']),
+        (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),  # ★ launch 安装
+    ],
+    install_requires=['setuptools'],
+    zip_safe=True,
+    maintainer='cyy',
+    maintainer_email='cyy@todo.todo',
+    description='TODO: Package description',
+    license='Apache-2.0',
+    extras_require={'test': ['pytest']},
+    entry_points={
+        'console_scripts': [
+            'talker = python_launch_demo.talker:main',        # ★ 前缀=包名
+            'listener = python_launch_demo.listener:main',
+        ],
+    },
+)</code></pre>
+
+      <h3>0.5 编译运行</h3>
+      <pre><span class="lang-label">bash</span><code class="language-bash">cd ~/ros2_learn_ws_01
+colcon build --symlink-install
+source install/setup.bash          # 每开新终端都要 source
+
+ros2 run python_launch_demo talker       # 先验证节点能跑</code></pre>
+    </section>
+
+    <section class="block" id="s1">
+      <h2><span class="no">1</span>import 速查表（重点）</h2>
+      <div class="callout info"><span class="ct">核心概念</span>ROS2 launch 分成两个包：<b><code>launch</code></b>（通用启动框架，与 ROS 无关）+ <b><code>launch_ros</code></b>（ROS 专用扩展）。</div>
+      <div class="table-wrap auto">
+        <table>
+          <thead><tr><th>import</th><th>里面有什么</th><th>干什么用</th></tr></thead>
+          <tbody>
+            <tr><td><code>from launch import LaunchDescription</code></td><td>容器类</td><td>launch 文件的返回值，装所有"动作"</td></tr>
+            <tr><td><code>from launch.actions import ...</code></td><td>所有<b>动作</b></td><td>声明参数、包含文件、分组、定时、打印日志、启动进程、注册事件</td></tr>
+            <tr><td><code>from launch.substitutions import ...</code></td><td>所有<b>替换（占位符）</b></td><td>运行时才求值的值：命令行参数、路径拼接、表达式</td></tr>
+            <tr><td><code>from launch.launch_description_sources import PythonLaunchDescriptionSource</code></td><td>加载器声明</td><td>告诉 include"被包含的文件是什么格式、在哪"</td></tr>
+            <tr><td><code>from launch.conditions import ...</code></td><td>条件</td><td>IfCondition / UnlessCondition / LaunchConfigurationEquals</td></tr>
+            <tr><td><code>from launch.event_handlers import ...</code></td><td>事件处理器</td><td>OnProcessStart / OnProcessExit（A启动/退出后做B）</td></tr>
+            <tr><td><code>from launch_ros.actions import Node</code></td><td>ROS 动作</td><td>启动一个 ROS 节点</td></tr>
+            <tr><td><code>from launch_ros.actions import PushRosNamespace</code></td><td>ROS 动作</td><td>给一组动作加命名空间</td></tr>
+            <tr><td><code>from launch_ros.substitutions import FindPackageShare</code></td><td>ROS 替换</td><td>找包的 share 目录（≈ ROS1 <code>$(find 包名)</code>）</td></tr>
+            <tr><td><code>from launch_ros.parameter_descriptions import ParameterValue</code></td><td>参数包装</td><td>指定参数类型（如 float），防止字符串传参</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>常用动作（<code>launch.actions</code>）清单</h3>
+      <div class="table-wrap auto">
+        <table>
+          <thead><tr><th>名称</th><th>用途</th><th>用在哪课</th></tr></thead>
+          <tbody>
+            <tr><td><code>DeclareLaunchArgument</code></td><td>声明命令行参数（名字+默认值）</td><td>02</td></tr>
+            <tr><td><code>IncludeLaunchDescription</code></td><td>包含另一个 launch 文件</td><td>04</td></tr>
+            <tr><td><code>GroupAction</code></td><td>把多个动作打包成一组</td><td>05</td></tr>
+            <tr><td><code>TimerAction</code></td><td>延时 N 秒后执行动作</td><td>06</td></tr>
+            <tr><td><code>RegisterEventHandler</code></td><td>注册事件（进程启动/退出时触发）</td><td>06</td></tr>
+            <tr><td><code>LogInfo</code> / <code>LogWarn</code></td><td>打印日志</td><td>06</td></tr>
+            <tr><td><code>OpaqueFunction</code></td><td>运行中执行任意 Python 逻辑（推导变量）</td><td>进阶</td></tr>
+            <tr><td><code>SetLaunchConfiguration</code></td><td>设置一个变量</td><td>进阶</td></tr>
+            <tr><td><code>ExecuteProcess</code></td><td>启动任意命令行进程（非 ROS 节点）</td><td>进阶</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>常用替换（<code>launch.substitutions</code>）清单</h3>
+      <div class="table-wrap auto">
+        <table>
+          <thead><tr><th>名称</th><th>含义</th></tr></thead>
+          <tbody>
+            <tr><td><code>LaunchConfiguration('x')</code></td><td>引用命令行参数 x（运行时取值）</td></tr>
+            <tr><td><code>PathJoinSubstitution([...])</code></td><td>把路径片段拼起来</td></tr>
+            <tr><td><code>PythonExpression([...])</code></td><td>运行时算个表达式（字符串拼接/条件）</td></tr>
+            <tr><td><code>TextSubstitution(text='...')</code></td><td>常量文本</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout info"><span class="ct">为什么要有"替换"这一层？</span>ROS2 launch 是<b>两阶段</b>：生成阶段只搭结构（此时还不知道命令行传了什么），运行阶段才把 <code>LaunchConfiguration</code> 等替换成真实值。所以路径、参数都得用"占位符"描述。</div>
+    </section>
+
+    <section class="block" id="s2">
+      <h2><span class="no">2</span>六个练习（完整代码 + 要点）</h2>
+
+      <h3 id="s21">01_one_node.launch.py — 启动单节点</h3>
+      <pre><span class="lang-label">python</span><code class="language-python">from launch import LaunchDescription
+from launch_ros.actions import Node
+
+
+def generate_launch_description():
+    return LaunchDescription([
+        Node(package='python_launch_demo',
+             executable='talker',
+             name='talker',
+             output='screen'),
+    ])</code></pre>
+      <div class="learn"><b>学会</b>：<code>Node</code> 三要素 = <code>package</code>（包名）+ <code>executable</code>（setup.py 里注册的名字）+ <code>name</code>（节点名，可不写）。<br><b>运行</b>：<code>ros2 launch python_launch_demo 01_one_node.launch.py</code></div>
+
+      <h3 id="s22">02_args.launch.py — 参数 + 传参</h3>
+      <pre><span class="lang-label">python</span><code class="language-python">from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
+
+
+def generate_launch_description():
+    msg = LaunchConfiguration('msg')
+    rate = LaunchConfiguration('rate_hz')
+    return LaunchDescription([
+        DeclareLaunchArgument('msg', default_value='hello ros2'),
+        DeclareLaunchArgument('rate_hz', default_value='1.0'),
+        Node(package='python_launch_demo',
+             executable='talker',
+             name='talker',
+             output='screen',
+             parameters=[{
+                 'msg': msg,
+                 'rate_hz': ParameterValue(rate, value_type=float),
+             }]),
+    ])</code></pre>
+      <div class="learn"><b>学会</b>：<code>DeclareLaunchArgument</code>（声明）+ <code>LaunchConfiguration</code>（引用）+ <code>ParameterValue</code>（类型）。<br><b>运行</b>：<code>ros2 launch python_launch_demo 02_args.launch.py rate_hz:=3.0 msg:=test</code><br><b>注意</b>：命令行赋值用 <b><code>:=</code></b> 不是 <code>=</code>。</div>
+
+      <h3 id="s23">03_two_nodes.launch.py — 两个节点</h3>
+      <pre><span class="lang-label">python</span><code class="language-python">from launch import LaunchDescription
+from launch_ros.actions import Node
+
+
+def generate_launch_description():
+    return LaunchDescription([
+        Node(package='python_launch_demo', executable='talker',
+             name='talker', output='screen'),
+        Node(package='python_launch_demo', executable='listener',
+             name='listener', output='screen'),
+    ])</code></pre>
+      <p><b>变体 A：加命名空间</b>（两边都加才通）</p>
+      <pre><span class="lang-label">python</span><code class="language-python">Node(..., namespace='robot1'),
+Node(..., namespace='robot1'),</code></pre>
+      <p><b>变体 B：remap 对接</b>（话题名不同也能连）</p>
+      <pre><span class="lang-label">python</span><code class="language-python">Node(..., remappings=[('chatter', 'my_topic')]),
+Node(..., remappings=[('chatter', 'my_topic')]),</code></pre>
+      <div class="learn"><b>学会</b>：<code>namespace</code> / <code>remappings</code> / <code>output='screen'</code>。</div>
+
+      <h3 id="s24">04_include.launch.py — 包含其他 launch</h3>
+      <pre><span class="lang-label">python</span><code class="language-python">from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import PathJoinSubstitution
+from launch_ros.substitutions import FindPackageShare
+
+
+def generate_launch_description():
+    return LaunchDescription([
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource([
+                PathJoinSubstitution([
+                    FindPackageShare('python_launch_demo'),
+                    'launch',
+                    '02_args.launch.py',
+                ])
+            ]),
+            launch_arguments={'msg': 'from include', 'rate_hz': '2.0'}.items(),
+        ),
+    ])</code></pre>
+      <p><b>简写版</b>（效果相同）：</p>
+      <pre><span class="lang-label">python</span><code class="language-python">IncludeLaunchDescription(
+    PythonLaunchDescriptionSource(
+        FindPackageShare('python_launch_demo') / 'launch' / '02_args.launch.py'
+    ),
+    launch_arguments={'msg': 'from include', 'rate_hz': '2.0'}.items(),
+)</code></pre>
+      <div class="learn"><b>学会</b>：四层套娃 = <code>IncludeLaunchDescription</code>（包含）→ <code>PythonLaunchDescriptionSource</code>（哪来的）→ <code>PathJoinSubstitution</code>（拼路径）→ <code>FindPackageShare</code>（找包）；<code>launch_arguments</code> 覆盖被包含文件的参数。</div>
+
+      <h3 id="s25">05_group_two_robots.launch.py — 分组 + 命名空间</h3>
+      <pre><span class="lang-label">python</span><code class="language-python">from launch import LaunchDescription
+from launch.actions import GroupAction
+from launch_ros.actions import Node, PushRosNamespace
+
+
+def generate_launch_description():
+    return LaunchDescription([
+        GroupAction([
+            PushRosNamespace('robot1'),
+            Node(package='python_launch_demo', executable='talker',
+                 name='talker', output='screen'),
+            Node(package='python_launch_demo', executable='listener',
+                 name='listener', output='screen'),
+        ]),
+        GroupAction([
+            PushRosNamespace('robot2'),
+            Node(package='python_launch_demo', executable='talker',
+                 name='talker', output='screen'),
+            Node(package='python_launch_demo', executable='listener',
+                 name='listener', output='screen'),
+            # 跨命名空间订阅（实验）:
+            # remappings=[('chatter', '/robot1/chatter')],
+        ]),
+    ])</code></pre>
+      <div class="learn"><b>学会</b>：<code>GroupAction</code>（打包一组）+ <code>PushRosNamespace</code>（整组加前缀）；命名空间天然隔离两套系统。<br><b>验证</b>：<code>ros2 node list</code> / <code>ros2 topic list</code> / <code>rqt_graph</code>（能看到两个方框各自成对）。</div>
+
+      <h3 id="s26">06_timer_event.launch.py — 延时与事件（未做，补充）</h3>
+      <h4>06a：延时启动（TimerAction）</h4>
+      <pre><span class="lang-label">python</span><code class="language-python">from launch import LaunchDescription
+from launch.actions import TimerAction
+from launch_ros.actions import Node
+
+
+def generate_launch_description():
+    return LaunchDescription([
+        Node(package='python_launch_demo', executable='talker',
+             name='talker', output='screen'),
+        # 3 秒后再启动 listener
+        TimerAction(
+            period=3.0,
+            actions=[
+                Node(package='python_launch_demo', executable='listener',
+                     name='listener', output='screen'),
+            ],
+        ),
+    ])</code></pre>
+      <h4>06b：事件驱动（A 启动后再启动 B）</h4>
+      <pre><span class="lang-label">python</span><code class="language-python">from launch import LaunchDescription
+from launch.actions import LogInfo, RegisterEventHandler
+from launch.event_handlers import OnProcessStart
+from launch_ros.actions import Node
+
+
+def generate_launch_description():
+    talker = Node(package='python_launch_demo', executable='talker',
+                  name='talker', output='screen')
+    listener = Node(package='python_launch_demo', executable='listener',
+                    name='listener', output='screen')
+
+    return LaunchDescription([
+        talker,
+        RegisterEventHandler(
+            OnProcessStart(
+                target_action=talker,          # 当 talker 启动后...
+                on_start=[                     # ...执行这些动作
+                    LogInfo(msg='talker 已启动, 现在启动 listener'),
+                    listener,
+                ],
+            )
+        ),
+    ])</code></pre>
+      <div class="callout info"><span class="ct">补充</span>另有 <code>OnProcessExit(target_action=..., on_exit=[...])</code>：A <b>退出</b>后启动 B。</div>
+      <div class="learn"><b>学会</b>：<code>TimerAction</code>（延时）、<code>RegisterEventHandler + OnProcessStart/OnProcessExit</code>（事件驱动），这是"节点依赖关系"的标准做法（比如先等驱动起来再启动上层）。</div>
+    </section>
+
+    <section class="block" id="s3">
+      <h2><span class="no">3</span>常用 API 速查</h2>
+      <pre><span class="lang-label">python</span><code class="language-python"># 节点
+Node(package=..., executable=..., name=..., namespace=..., output='screen'|'log'|'both',
+     parameters=[{'k': v}, 'xx.yaml'],
+     remappings=[('from', 'to')],
+     arguments=['--ros-args', '--log-level', 'debug'],
+     respawn=True, condition=IfCondition(...))
+
+# 动作
+DeclareLaunchArgument('x', default_value='1')
+IncludeLaunchDescription(source, launch_arguments={...}.items())
+GroupAction([...])
+TimerAction(period=3.0, actions=[...])
+RegisterEventHandler(OnProcessStart(target_action=node, on_start=[...]))
+LogInfo(msg='...')
+ExecuteProcess(cmd=['ls', '-l'], output='screen')
+
+# 替换
+LaunchConfiguration('x')
+PathJoinSubstitution([a, b, c])        # 或 a / b / c
+PythonExpression(["'", LaunchConfiguration('x'), "' == 'true'"])
+FindPackageShare('pkg')
+ParameterValue(LaunchConfiguration('x'), value_type=float)
+
+# 条件
+IfCondition(LaunchConfiguration('use_x'))
+UnlessCondition(...)
+LaunchConfigurationEquals('mode', 'debug')</code></pre>
+    </section>
+
+    <section class="block" id="s4">
+      <h2><span class="no">4</span>运行与验证</h2>
+      <pre><span class="lang-label">bash</span><code class="language-bash">cd ~/ros2_learn_ws_01
+colcon build --symlink-install
+source install/setup.bash
+
+ros2 launch python_launch_demo 0X_xxx.launch.py            # 启动
+ros2 launch python_launch_demo 02_args.launch.py --show-args   # 看参数
+ros2 launch python_launch_demo 02_args.launch.py rate_hz:=3.0 msg:=test   # 传参
+
+ros2 node list                 # 看节点
+ros2 topic list                # 看话题
+ros2 topic echo /chatter       # 看消息
+rqt_graph                      # 图形化看连接关系
+python3 -m py_compile xx.launch.py   # 语法检查</code></pre>
+    </section>
+
+    <section class="block" id="s5">
+      <h2><span class="no">5</span>踩坑记录（本次实际遇到的错误）</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>错误</th><th>原因</th><th>修正</th></tr></thead>
+          <tbody>
+            <tr><td><code>unexpected keyword argument 'date'</code></td><td>消息字段拼错</td><td><code>String(data=...)</code></td></tr>
+            <tr><td><code>TypeError: super.__init__</code></td><td>少括号</td><td><code>super().__init__('listener')</code></td></tr>
+            <tr><td>节点没销毁</td><td>少括号</td><td><code>node.destroy_node()</code></td></tr>
+            <tr><td><code>NameError: os/glob</code></td><td>setup.py 没 import</td><td><code>import os</code> / <code>from glob import glob</code></td></tr>
+            <tr><td><code>ModuleNotFoundError</code></td><td>包名不一致</td><td><code>python_launch_demo.xxx:main</code> 四处统一</td></tr>
+            <tr><td><code>SyntaxError</code> 指向下一行</td><td>列表元素少逗号</td><td>上一行末尾补 <code>,</code></td></tr>
+            <tr><td>终端看不到输出</td><td><code>outpur</code> 拼错</td><td><code>output='screen'</code></td></tr>
+            <tr><td><code>NameError: InlcudeLaunchDescription</code></td><td>拼写</td><td><code>IncludeLaunchDescription</code></td></tr>
+            <tr><td><code>TypeError: launch_argments</code></td><td>拼写</td><td><code>launch_arguments</code></td></tr>
+            <tr><td>找不到文件</td><td>文件名不全</td><td><code>'02_args.launch.py'</code></td></tr>
+            <tr><td><code>NameError: LaunchDescription</code></td><td>少 import</td><td><code>from launch import LaunchDescription</code></td></tr>
+            <tr><td><code>unmatched ')'</code></td><td>括号多了</td><td>参数最后一个用逗号，闭合括号单独一行</td></tr>
+            <tr><td><code>malformed launch argument 'rate_hz=3.0'</code></td><td>命令行用错符号</td><td>用 <code>:=</code>：<code>rate_hz:=3.0</code></td></tr>
+            <tr><td><code>TypeError: 1.0 / rate</code></td><td>参数是字符串</td><td><code>ParameterValue(rate, value_type=float)</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="block" id="s6">
+      <h2><span class="no">6</span>下一步建议</h2>
+      <ol>
+        <li><b>综合练习</b>：仿照 wheeltec 的 <code>base_serial.launch</code>，用 <code>DeclareLaunchArgument</code> + <code>IfCondition</code> 写一个"开关式" launch：
+          <ul>
+            <li><code>use_talker:=true/false</code>、<code>use_listener:=true/false</code>、<code>rate_hz:=2.0</code></li>
+            <li>参考：<code>wheeltec_arm/ROS2学习笔记_从ROS1工程出发.md</code> 第 3.6 节</li>
+          </ul>
+        </li>
+        <li><b>节点依赖</b>：用 <code>TimerAction</code> / <code>OnProcessExit</code> 做"先启动驱动、再启动上层"</li>
+        <li><b>YAML 参数</b>：把 <code>parameters=[{...}]</code> 换成 <code>parameters=['config/xx.yaml']</code>，学参数文件</li>
+        <li><b>看真实工程</b>：用本笔记第 1 节的 import 表去读 wheeltec 的 ROS1 launch，再对照 ROS2 写法</li>
+      </ol>
+      <div class="callout ok"><span class="ct">一句话总结</span><b>launch = 用 Python 描述"启动哪些节点、怎么组合、传什么参数"</b>；核心就三类东西：<b>动作（actions）做事情、替换（substitutions）取值、条件/事件控制时机</b>。</div>
+    </section>
+
+  </main>
+</div>
+
+<button class="toplink" id="topBtn">↑ 返回顶部</button>
+
+<footer>ROS2 launch.py 练习笔记（从零到入门）· 整理日期 2026-09-17 · 树莓派 + ROS2<br>GitHub: <a href="https://github.com/Ian-cyy" target="_blank" rel="noopener" style="color:var(--acc);">@Ian-cyy</a></footer>
+
+<script>
+  // 目录高亮
+  const links = document.querySelectorAll('#toc a');
+  const ids = ['s0','s1','s2','s21','s22','s23','s24','s25','s26','s3','s4','s5','s6'];
+  const anchors = ids.map(id => document.getElementById(id)).filter(Boolean);
+  const onScroll = () => {
+    let cur = 0;
+    anchors.forEach((s, i) => { if (window.scrollY >= s.offsetTop - 130) cur = i; });
+    links.forEach(a => a.classList.toggle('active', +a.dataset.i === cur));
+    document.getElementById('topBtn').style.display = window.scrollY > 600 ? 'block' : 'none';
+  };
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+  document.getElementById('topBtn').addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
+
+  // 代码块复制按钮
+  document.querySelectorAll('pre').forEach(pre => {
+    const btn = document.createElement('button');
+    btn.textContent = '复制';
+    Object.assign(btn.style, {
+      position:'absolute', top:'9px', right:'12px', display:'none',
+      fontSize:'11px', color:'#cfe0db', background:'#1a2b26',
+      border:'1px solid #2c423a', padding:'2px 10px', borderRadius:'6px', cursor:'pointer', zIndex:2
+    });
+    pre.addEventListener('mouseenter', ()=> btn.style.display='block');
+    pre.addEventListener('mouseleave', ()=> btn.style.display='none');
+    btn.addEventListener('click', () => {
+      navigator.clipboard.writeText(pre.querySelector('code').innerText).then(() => {
+        btn.textContent = '已复制 ✓';
+        setTimeout(() => btn.textContent = '复制', 1500);
+      });
+    });
+    pre.appendChild(btn);
+  });
+</script>
+</body>
+</html>
