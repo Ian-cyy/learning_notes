@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROS2 Parameters + YAML 练习笔记</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f6f8fb;
+    --bg-card: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --primary: #1a2744;
+    --primary-light: #2c4a7c;
+    --accent: #4a9eff;
+    --accent-light: #e8f2ff;
+    --code-bg: #f4f6fa;
+    --code-text: #2c3e50;
+    --formula-bg: #faf8f2;
+    --formula-border: #e8dcc0;
+    --formula-text: #5a4a2a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+    --sidebar-width: 280px;
+    --content-max: 860px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --text: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border: #334155;
+    --border-light: #1e293b;
+    --primary: #3b5998;
+    --primary-light: #4a6fa5;
+    --accent: #60a5fa;
+    --accent-light: #1e3a5f;
+    --code-bg: #1e293b;
+    --code-text: #cbd5e1;
+    --formula-bg: #1e293b;
+    --formula-border: #475569;
+    --formula-text: #fbbf24;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg);
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ===== 顶部导航栏 ===== */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.85);
+  }
+  [data-theme="dark"] .topbar { background: rgba(15,23,42,0.85); }
+
+  .topbar-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-title .dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .topbar-title .sub {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 8px;
+  }
+
+  .topbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .icon-btn {
+    width: 36px; height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .menu-btn { display: none; }
+
+  /* ===== 侧边栏 ===== */
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: var(--sidebar-width);
+    height: calc(100vh - 60px);
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px 0;
+    z-index: 90;
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar-header {
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sidebar-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .toc-list { list-style: none; padding: 0 12px; }
+  .toc-list li { margin: 2px 0; }
+  .toc-list a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13.5px;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+  }
+  .toc-list a:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+  .toc-list a.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  .toc-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    background: var(--border);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc-list a.active .toc-num {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ===== 主内容区 ===== */
+  .main {
+    margin-left: var(--sidebar-width);
+    margin-top: 60px;
+    padding: 40px 48px 80px;
+    min-height: calc(100vh - 60px);
+  }
+
+  .content-wrapper {
+    max-width: var(--content-max);
+    margin: 0 auto;
+  }
+
+  /* ===== 文章头部 ===== */
+  .article-header {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid var(--border);
+  }
+  .article-header .tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+  .article-header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .article-header .subtitle {
+    font-size: 17px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+  }
+  .article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .article-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* ===== 章节标题 ===== */
+  h2.chapter {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 50px 0 24px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: #fff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+    scroll-margin-top: 80px;
+  }
+  h2.chapter .ch-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 32px 0 14px;
+    padding-left: 14px;
+    border-left: 4px solid var(--accent);
+    scroll-margin-top: 80px;
+  }
+
+  h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-light);
+    margin: 22px 0 10px;
+    scroll-margin-top: 80px;
+  }
+
+  p { margin: 10px 0; text-align: justify; }
+
+  /* ===== 代码块 ===== */
+  pre, code {
+    font-family: "JetBrains Mono", "Fira Code", "DejaVu Sans Mono", "Noto Sans Mono CJK SC", monospace;
+  }
+  pre {
+    position: relative;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 13px;
+    line-height: 1.65;
+    overflow-x: auto;
+    margin: 14px 0;
+    color: var(--code-text);
+  }
+  pre .lang-label {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--border-light);
+    padding: 1px 8px;
+    border-radius: 5px;
+    letter-spacing: .5px;
+  }
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #e06c5e;
+  }
+  [data-theme="dark"] code { color: #f87171; }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* ===== 公式 ===== */
+  .formula {
+    background: var(--formula-bg);
+    border: 1px solid var(--formula-border);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 14px 0;
+    font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace;
+    font-size: 14px;
+    text-align: center;
+    color: var(--formula-text);
+    overflow-x: auto;
+  }
+
+  /* ===== 分类栏 ===== */
+  .category-bar {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 18px;
+    margin: 30px 0 14px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .category-bar::before {
+    content: "";
+    width: 4px; height: 16px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* ===== 表格 ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13.5px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  th {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  td {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--bg-secondary); }
+  td code { white-space: normal; word-break: break-word; }
+
+  /* ===== 提示框 ===== */
+  .tip-box, .warn-box {
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 16px 0;
+  }
+  .tip-box {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+  }
+  .tip-box .tip-title {
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .warn-box {
+    background: #fef5e7;
+    border-left: 4px solid #f59e0b;
+  }
+  [data-theme="dark"] .warn-box { background: #422006; border-left-color: #f59e0b; }
+  .warn-box .warn-title {
+    font-weight: 700;
+    color: #d97706;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  [data-theme="dark"] .warn-box .warn-title { color: #fbbf24; }
+
+  /* ===== 列表 ===== */
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  /* ===== 自测清单 ===== */
+  .checklist { list-style: none; padding-left: 4px; }
+  .checklist li { margin: 6px 0; }
+  .checklist li::before {
+    content: "☐";
+    color: var(--accent);
+    font-weight: 700;
+    margin-right: 8px;
+  }
+
+  .status-done { color: #22c55e; font-weight: 700; }
+  .status-todo { color: #f59e0b; font-weight: 700; }
+
+  /* ===== 回到顶部 ===== */
+  .back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 44px; height: 44px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+    z-index: 80;
+  }
+  .back-to-top.visible { opacity: 1; visibility: visible; }
+  .back-to-top:hover { transform: translateY(-2px); }
+
+  /* ===== 阅读进度条 ===== */
+  .progress-bar {
+    position: fixed;
+    top: 60px; left: 0;
+    height: 3px;
+    background: var(--accent);
+    z-index: 95;
+    transition: width 0.1s;
+  }
+
+  /* ===== 遮罩层（移动端） ===== */
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 60px; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 85;
+  }
+  .overlay.show { display: block; }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 900px) {
+    .menu-btn { display: flex; }
+    .sidebar {
+      transform: translateX(-100%);
+      box-shadow: var(--shadow-lg);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; padding: 24px 20px 60px; }
+    .article-header h1 { font-size: 24px; }
+    h2.chapter { font-size: 19px; padding: 12px 16px; }
+    h2.chapter .ch-num { width: 30px; height: 30px; font-size: 14px; }
+    .topbar-title .sub { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .main { padding: 16px 14px 50px; }
+    .article-meta { gap: 12px; font-size: 12px; }
+    pre { font-size: 12px; padding: 12px 14px; }
+    table { font-size: 12px; }
+    th, td { padding: 7px 10px; }
+  }
+
+  /* ===== 滚动条美化 ===== */
+  .sidebar::-webkit-scrollbar { width: 5px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  pre::-webkit-scrollbar { height: 6px; }
+  pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- 阅读进度条 -->
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+
+<!-- 顶部导航 -->
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menuBtn" title="目录">☰</button>
+  <div class="topbar-title">
+    <span class="dot"></span>
+    ROS2 Parameters + YAML 练习笔记
+    <span class="sub">实操记录 · 树莓派 ROS2 Humble</span>
+  </div>
+  <div class="topbar-actions">
+    <a class="icon-btn" href="../" title="返回笔记主页" style="text-decoration:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+    </a>
+    <a class="icon-btn" href="https://github.com/Ian-cyy" target="_blank" title="GitHub: Ian-cyy" style="text-decoration:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+    </a>
+    <button class="icon-btn" id="themeBtn" title="切换深色模式">🌙</button>
+  </div>
+</header>
+
+<!-- 遮罩层 -->
+<div class="overlay" id="overlay"></div>
+
+<!-- 侧边栏目录 -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h3>📑 章节目录</h3>
+  </div>
+  <ul class="toc-list">
+    <li><a href="#ch1" data-target="ch1"><span class="toc-num">一</span>环境与文件清单</a></li>
+    <li><a href="#ch2" data-target="ch2"><span class="toc-num">二</span>我写的代码</a></li>
+    <li><a href="#ch3" data-target="ch3"><span class="toc-num">三</span>实操步骤与验证结果</a></li>
+    <li><a href="#ch4" data-target="ch4"><span class="toc-num">四</span>参数优先级</a></li>
+    <li><a href="#ch5" data-target="ch5"><span class="toc-num">五</span>命令速查</a></li>
+    <li><a href="#ch6" data-target="ch6"><span class="toc-num">六</span>踩坑记录</a></li>
+    <li><a href="#ch7" data-target="ch7"><span class="toc-num">七</span>自测清单</a></li>
+  </ul>
+  <div class="sidebar-footer">
+    工程：~/ros2_learn_ws_01<br>
+    环境：树莓派 · ROS2 Humble<br>
+    共 7 章 · 实操记录<br><br>
+    <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">
+      → GitHub: Ian-cyy
+    </a>
+  </div>
+</aside>
+
+<!-- 主内容 -->
+<main class="main">
+  <div class="content-wrapper">
+
+    <!-- 文章头部 -->
+    <div class="article-header">
+      <span class="tag">ROS2 · PARAMETERS · YAML</span>
+      <h1>ROS2 Parameters + YAML 练习笔记</h1>
+      <p class="subtitle">实操记录：声明 / 读取 / 回调 / YAML 加载 / 优先级 / 踩坑</p>
+      <div class="article-meta">
+        <span>🗓 2026-09-22</span>
+        <span>🖥 树莓派 + ROS2 Humble</span>
+        <span>📦 python_launch_demo</span>
+        <span>📝 7 章</span>
+        <span>👤 <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">GitHub @Ian-cyy</a></span>
+      </div>
+    </div>
+
+    <!-- 第一章 -->
+    <h2 class="chapter" id="ch1"><span class="ch-num">一</span>环境与文件清单</h2>
+    <p>本次在 launch 练习的工作空间上继续：给 <code>talker</code> 加参数回调、新增 YAML 参数文件、新增 launch 加载 YAML 示例。</p>
+    <pre><code class="language-text">ros2_learn_ws_01/
+└── src/python_launch_demo/
+    ├── python_launch_demo/
+    │   ├── talker.py          ← 本次改：加了参数回调
+    │   └── listener.py
+    ├── config/
+    │   └── talker.yaml        ← 本次新增：YAML 参数文件
+    ├── launch/
+    │   ├── 01~05 (launch 部分已完成)
+    │   └── 06_cfg_yaml_from.launch.py   ← 本次新增：launch 加载 YAML
+    └── setup.py               ← 本次改：注册 config 目录</code></pre>
+    <h4>编译运行</h4>
+    <pre><code class="language-bash">cd ~/ros2_learn_ws_01
+colcon build --symlink-install
+source install/setup.bash</code></pre>
+
+    <!-- 第二章 -->
+    <h2 class="chapter" id="ch2"><span class="ch-num">二</span>我写的代码</h2>
+
+    <h3>1.1 talker.py（带参数回调，最终版）</h3>
+    <pre><code class="language-python">import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+from rcl_interfaces.msg import SetParametersResult
+
+
+class Talker(Node):
+    def __init__(self):
+        super().__init__('talker')
+        self.declare_parameter('msg', 'hello,ros2')
+        self.declare_parameter('rate_hz', 1.0)
+        self.pub = self.create_publisher(String, 'chatter', 10)
+        rate = self.get_parameter('rate_hz').value
+        self.timer = self.create_timer(1.0 / rate, self.tick)
+        self.add_on_set_parameters_callback(self.on_param_change)
+        self.count = 0
+
+    def on_param_change(self, params):
+        for p in params:
+            self.get_logger().info(f'参数改变:{p.name} = {p.value}')
+            if p.name == 'rate_hz':
+                self.timer.cancel()
+                self.timer = self.create_timer(1.0 / p.value, self.tick)
+            elif p.name == 'msg':
+                pass
+        return SetParametersResult(successful=True)
+
+    def tick(self):
+        text = f"{self.get_parameter('msg').value} #{self.count}"
+        self.pub.publish(String(data=text))
+        self.get_logger().info(f'publish : {text}')
+        self.count += 1
+
+
+def main():
+    rclpy.init()
+    node = Talker()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    node.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()</code></pre>
+    <div class="tip-box">
+      <div class="tip-title">💡 要点</div>
+      <ul>
+        <li><code>declare_parameter</code> 声明（默认 1.0）</li>
+        <li>回调里 <code>rate_hz</code> 变化 → <code>timer.cancel()</code> + 重建（<strong>这样才真正生效</strong>）</li>
+        <li><code>msg</code> 每次 tick 重新读 → 改文字自动生效，不需要重建什么</li>
+        <li>返回 <code>SetParametersResult(successful=True)</code>；返回 False 可拒绝修改</li>
+      </ul>
+    </div>
+
+    <h3>1.2 config/talker.yaml</h3>
+    <pre><code class="language-yaml">/talker:
+  ros__parameters:
+    msg: "from yaml"
+    rate_hz: 2.0</code></pre>
+    <div class="tip-box">
+      <div class="tip-title">💡 要点</div>
+      <ul>
+        <li><code>/talker:</code> 节点全名，必须和 Node 的 <code>name</code> 一致（不一致会<strong>静默忽略</strong>）</li>
+        <li><code>ros__parameters</code> 是<strong>双下划线</strong></li>
+        <li>缩进用空格</li>
+      </ul>
+    </div>
+
+    <h3>1.3 launch/06_cfg_yaml_from.launch.py</h3>
+    <pre><code class="language-python">from launch import LaunchDescription
+from launch_ros.actions import Node
+from launch.substitutions import PathJoinSubstitution
+from launch_ros.substitutions import FindPackageShare
+
+
+def generate_launch_description():
+    return LaunchDescription([
+        Node(
+            package='python_launch_demo',
+            executable='talker',
+            name='talker',
+            output='screen',
+            parameters=[
+                PathJoinSubstitution([
+                    FindPackageShare('python_launch_demo'), 'config', 'talker.yaml',
+                ]),
+                {'rate_hz': 3.0},        # ← 字典在后面, 覆盖 YAML
+            ],
+        )
+    ])</code></pre>
+
+    <h3>1.4 setup.py（关键改动）</h3>
+    <pre><code class="language-python">data_files=[
+    ('share/ament_index/resource_index/packages',
+        ['resource/' + package_name]),
+    ('share/' + package_name, ['package.xml']),
+    (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
+    (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),   # ← 新增
+],</code></pre>
+    <div class="warn-box">
+      <div class="warn-title">⚠️ 不加这行</div>
+      <code>install/.../share/python_launch_demo/config/</code> 不存在 → launch 里 <code>FindPackageShare(...)/config/talker.yaml</code> 找不到 → 节点启动失败。
+    </div>
+
+    <!-- 第三章 -->
+    <h2 class="chapter" id="ch3"><span class="ch-num">三</span>实操步骤与验证结果</h2>
+
+    <h3>第 1 步：声明 + 读取</h3>
+    <pre><code class="language-bash">ros2 run python_launch_demo talker     # 1Hz, "hello,ros2 #n"</code></pre>
+
+    <h3>第 2 步：命令行查看/修改</h3>
+    <pre><code class="language-bash">ros2 param list /talker                # msg, rate_hz, use_sim_time
+ros2 param get /talker rate_hz         # 1.0
+ros2 param set /talker rate_hz 5.0     # 值变 5.0
+ros2 param get /talker rate_hz         # 5.0 ← 值确实改了</code></pre>
+    <div class="warn-box">
+      <div class="warn-title">★ 关键观察</div>
+      值改成 5.0 了，但<strong>发布频率还是 1Hz</strong> → "set 成功 ≠ 行为改变"（原因：timer 只在 <code>__init__</code> 里创建过一次）
+    </div>
+
+    <h3>第 3 步：参数回调（真正生效）</h3>
+    <p>加上回调后重新 build：</p>
+    <pre><code class="language-bash">ros2 param set /talker rate_hz 5.0
+# 终端打印: 参数改变:rate_hz = 5.0
+# 频率立刻变 5Hz ✅
+ros2 param set /talker msg world
+# 下一条消息: "world #n" ✅（msg 每 tick 重读，本来就即时）</code></pre>
+
+    <h3>第 4 步：YAML 文件</h3>
+    <pre><code class="language-bash"># 注意路径：相对路径是相对"当前目录"的
+ros2 run python_launch_demo talker --ros-args --params-file src/python_launch_demo/config/talker.yaml
+# 输出: "from yaml #n", 2Hz ✅</code></pre>
+
+    <h3>第 5 步：launch 加载 YAML</h3>
+    <pre><code class="language-bash">ros2 launch python_launch_demo 06_cfg_yaml_from.launch.py
+# 输出: "from yaml #n", 3Hz ✅（msg 来自 YAML，rate_hz 被字典覆盖）</code></pre>
+
+    <h3>第 6 步：dump / load</h3>
+    <pre><code class="language-bash">ros2 param dump /talker > /tmp/talker_saved.yaml
+ros2 param load /talker /tmp/talker_saved.yaml</code></pre>
+
+    <h3>安装验证（已确认）</h3>
+    <pre><code class="language-text">install/python_launch_demo/share/python_launch_demo/config/talker.yaml      ✅
+install/python_launch_demo/share/python_launch_demo/launch/06_cfg_yaml_from.launch.py  ✅</code></pre>
+
+    <!-- 第四章 -->
+    <h2 class="chapter" id="ch4"><span class="ch-num">四</span>参数优先级（实测结论）</h2>
+    <div class="formula">launch 命令行参数 ＞ Node parameters 字典 ＞ YAML 文件 ＞ declare 默认值</div>
+    <p>实测：YAML 写 <code>rate_hz: 2.0</code>，launch 字典写 <code>3.0</code> → 最终 <strong>3.0</strong> ✅</p>
+
+    <!-- 第五章 -->
+    <h2 class="chapter" id="ch5"><span class="ch-num">五</span>命令速查</h2>
+    <table>
+      <tr><th>命令</th><th>作用</th></tr>
+      <tr><td><code>ros2 param list /talker</code></td><td>列出参数</td></tr>
+      <tr><td><code>ros2 param get /talker rate_hz</code></td><td>读</td></tr>
+      <tr><td><code>ros2 param set /talker rate_hz 5.0</code></td><td>改</td></tr>
+      <tr><td><code>ros2 param describe /talker rate_hz</code></td><td>看类型/说明</td></tr>
+      <tr><td><code>ros2 param dump /talker</code></td><td>导出 YAML</td></tr>
+      <tr><td><code>ros2 param load /talker xx.yaml</code></td><td>导入</td></tr>
+      <tr><td><code>ros2 run 包 节点 --ros-args --params-file xx.yaml</code></td><td>启动时加载 YAML</td></tr>
+      <tr><td><code>ros2 run 包 节点 --ros-args -p 名:=值</code></td><td>启动时设单个参数</td></tr>
+    </table>
+
+    <!-- 第六章 -->
+    <h2 class="chapter" id="ch6"><span class="ch-num">六</span>踩坑记录（本次实际遇到）</h2>
+    <table>
+      <tr><th>#</th><th>现象</th><th>原因</th><th>解决</th></tr>
+      <tr><td>1</td><td><code>Error opening YAML file</code>（Failed to parse global arguments）</td><td><code>--params-file config/talker.yaml</code> 是<strong>相对路径</strong>，当前目录是工作空间根目录，没有这个文件</td><td>用 <code>src/python_launch_demo/config/talker.yaml</code>，或先 cd 到包目录</td></tr>
+      <tr><td>2</td><td>launch 加载 YAML 找不到文件</td><td>setup.py <strong>没注册 config 目录</strong>，install 空间没有 config/</td><td>data_files 加 <code>(os.path.join('share', package_name, 'config'), glob('config/*.yaml'))</code> + 重新 build</td></tr>
+      <tr><td>3</td><td><code>set</code> 后 <code>get</code> 是 5.0，但频率没变</td><td>参数值变了，但 timer 只在 <code>__init__</code> 创建一次，没人读新值</td><td>加 <code>on_set_parameters_callback</code> 重建 timer</td></tr>
+      <tr><td>4</td><td>新开的 talker 还是 1.0</td><td>① 参数是<strong>每个节点实例私有</strong>；② 新实例用 declare 默认值启动</td><td>想以非默认值启动：<code>-p rate_hz:=5.0</code> 或 YAML/launch</td></tr>
+      <tr><td>5</td><td>改了 setup.py / 新增文件后命令没变化</td><td>没重新 build / 没 source</td><td><code>colcon build --symlink-install &amp;&amp; source install/setup.bash</code></td></tr>
+    </table>
+
+    <div class="warn-box">
+      <div class="warn-title">⚠️ 易踩但本次没踩的坑（记住）</div>
+      <ul>
+        <li><code>ros__parameters</code> 写成单下划线 → 静默失效</li>
+        <li>YAML 的节点名 <code>/talker</code> 和 Node 的 <code>name</code> 不一致 → 静默忽略</li>
+        <li>YAML 里 <code>rate_hz: "2.0"</code>（带引号）→ 字符串类型不匹配</li>
+        <li><code>rate_hz</code> 被设成 0/负数 → <code>1.0/0</code> 抛异常（可在回调里校验并返回 <code>successful=False</code> 拒绝）</li>
+      </ul>
+    </div>
+
+    <!-- 第七章 -->
+    <h2 class="chapter" id="ch7"><span class="ch-num">七</span>自测清单</h2>
+    <ul class="checklist">
+      <li>会用 declare/get 读写参数</li>
+      <li>知道"没声明"的参数设不进去</li>
+      <li>会用 ros2 param list/get/set/describe/dump/load</li>
+      <li>理解"set 成功 ≠ 行为改变"，会用回调让改动生效</li>
+      <li>会写 YAML（节点名 + ros__parameters）</li>
+      <li>会 --ros-args --params-file 加载（注意路径）</li>
+      <li>会在 launch 里加载 YAML + 字典覆盖，知道优先级</li>
+      <li>config/ 已在 setup.py data_files 注册</li>
+      <li>理解参数是"实例私有"的，重启回默认值</li>
+    </ul>
+
+    <div class="tip-box" style="margin-top:40px;">
+      <div class="tip-title">🚀 下一步（第三部分）</div>
+      <p style="margin:6px 0 0 0;"><strong>TF2 + URDF + RViz2</strong> · 文件：<code>ROS2_第三部分_TF2_URDF_RViz学习流程.md</code></p>
+    </div>
+
+  </div>
+</main>
+
+<!-- 回到顶部按钮 -->
+<button class="back-to-top" id="backToTop" title="回到顶部">↑</button>
+
+<script>
+  // ===== 深色模式切换 =====
+  const themeBtn = document.getElementById('themeBtn');
+  const html = document.documentElement;
+  const savedTheme = localStorage.getItem('params-yaml-theme');
+  if (savedTheme === 'dark') {
+    html.setAttribute('data-theme', 'dark');
+    themeBtn.textContent = '☀️';
+  }
+  themeBtn.addEventListener('click', () => {
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      themeBtn.textContent = '🌙';
+      localStorage.setItem('params-yaml-theme', 'light');
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      themeBtn.textContent = '☀️';
+      localStorage.setItem('params-yaml-theme', 'dark');
+    }
+  });
+
+  // ===== 移动端侧边栏 =====
+  const menuBtn = document.getElementById('menuBtn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  menuBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+  document.querySelectorAll('.toc-list a').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 900) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+      }
+    });
+  });
+
+  // ===== 滚动监听：高亮当前章节 + 进度条 + 回到顶部 =====
+  const tocLinks = document.querySelectorAll('.toc-list a');
+  const chapters = document.querySelectorAll('h2.chapter');
+  const progressBar = document.getElementById('progressBar');
+  const backToTop = document.getElementById('backToTop');
+
+  function updateActiveChapter() {
+    let current = '';
+    const scrollPos = window.scrollY + 120;
+    chapters.forEach(ch => {
+      if (ch.offsetTop <= scrollPos) {
+        current = ch.id;
+      }
+    });
+    tocLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('data-target') === current) {
+        link.classList.add('active');
+      }
+    });
+  }
+
+  function updateProgress() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = progress + '%';
+    if (scrollTop > 400) {
+      backToTop.classList.add('visible');
+    } else {
+      backToTop.classList.remove('visible');
+    }
+  }
+
+  window.addEventListener('scroll', () => {
+    updateActiveChapter();
+    updateProgress();
+  }, { passive: true });
+
+  backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  updateActiveChapter();
+  updateProgress();
+</script>
+
+</body>
+</html>
