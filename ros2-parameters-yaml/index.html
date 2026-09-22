@@ -880,12 +880,15 @@ install/python_launch_demo/share/python_launch_demo/launch/06_cfg_yaml_from.laun
 
   function updateActiveChapter() {
     let current = '';
-    const scrollPos = window.scrollY + 120;
+    const scrollPos = window.scrollY + 170;
     chapters.forEach(ch => {
       if (ch.offsetTop <= scrollPos) {
         current = ch.id;
       }
     });
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      current = chapters[chapters.length - 1].id;
+    }
     tocLinks.forEach(link => {
       link.classList.remove('active');
       if (link.getAttribute('data-target') === current) {
