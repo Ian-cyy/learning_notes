@@ -179,8 +179,23 @@
     .layout{flex-direction:column; padding:20px 18px 50px;}
     .toc{position:static; flex:none; max-height:none; width:100%;}
     .hero{padding:24px 18px;}
-    .hero .gh-btn{position:static; transform:none; margin-top:12px;}
+    .hero h1{font-size:22px;}
+    .hero .hero-actions{position:static; transform:none; right:auto; top:auto; margin-top:14px; flex-wrap:wrap;}
+    .hero .gh-btn{position:static; transform:none; margin-top:0;}
     section.block{padding:20px 16px;}
+  }
+
+  @media (max-width:480px){
+    .hero{padding:20px 14px;}
+    .hero h1{font-size:19px;}
+    .hero .sub{font-size:13px;}
+    .hero .hero-actions{width:100%;}
+    .hero .hero-actions .gh-btn{flex:1 1 auto; justify-content:center;}
+    .layout{padding:16px 12px 40px;}
+    section.block{padding:16px 12px;}
+    pre{font-size:12px; padding:12px 14px;}
+    table{min-width:0;}
+    td code{white-space:normal;}
   }
 
   @media print{
