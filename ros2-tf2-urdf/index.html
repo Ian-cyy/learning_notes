@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROS2 第三部分：TF2 + URDF + RViz2 学习流程</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f6f8fb;
+    --bg-card: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --primary: #1a2744;
+    --primary-light: #2c4a7c;
+    --accent: #4a9eff;
+    --accent-light: #e8f2ff;
+    --code-bg: #f4f6fa;
+    --code-text: #2c3e50;
+    --formula-bg: #faf8f2;
+    --formula-border: #e8dcc0;
+    --formula-text: #5a4a2a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+    --sidebar-width: 280px;
+    --content-max: 860px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --text: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border: #334155;
+    --border-light: #1e293b;
+    --primary: #3b5998;
+    --primary-light: #4a6fa5;
+    --accent: #60a5fa;
+    --accent-light: #1e3a5f;
+    --code-bg: #1e293b;
+    --code-text: #cbd5e1;
+    --formula-bg: #1e293b;
+    --formula-border: #475569;
+    --formula-text: #fbbf24;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg);
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ===== 顶部导航栏 ===== */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.85);
+  }
+  [data-theme="dark"] .topbar { background: rgba(15,23,42,0.85); }
+
+  .topbar-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-title .dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .topbar-title .sub {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 8px;
+  }
+
+  .topbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .icon-btn {
+    width: 36px; height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .menu-btn { display: none; }
+
+  /* ===== 侧边栏 ===== */
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: var(--sidebar-width);
+    height: calc(100vh - 60px);
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px 0;
+    z-index: 90;
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar-header {
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sidebar-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .toc-list { list-style: none; padding: 0 12px; }
+  .toc-list li { margin: 2px 0; }
+  .toc-list a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13.5px;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+  }
+  .toc-list a:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+  .toc-list a.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  .toc-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    background: var(--border);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc-list a.active .toc-num {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ===== 主内容区 ===== */
+  .main {
+    margin-left: var(--sidebar-width);
+    margin-top: 60px;
+    padding: 40px 48px 80px;
+    min-height: calc(100vh - 60px);
+  }
+
+  .content-wrapper {
+    max-width: var(--content-max);
+    margin: 0 auto;
+  }
+
+  /* ===== 文章头部 ===== */
+  .article-header {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid var(--border);
+  }
+  .article-header .tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+  .article-header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .article-header .subtitle {
+    font-size: 17px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+  }
+  .article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .article-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* ===== 章节标题 ===== */
+  h2.chapter {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 50px 0 24px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: #fff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+    scroll-margin-top: 80px;
+  }
+  h2.chapter .ch-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 32px 0 14px;
+    padding-left: 14px;
+    border-left: 4px solid var(--accent);
+    scroll-margin-top: 80px;
+  }
+
+  h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-light);
+    margin: 22px 0 10px;
+    scroll-margin-top: 80px;
+  }
+
+  p { margin: 10px 0; text-align: justify; }
+
+  /* ===== 代码块 ===== */
+  pre, code {
+    font-family: "JetBrains Mono", "Fira Code", "DejaVu Sans Mono", "Noto Sans Mono CJK SC", monospace;
+  }
+  pre {
+    position: relative;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 13px;
+    line-height: 1.65;
+    overflow-x: auto;
+    margin: 14px 0;
+    color: var(--code-text);
+  }
+  pre .lang-label {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--border-light);
+    padding: 1px 8px;
+    border-radius: 5px;
+    letter-spacing: .5px;
+  }
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #e06c5e;
+  }
+  [data-theme="dark"] code { color: #f87171; }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* ===== 公式 ===== */
+  .formula {
+    background: var(--formula-bg);
+    border: 1px solid var(--formula-border);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 14px 0;
+    font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace;
+    font-size: 14px;
+    text-align: center;
+    color: var(--formula-text);
+    overflow-x: auto;
+  }
+
+  /* ===== 分类栏 ===== */
+  .category-bar {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 18px;
+    margin: 30px 0 14px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .category-bar::before {
+    content: "";
+    width: 4px; height: 16px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* ===== 表格 ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13.5px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  th {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  td {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--bg-secondary); }
+  td code { white-space: normal; word-break: break-word; }
+
+  /* ===== 提示框 ===== */
+  .tip-box, .warn-box {
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 16px 0;
+  }
+  .tip-box {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+  }
+  .tip-box .tip-title {
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .warn-box {
+    background: #fef5e7;
+    border-left: 4px solid #f59e0b;
+  }
+  [data-theme="dark"] .warn-box { background: #422006; border-left-color: #f59e0b; }
+  .warn-box .warn-title {
+    font-weight: 700;
+    color: #d97706;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  [data-theme="dark"] .warn-box .warn-title { color: #fbbf24; }
+
+  /* ===== 列表 ===== */
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  /* ===== 自测清单 ===== */
+  .checklist { list-style: none; padding-left: 4px; }
+  .checklist li { margin: 6px 0; }
+  .checklist li::before {
+    content: "☐";
+    color: var(--accent);
+    font-weight: 700;
+    margin-right: 8px;
+  }
+
+  .status-done { color: #22c55e; font-weight: 700; }
+  .status-todo { color: #f59e0b; font-weight: 700; }
+
+  /* ===== 回到顶部 ===== */
+  .back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 44px; height: 44px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+    z-index: 80;
+  }
+  .back-to-top.visible { opacity: 1; visibility: visible; }
+  .back-to-top:hover { transform: translateY(-2px); }
+
+  /* ===== 阅读进度条 ===== */
+  .progress-bar {
+    position: fixed;
+    top: 60px; left: 0;
+    height: 3px;
+    background: var(--accent);
+    z-index: 95;
+    transition: width 0.1s;
+  }
+
+  /* ===== 遮罩层（移动端） ===== */
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 60px; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 85;
+  }
+  .overlay.show { display: block; }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 900px) {
+    .menu-btn { display: flex; }
+    .sidebar {
+      transform: translateX(-100%);
+      box-shadow: var(--shadow-lg);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; padding: 24px 20px 60px; }
+    .article-header h1 { font-size: 24px; }
+    h2.chapter { font-size: 19px; padding: 12px 16px; }
+    h2.chapter .ch-num { width: 30px; height: 30px; font-size: 14px; }
+    .topbar-title .sub { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .main { padding: 16px 14px 50px; }
+    .article-meta { gap: 12px; font-size: 12px; }
+    pre { font-size: 12px; padding: 12px 14px; }
+    table { font-size: 12px; }
+    th, td { padding: 7px 10px; }
+  }
+
+  /* ===== 滚动条美化 ===== */
+  .sidebar::-webkit-scrollbar { width: 5px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  pre::-webkit-scrollbar { height: 6px; }
+  pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- 阅读进度条 -->
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+
+<!-- 顶部导航 -->
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menuBtn" title="目录">☰</button>
+  <div class="topbar-title">
+    <span class="dot"></span>
+    ROS2 TF2 + URDF + RViz2
+    <span class="sub">第三部分学习流程 · ROS2 Humble</span>
+  </div>
+  <div class="topbar-actions">
+    <a class="icon-btn" href="../" title="返回笔记主页" style="text-decoration:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+    </a>
+    <a class="icon-btn" href="https://github.com/Ian-cyy" target="_blank" title="GitHub: Ian-cyy" style="text-decoration:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+    </a>
+    <button class="icon-btn" id="themeBtn" title="切换深色模式">🌙</button>
+  </div>
+</header>
+
+<!-- 遮罩层 -->
+<div class="overlay" id="overlay"></div>
+
+<!-- 侧边栏目录 -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h3>📑 章节目录</h3>
+  </div>
+  <ul class="toc-list">
+    <li><a href="#ch0" data-target="ch0"><span class="toc-num">零</span>为什么需要 TF2</a></li>
+    <li><a href="#ch1" data-target="ch1"><span class="toc-num">一</span>命令行体验</a></li>
+    <li><a href="#ch2" data-target="ch2"><span class="toc-num">二</span>静态 TF 广播</a></li>
+    <li><a href="#ch3" data-target="ch3"><span class="toc-num">三</span>动态 TF 广播</a></li>
+    <li><a href="#ch4" data-target="ch4"><span class="toc-num">四</span>TF 监听</a></li>
+    <li><a href="#ch5" data-target="ch5"><span class="toc-num">五</span>URDF 机器人模型</a></li>
+    <li><a href="#ch6" data-target="ch6"><span class="toc-num">六</span>三件套 + RViz2</a></li>
+    <li><a href="#ch7" data-target="ch7"><span class="toc-num">七</span>综合练习</a></li>
+    <li><a href="#ch8" data-target="ch8"><span class="toc-num">八</span>命令速查</a></li>
+    <li><a href="#ch9" data-target="ch9"><span class="toc-num">九</span>踩坑清单</a></li>
+    <li><a href="#ch10" data-target="ch10"><span class="toc-num">十</span>学完自测</a></li>
+  </ul>
+  <div class="sidebar-footer">
+    工程：~/ros2_learn_ws_01<br>
+    环境：树莓派 · ROS2 Humble<br>
+    共 11 章 · 学习流程<br><br>
+    <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">
+      → GitHub: Ian-cyy
+    </a>
+  </div>
+</aside>
+
+<!-- 主内容 -->
+<main class="main">
+  <div class="content-wrapper">
+
+    <!-- 文章头部 -->
+    <div class="article-header">
+      <span class="tag">ROS2 · TF2 · URDF · RVIZ2</span>
+      <h1>ROS2 第三部分：TF2 + URDF + RViz2 学习流程</h1>
+      <p class="subtitle">坐标变换 → 机器人模型 → 可视化 · 每一步都亲手敲 + 命令验证</p>
+      <div class="article-meta">
+        <span>🗓 2026-09-22</span>
+        <span>🖥 树莓派 + ROS2 Humble</span>
+        <span>📦 python_launch_demo</span>
+        <span>📝 11 章</span>
+        <span>👤 <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">GitHub @Ian-cyy</a></span>
+      </div>
+    </div>
+
+    <!-- 第零章 -->
+    <h2 class="chapter" id="ch0"><span class="ch-num">零</span>为什么需要 TF2（10 分钟概念）</h2>
+    <p>机器人身上有一堆坐标系：</p>
+    <pre><code class="language-text">map（地图）
+ └ odom（里程计）
+    └ base_link（车体）
+       ├ camera_link（相机）
+       ├ laser（雷达）
+       └ arm_base → link1 → link2 → ... → gripper（机械臂链条）</code></pre>
+    <ul>
+      <li><strong>TF2 = ROS2 的坐标变换系统</strong>：记录"谁相对谁、在哪、朝向如何"</li>
+      <li>两种数据：<strong>静态 TF</strong>（装死的，如相机相对车体，发一次即可）+ <strong>动态 TF</strong>（会动的，如机械臂关节，要持续发）</li>
+      <li>两个角色：<strong>广播者（Broadcaster）</strong>发布变换；<strong>监听者（Listener）</strong>查询"A 到 B 怎么转"</li>
+      <li>实际用途：相机看到的目标在 <code>camera_link</code> 下，要转到 <code>base_link</code> 才能让车去对准——<strong>你们 C70 项目的核心数学就是这个</strong></li>
+    </ul>
+
+    <!-- 第一章 -->
+    <h2 class="chapter" id="ch1"><span class="ch-num">一</span>命令行先体验一把（不用写代码）</h2>
+    <pre><span class="lang-label">bash</span><code class="language-bash"># 终端A：手动发一个静态 TF（world → base_link，抬到 z=1 米）
+ros2 run tf2_ros static_transform_publisher --x 0 --y 0 --z 1 --yaw 0 --pitch 0 --roll 0 --frame-id world --child-frame-id base_link
+
+# 终端B：查询 world → base_link
+ros2 run tf2_ros tf2_echo world base_link
+# 看到 translation: [0, 0, 1] 就对了
+
+# 看 TF 树（生成 frames.pdf，需要 graphviz）
+sudo apt install graphviz
+ros2 run tf2_tools view_frames
+# 当前目录出现 frames.pdf，打开看树结构
+
+# 看原始话题
+ros2 topic echo /tf_static</code></pre>
+    <div class="tip-box">
+      <div class="tip-title">✅ 检查点</div>
+      能解释 <code>/tf</code>（动态）和 <code>/tf_static</code>（静态）的区别。
+    </div>
+
+    <!-- 第二章 -->
+    <h2 class="chapter" id="ch2"><span class="ch-num">二</span>写一个静态 TF 广播节点</h2>
+    <p>在 <code>python_launch_demo</code> 里新增 <code>static_tf_demo.py</code>：</p>
+    <pre><span class="lang-label">python</span><code class="language-python">import rclpy
+from rclpy.node import Node
+from tf2_ros import StaticTransformBroadcaster
+from geometry_msgs.msg import TransformStamped
+
+
+class StaticTfDemo(Node):
+    def __init__(self):
+        super().__init__('static_tf_demo')
+        self.broadcaster = StaticTransformBroadcaster(self)
+
+        t = TransformStamped()
+        t.header.stamp = self.get_clock().now().to_msg()
+        t.header.frame_id = 'base_link'          # 父
+        t.child_frame_id = 'camera_link'         # 子
+        t.transform.translation.x = 0.10         # 相机装在前方10cm
+        t.transform.translation.y = 0.0
+        t.transform.translation.z = 0.50         # 高50cm
+        t.transform.rotation.w = 1.0             # 无旋转（单位四元数）
+        self.broadcaster.sendTransform(t)
+        self.get_logger().info('static tf: base_link -> camera_link 已发布')
+
+
+def main():
+    rclpy.init()
+    node = StaticTfDemo()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    node.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()</code></pre>
+    <p>注册（setup.py 的 <code>console_scripts</code>）：</p>
+    <pre><span class="lang-label">python</span><code class="language-python">'static_tf_demo = python_launch_demo.static_tf_demo:main',</code></pre>
+    <p>验证：</p>
+    <pre><span class="lang-label">bash</span><code class="language-bash">colcon build --symlink-install && source install/setup.bash
+ros2 run python_launch_demo static_tf_demo
+# 另开终端
+ros2 run tf2_ros tf2_echo base_link camera_link
+ros2 topic echo /tf_static --once</code></pre>
+    <div class="tip-box">
+      <div class="tip-title">💡 要点</div>
+      静态 TF 用 <code>StaticTransformBroadcaster</code>（发一次就够，latched）；<code>frame_id</code>=父、<code>child_frame_id</code>=子。
+    </div>
+
+    <!-- 第三章 -->
+    <h2 class="chapter" id="ch3"><span class="ch-num">三</span>动态 TF 广播（会动的）</h2>
+    <p>新增 <code>tf_mover.py</code>：让 camera_link 绕 z 轴来回摆：</p>
+    <pre><span class="lang-label">python</span><code class="language-python">import math
+
+import rclpy
+from rclpy.node import Node
+from tf2_ros import TransformBroadcaster
+from geometry_msgs.msg import TransformStamped
+
+
+class TfMover(Node):
+    def __init__(self):
+        super().__init__('tf_mover')
+        self.br = TransformBroadcaster(self)
+        self.t = 0.0
+        self.create_timer(0.1, self.tick)        # 10Hz
+
+    def tick(self):
+        self.t += 0.1
+        yaw = 0.6 * math.sin(self.t)             # 摆动 ±0.6 rad
+
+        msg = TransformStamped()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = 'base_link'
+        msg.child_frame_id = 'camera_link'
+        msg.transform.translation.x = 0.10
+        msg.transform.translation.z = 0.50
+        msg.transform.rotation.z = math.sin(yaw / 2)   # 绕 z 的四元数
+        msg.transform.rotation.w = math.cos(yaw / 2)
+        self.br.sendTransform(msg)
+
+
+def main():
+    rclpy.init()
+    node = TfMover()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    node.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()</code></pre>
+    <p>验证：</p>
+    <pre><span class="lang-label">bash</span><code class="language-bash">ros2 run python_launch_demo tf_mover
+ros2 run tf2_ros tf2_echo base_link camera_link    # 数值在动</code></pre>
+    <div class="tip-box">
+      <div class="tip-title">💡 要点</div>
+      动态 TF 必须<strong>持续发</strong>（10Hz 以上）；每帧带时间戳。
+    </div>
+
+    <!-- 第四章 -->
+    <h2 class="chapter" id="ch4"><span class="ch-num">四</span>TF 监听（查询变换，★最实用）</h2>
+    <p>新增 <code>tf_listener.py</code>：</p>
+    <pre><span class="lang-label">python</span><code class="language-python">import rclpy
+from rclpy.node import Node
+from rclpy.time import Time
+from tf2_ros import Buffer, TransformListener
+
+
+class TfListener(Node):
+    def __init__(self):
+        super().__init__('tf_listener')
+        self.buffer = Buffer()
+        self.listener = TransformListener(self.buffer, self)
+        self.create_timer(1.0, self.tick)
+
+    def tick(self):
+        try:
+            t = self.buffer.lookup_transform('base_link', 'camera_link', Time())
+            tr = t.transform.translation
+            self.get_logger().info(f'相机在车体系: x={tr.x:.3f} y={tr.y:.3f} z={tr.z:.3f}')
+        except Exception as e:
+            self.get_logger().warn(f'查询失败: {e}')
+
+
+def main():
+    rclpy.init()
+    node = TfListener()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    node.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()</code></pre>
+    <h3>实战意义：把相机里检测到的目标点转到车体系</h3>
+    <p>这正是你们项目的需求：</p>
+    <pre><span class="lang-label">python</span><code class="language-python"># 相机系下目标点 (x_c, y_c, z_c) → 车体系
+# 1) 构造 PointStamped(frame_id='camera_link')
+# 2) buffer.transform(point, 'base_link') 一行搞定</code></pre>
+    <div class="tip-box">
+      <div class="tip-title">💡 要点</div>
+      <code>Buffer</code> 缓存一段时间的历史；<code>lookup_transform</code> 可能抛异常（超时/不存在）——必须 try/except。
+    </div>
+
+    <!-- 第五章 -->
+    <h2 class="chapter" id="ch5"><span class="ch-num">五</span>URDF（机器人模型）</h2>
+    <p>URDF 用 XML 描述机器人：<strong>link（刚体）+ joint（关节）</strong>。</p>
+    <p>写一个两连杆小臂 <code>urdf/two_link_arm.urdf</code>：</p>
+    <pre><span class="lang-label">xml</span><code class="language-xml">&lt;?xml version="1.0"?&gt;
+&lt;robot name="two_link_arm"&gt;
+  &lt;link name="base_link"&gt;
+    &lt;visual&gt;
+      &lt;geometry&gt;&lt;cylinder radius="0.05" length="0.02"/&gt;&lt;/geometry&gt;
+      &lt;origin xyz="0 0 0.01"/&gt;
+    &lt;/visual&gt;
+  &lt;/link&gt;
+
+  &lt;joint name="joint1" type="revolute"&gt;
+    &lt;parent link="base_link"/&gt;
+    &lt;child link="link1"/&gt;
+    &lt;origin xyz="0 0 0.02"/&gt;            &lt;!-- 相对父坐标系 --&gt;
+    &lt;axis xyz="0 1 0"/&gt;                 &lt;!-- 绕 y 轴转 --&gt;
+    &lt;limit lower="-1.57" upper="1.57" effort="10" velocity="1.0"/&gt;
+  &lt;/joint&gt;
+
+  &lt;link name="link1"&gt;
+    &lt;visual&gt;
+      &lt;geometry&gt;&lt;box size="0.02 0.02 0.30"/&gt;&lt;/geometry&gt;
+      &lt;origin xyz="0 0 0.15"/&gt;          &lt;!-- 视觉几何居中 --&gt;
+    &lt;/visual&gt;
+  &lt;/link&gt;
+
+  &lt;joint name="joint2" type="revolute"&gt;
+    &lt;parent link="link1"/&gt;
+    &lt;child link="link2"/&gt;
+    &lt;origin xyz="0 0 0.30"/&gt;
+    &lt;axis xyz="0 1 0"/&gt;
+    &lt;limit lower="-1.57" upper="1.57" effort="10" velocity="1.0"/&gt;
+  &lt;/joint&gt;
+
+  &lt;link name="link2"&gt;
+    &lt;visual&gt;
+      &lt;geometry&gt;&lt;box size="0.02 0.02 0.25"/&gt;&lt;/geometry&gt;
+      &lt;origin xyz="0 0 0.125"/&gt;
+    &lt;/visual&gt;
+  &lt;/link&gt;
+&lt;/robot&gt;</code></pre>
+    <div class="tip-box">
+      <div class="tip-title">💡 要点</div>
+      <ul>
+        <li>joint 的 <code>origin</code> 是相对 <strong>parent link</strong> 的（不是世界）</li>
+        <li><code>visual/origin</code> 是几何体自身在 link 坐标系里的位置（常用来把几何"居中"）</li>
+        <li>关节类型：<code>revolute</code>（限位旋转）/ <code>continuous</code> / <code>prismatic</code> / <code>fixed</code></li>
+      </ul>
+    </div>
+
+    <!-- 第六章 -->
+    <h2 class="chapter" id="ch6"><span class="ch-num">六</span>robot_state_publisher + joint_state_publisher_gui + RViz2</h2>
+    <p>原理：<strong>joint_state_publisher_gui 发关节角 → robot_state_publisher 算 TF → RViz2 显示模型</strong>。</p>
+    <p>写 <code>launch/06_urdf.launch.py</code>：</p>
+    <pre><span class="lang-label">python</span><code class="language-python">import os
+
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch_ros.actions import Node
+
+
+def generate_launch_description():
+    urdf_path = os.path.join(
+        get_package_share_directory('python_launch_demo'),
+        'urdf', 'two_link_arm.urdf')
+    robot_description = {'robot_description': open(urdf_path).read()}
+
+    return LaunchDescription([
+        Node(package='robot_state_publisher', executable='robot_state_publisher',
+             parameters=[robot_description], output='screen'),
+        Node(package='joint_state_publisher_gui', executable='joint_state_publisher_gui',
+             output='screen'),
+        Node(package='rviz2', executable='rviz2', output='screen'),
+    ])</code></pre>
+    <p>urdf 目录也要在 setup.py 注册：</p>
+    <pre><span class="lang-label">python</span><code class="language-python">(os.path.join('share', package_name, 'urdf'), glob('urdf/*.urdf')),</code></pre>
+    <p>运行：</p>
+    <pre><span class="lang-label">bash</span><code class="language-bash">colcon build --symlink-install && source install/setup.bash
+ros2 launch python_launch_demo 06_urdf.launch.py</code></pre>
+    <h3>RViz2 里：</h3>
+    <ol>
+      <li>左侧 <strong>Fixed Frame</strong> 改成 <code>base_link</code></li>
+      <li>左下 <strong>Add</strong> → 选 <strong>RobotModel</strong> → OK</li>
+      <li>展开 RobotModel → <strong>Description Topic 选 <code>/robot_description</code></strong>（不选模型不显示）</li>
+      <li>拖动 joint_state_publisher_gui 的两个滑条 → <strong>模型跟着动</strong></li>
+    </ol>
+    <div class="tip-box">
+      <div class="tip-title">💡 这就是机械臂 FK 的可视化原理</div>
+      对照你们的 FK：关节角 → 末端位姿。
+    </div>
+
+    <!-- 第七章 -->
+    <h2 class="chapter" id="ch7"><span class="ch-num">七</span>综合练习（把知识串起来）</h2>
+    <ul class="checklist">
+      <li>用 tf2_echo 查 link2（末端）相对 base_link 的位置，拖动滑条看数值变化</li>
+      <li>写一个监听节点：定时查询 link2 → base_link，打印末端坐标</li>
+      <li>对比：手动算 FK vs TF 自动算的结果（应该一致）</li>
+      <li>进阶：相机点变换练习
+        <ul>
+          <li>造一个 <code>PointStamped(frame_id='camera_link', x=0.1, y=0, z=0.3)</code></li>
+          <li>用 <code>buffer.transform(点, 'base_link')</code> 转换并打印</li>
+          <li>这就是"相机看到目标 → 车体坐标"的完整链路</li>
+        </ul>
+      </li>
+    </ul>
+
+    <!-- 第八章 -->
+    <h2 class="chapter" id="ch8"><span class="ch-num">八</span>命令速查</h2>
+    <table>
+      <tr><th>命令</th><th>作用</th></tr>
+      <tr><td><code>ros2 run tf2_ros tf2_echo 父 子</code></td><td>查询两坐标系变换（持续刷新）</td></tr>
+      <tr><td><code>ros2 run tf2_ros static_transform_publisher --x .. --frame-id .. --child-frame-id ..</code></td><td>命令行发静态 TF</td></tr>
+      <tr><td><code>ros2 run tf2_tools view_frames</code></td><td>生成 frames.pdf（TF 树）</td></tr>
+      <tr><td><code>ros2 topic echo /tf</code> / <code>/tf_static</code></td><td>看原始 TF 消息</td></tr>
+      <tr><td><code>ros2 launch ... 06_urdf.launch.py</code></td><td>模型 + 滑条 + RViz</td></tr>
+      <tr><td>RViz2 → Add → TF / RobotModel</td><td>可视化</td></tr>
+    </table>
+
+    <!-- 第九章 -->
+    <h2 class="chapter" id="ch9"><span class="ch-num">九</span>踩坑清单</h2>
+    <table>
+      <tr><th>坑</th><th>说明</th></tr>
+      <tr><td><code>frame_id</code> / <code>child_frame_id</code> 写反</td><td>父在前、子在后</td></tr>
+      <tr><td>静态 TF 用了普通 Broadcaster</td><td>静态必须用 <code>StaticTransformBroadcaster</code>（发一次）</td></tr>
+      <tr><td>动态 TF 忘了持续发</td><td>监听端会报 "extrapolation into the future" / 查不到</td></tr>
+      <tr><td>时间戳</td><td>用 <code>self.get_clock().now().to_msg()</code>，别用 0</td></tr>
+      <tr><td><code>lookup_transform</code> 抛异常</td><td>必须 try/except（启动初期 TF 还没到）</td></tr>
+      <tr><td>URDF joint origin 理解错</td><td>是<strong>相对父 link</strong>，不是世界坐标</td></tr>
+      <tr><td>RViz Fixed Frame 没设</td><td>设成 TF 树里存在的（如 base_link），否则一片空白</td></tr>
+      <tr><td>RobotModel 的 Description Topic 没选</td><td>展开 RobotModel → 选 <code>/robot_description</code>，否则模型不显示</td></tr>
+      <tr><td><code>view_frames</code> 报错</td><td>装 <code>graphviz</code></td></tr>
+      <tr><td>TF 树有多个父</td><td>每个坐标系只能有一个父，冲突会导致查询失败</td></tr>
+      <tr><td>没 source install</td><td>每开新终端都要 <code>source install/setup.bash</code></td></tr>
+    </table>
+
+    <!-- 第十章 -->
+    <h2 class="chapter" id="ch10"><span class="ch-num">十</span>学完自测（含答案）</h2>
+    <table>
+      <tr><th style="width:32%">自测题</th><th>参考答案</th></tr>
+      <tr>
+        <td>能说出静态 TF 和动态 TF 的区别与各自用法？</td>
+        <td>静态 TF：<strong>安装关系固定不变</strong>（如相机相对车体）→ <code>StaticTransformBroadcaster</code> 发一次（latched），数据在 <code>/tf_static</code>；动态 TF：<strong>随时间变化</strong>（关节角、里程计）→ <code>TransformBroadcaster</code> 定时器持续发（≥10Hz），每帧带时间戳，数据在 <code>/tf</code>。两者查询方式相同。</td>
+      </tr>
+      <tr>
+        <td>会写广播者（静态/动态）和监听者？</td>
+        <td>静态：<code>StaticTransformBroadcaster(self).sendTransform(t)</code> 只发一次；动态：<code>TransformBroadcaster(self)</code> + <code>create_timer(0.1, tick)</code> 里反复发；监听：<code>Buffer()</code> + <code>TransformListener(buffer, self)</code>，查询 <code>buffer.lookup_transform('父','子',Time())</code>。查询<strong>必须 try/except</strong>（TF 还没到会抛异常）。</td>
+      </tr>
+      <tr>
+        <td>会用 tf2_echo / view_frames / RViz 排查 TF 问题？</td>
+        <td><code>tf2_echo 父 子</code> 查变换（数值变化=动态）；<code>view_frames</code> 生成 frames.pdf 看整棵 TF 树（需 graphviz）；RViz 里设 Fixed Frame + TF/RobotModel 显示。查不到 = 没有对应的 TF 发布（检查广播节点是否在跑）。</td>
+      </tr>
+      <tr>
+        <td>能读懂 URDF 的 link/joint/origin/axis/limit？</td>
+        <td><code>link</code>=刚体（visual/collision/inertial）；<code>joint</code>=关节（parent/child/origin/axis/limit/type）；<strong>origin 是相对父 link 的位姿，不是世界坐标</strong>；<code>axis</code>=旋转轴；<code>limit</code>=角度范围（revolute 必需）。</td>
+      </tr>
+      <tr>
+        <td>能跑起 robot_state_publisher + gui + RViz 三件套？</td>
+        <td><code>robot_state_publisher</code>（<code>parameters=[{'robot_description': open(urdf).read()}]</code>）+ <code>joint_state_publisher_gui</code>（滑条发 /joint_states）+ <code>rviz2</code>；setup.py 注册 urdf 目录；RViz：Fixed Frame → base_link、Add RobotModel、<strong>Description Topic 选 /robot_description</strong>。</td>
+      </tr>
+      <tr>
+        <td>会用 buffer.transform 把点从一个坐标系转到另一个？</td>
+        <td>构造 <code>PointStamped</code>（<code>frame_id='camera_link'</code>）→ <code>buffer.transform(点, 'base_link')</code> 一行转换；转换前确保两坐标系间有 TF 链（先用 <code>tf2_echo</code> 验证）。</td>
+      </tr>
+      <tr>
+        <td>理解"关节角 → TF → 末端位姿"就是 FK？</td>
+        <td>关节角（<code>/joint_states</code>）→ robot_state_publisher 按 URDF 关节链算出每个 link 的 TF → 末端 link 相对 base_link 的变换就是正运动学（FK）结果；RViz 只是把它画出来。可与手算 FK 对比验证。</td>
+      </tr>
+    </table>
+
+    <div class="tip-box" style="margin-top:40px;">
+      <div class="tip-title">🚀 下一步（第四部分）</div>
+      <p style="margin:6px 0 0 0;"><strong>自定义 msg/srv/action + 写串口节点</strong>（把 ROS2 接到真实硬件）。</p>
+    </div>
+
+  </div>
+</main>
+
+<!-- 回到顶部按钮 -->
+<button class="back-to-top" id="backToTop" title="回到顶部">↑</button>
+
+<script>
+  // ===== 深色模式切换 =====
+  const themeBtn = document.getElementById('themeBtn');
+  const html = document.documentElement;
+  const savedTheme = localStorage.getItem('tf2-urdf-theme');
+  if (savedTheme === 'dark') {
+    html.setAttribute('data-theme', 'dark');
+    themeBtn.textContent = '☀️';
+  }
+  themeBtn.addEventListener('click', () => {
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      themeBtn.textContent = '🌙';
+      localStorage.setItem('tf2-urdf-theme', 'light');
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      themeBtn.textContent = '☀️';
+      localStorage.setItem('tf2-urdf-theme', 'dark');
+    }
+  });
+
+  // ===== 移动端侧边栏 =====
+  const menuBtn = document.getElementById('menuBtn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  menuBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+  document.querySelectorAll('.toc-list a').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 900) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+      }
+    });
+  });
+
+  // ===== 滚动监听：高亮当前章节 + 进度条 + 回到顶部 =====
+  const tocLinks = document.querySelectorAll('.toc-list a');
+  const chapters = document.querySelectorAll('h2.chapter');
+  const progressBar = document.getElementById('progressBar');
+  const backToTop = document.getElementById('backToTop');
+
+  function updateActiveChapter() {
+    let current = '';
+    const scrollPos = window.scrollY + 170;
+    chapters.forEach(ch => {
+      if (ch.offsetTop <= scrollPos) {
+        current = ch.id;
+      }
+    });
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      current = chapters[chapters.length - 1].id;
+    }
+    tocLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('data-target') === current) {
+        link.classList.add('active');
+      }
+    });
+  }
+
+  function updateProgress() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = progress + '%';
+    if (scrollTop > 400) {
+      backToTop.classList.add('visible');
+    } else {
+      backToTop.classList.remove('visible');
+    }
+  }
+
+  window.addEventListener('scroll', () => {
+    updateActiveChapter();
+    updateProgress();
+  }, { passive: true });
+
+  backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  updateActiveChapter();
+  updateProgress();
+</script>
+
+</body>
+</html>
