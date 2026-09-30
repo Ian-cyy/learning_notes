@@ -1,0 +1,912 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03 · 比特币与算力</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f6f8fb;
+    --bg-card: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --primary: #1a2744;
+    --primary-light: #2c4a7c;
+    --accent: #4a9eff;
+    --accent-light: #e8f2ff;
+    --code-bg: #f4f6fa;
+    --code-text: #2c3e50;
+    --formula-bg: #faf8f2;
+    --formula-border: #e8dcc0;
+    --formula-text: #5a4a2a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+    --sidebar-width: 280px;
+    --content-max: 860px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --text: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border: #334155;
+    --border-light: #1e293b;
+    --primary: #3b5998;
+    --primary-light: #4a6fa5;
+    --accent: #60a5fa;
+    --accent-light: #1e3a5f;
+    --code-bg: #1e293b;
+    --code-text: #cbd5e1;
+    --formula-bg: #1e293b;
+    --formula-border: #475569;
+    --formula-text: #fbbf24;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg);
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ===== 顶部导航栏 ===== */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.85);
+  }
+  [data-theme="dark"] .topbar { background: rgba(15,23,42,0.85); }
+
+  .topbar-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-title .dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .topbar-title .sub {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 8px;
+  }
+
+  .topbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .icon-btn {
+    width: 36px; height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .menu-btn { display: none; }
+
+  /* ===== 侧边栏 ===== */
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: var(--sidebar-width);
+    height: calc(100vh - 60px);
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px 0;
+    z-index: 90;
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar-header {
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sidebar-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .toc-list { list-style: none; padding: 0 12px; }
+  .toc-list li { margin: 2px 0; }
+  .toc-list a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13.5px;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+  }
+  .toc-list a:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+  .toc-list a.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  .toc-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    background: var(--border);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc-list a.active .toc-num {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .series-nav { padding: 12px 20px; }
+  .series-nav .sn-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .series-nav a {
+    display: block;
+    padding: 7px 12px;
+    margin: 4px 0;
+    border-radius: 7px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .series-nav a:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+  .series-nav a.cur {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ===== 主内容区 ===== */
+  .main {
+    margin-left: var(--sidebar-width);
+    margin-top: 60px;
+    padding: 40px 48px 80px;
+    min-height: calc(100vh - 60px);
+  }
+
+  .content-wrapper {
+    max-width: var(--content-max);
+    margin: 0 auto;
+  }
+
+  /* ===== 文章头部 ===== */
+  .article-header {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid var(--border);
+  }
+  .article-header .tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+  .article-header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .article-header .subtitle {
+    font-size: 17px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+  }
+  .article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .article-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* ===== 章节标题 ===== */
+  h2.chapter {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 50px 0 24px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: #fff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+    scroll-margin-top: 80px;
+  }
+  h2.chapter .ch-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 32px 0 14px;
+    padding-left: 14px;
+    border-left: 4px solid var(--accent);
+    scroll-margin-top: 80px;
+  }
+
+  h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-light);
+    margin: 22px 0 10px;
+    scroll-margin-top: 80px;
+  }
+
+  p { margin: 10px 0; text-align: justify; }
+
+  /* ===== 代码块 ===== */
+  pre, code {
+    font-family: "JetBrains Mono", "Fira Code", "DejaVu Sans Mono", "Noto Sans Mono CJK SC", monospace;
+  }
+  pre {
+    position: relative;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 13px;
+    line-height: 1.65;
+    overflow-x: auto;
+    margin: 14px 0;
+    color: var(--code-text);
+  }
+  pre .lang-label {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--border-light);
+    padding: 1px 8px;
+    border-radius: 5px;
+    letter-spacing: .5px;
+  }
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #e06c5e;
+  }
+  [data-theme="dark"] code { color: #f87171; }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* ===== 公式 ===== */
+  .formula {
+    background: var(--formula-bg);
+    border: 1px solid var(--formula-border);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 14px 0;
+    font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace;
+    font-size: 14px;
+    text-align: center;
+    color: var(--formula-text);
+    overflow-x: auto;
+  }
+
+  /* ===== 表格 ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13.5px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  th {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  td {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--bg-secondary); }
+  td code { white-space: normal; word-break: break-word; }
+
+  /* ===== 提示框 ===== */
+  .tip-box, .warn-box {
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 16px 0;
+  }
+  .tip-box {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+  }
+  .tip-box .tip-title {
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .warn-box {
+    background: #fef5e7;
+    border-left: 4px solid #f59e0b;
+  }
+  [data-theme="dark"] .warn-box { background: #422006; border-left-color: #f59e0b; }
+  .warn-box .warn-title {
+    font-weight: 700;
+    color: #d97706;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  [data-theme="dark"] .warn-box .warn-title { color: #fbbf24; }
+
+  /* ===== 列表 ===== */
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  /* ===== 回到顶部 ===== */
+  .back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 44px; height: 44px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+    z-index: 80;
+  }
+  .back-to-top.visible { opacity: 1; visibility: visible; }
+  .back-to-top:hover { transform: translateY(-2px); }
+
+  /* ===== 阅读进度条 ===== */
+  .progress-bar {
+    position: fixed;
+    top: 60px; left: 0;
+    height: 3px;
+    background: var(--accent);
+    z-index: 95;
+    transition: width 0.1s;
+  }
+
+  /* ===== 遮罩层（移动端） ===== */
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 60px; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 85;
+  }
+  .overlay.show { display: block; }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 900px) {
+    .menu-btn { display: flex; }
+    .sidebar {
+      transform: translateX(-100%);
+      box-shadow: var(--shadow-lg);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; padding: 24px 20px 60px; }
+    .article-header h1 { font-size: 24px; }
+    h2.chapter { font-size: 19px; padding: 12px 16px; }
+    h2.chapter .ch-num { width: 30px; height: 30px; font-size: 14px; }
+    .topbar-title .sub { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .main { padding: 16px 14px 50px; }
+    .article-meta { gap: 12px; font-size: 12px; }
+    pre { font-size: 12px; padding: 12px 14px; }
+    table { font-size: 12px; }
+    th, td { padding: 7px 10px; }
+  }
+
+  /* ===== 滚动条美化 ===== */
+  .sidebar::-webkit-scrollbar { width: 5px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  pre::-webkit-scrollbar { height: 6px; }
+  pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- 阅读进度条 -->
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+
+<!-- 顶部导航 -->
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menuBtn" title="目录">☰</button>
+  <div class="topbar-title">
+    <span class="dot"></span>
+    03 · 比特币与算力
+    <span class="sub">从算力看 AI 与比特币 · 系列第 3 篇</span>
+  </div>
+  <div class="topbar-actions">
+    <a class="icon-btn" href="../" title="返回笔记主页" style="text-decoration:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+    </a>
+    <a class="icon-btn" href="https://github.com/Ian-cyy" target="_blank" title="GitHub: Ian-cyy" style="text-decoration:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+    </a>
+    <button class="icon-btn" id="themeBtn" title="切换深色模式">🌙</button>
+  </div>
+</header>
+
+<!-- 遮罩层 -->
+<div class="overlay" id="overlay"></div>
+
+<!-- 侧边栏目录 -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h3>📑 章节目录</h3>
+  </div>
+  <ul class="toc-list">
+    <li><a href="#ch1" data-target="ch1"><span class="toc-num">一</span>比特币是什么</a></li>
+    <li><a href="#ch2" data-target="ch2"><span class="toc-num">二</span>区块链账本</a></li>
+    <li><a href="#ch3" data-target="ch3"><span class="toc-num">三</span>SHA-256 哈希</a></li>
+    <li><a href="#ch4" data-target="ch4"><span class="toc-num">四</span>挖矿的"题目"</a></li>
+    <li><a href="#ch5" data-target="ch5"><span class="toc-num">五</span>挖矿完整流程</a></li>
+    <li><a href="#ch6" data-target="ch6"><span class="toc-num">六</span>为什么验证一眼就行</a></li>
+    <li><a href="#ch7" data-target="ch7"><span class="toc-num">七</span>为什么安全防作弊</a></li>
+    <li><a href="#ch8" data-target="ch8"><span class="toc-num">八</span>算力是不是白费</a></li>
+    <li><a href="#ch9" data-target="ch9"><span class="toc-num">九</span>发行：2100 万 · 减半</a></li>
+    <li><a href="#ch10" data-target="ch10"><span class="toc-num">十</span>钱归谁：私钥</a></li>
+    <li><a href="#ch11" data-target="ch11"><span class="toc-num">十一</span>挖矿硬件：GPU 已出局</a></li>
+    <li><a href="#ch12" data-target="ch12"><span class="toc-num">十二</span>与 AI 算力对比</a></li>
+    <li><a href="#ch13" data-target="ch13"><span class="toc-num">十三</span>一句话总纲</a></li>
+    <li><a href="#ch14" data-target="ch14"><span class="toc-num">十四</span>实时数据与风险提示</a></li>
+  </ul>
+  <div class="series-nav">
+    <div class="sn-title">📚 系列文章</div>
+    <a href="index.html">📖 主页 · 从算力看 AI 与比特币</a>
+    <a href="01-大模型是什么.html">01 · 大模型是什么</a>
+    <a href="02-算力硬件与生态.html">02 · 算力硬件与生态</a>
+    <a href="03-比特币与算力.html" class="cur">03 · 比特币与算力</a>
+  </div>
+  <div class="sidebar-footer">
+    资料截止：2026/10/1<br>
+    系列：从算力看 AI 与比特币<br>
+    本篇：14 章<br><br>
+    <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">
+      → GitHub: Ian-cyy
+    </a>
+  </div>
+</aside>
+
+<!-- 主内容 -->
+<main class="main">
+  <div class="content-wrapper">
+
+    <!-- 文章头部 -->
+    <div class="article-header">
+      <span class="tag">BITCOIN · POW · HASH</span>
+      <h1>03 · 比特币与算力</h1>
+      <p class="subtitle">账本 → 哈希 → 挖矿题目 → 完整流程 → 防作弊 → 发行 → 私钥 → 硬件 → 与 AI 算力对比</p>
+      <div class="article-meta">
+        <span>🗓 资料截止 2026/10/1</span>
+        <span>📦 系列第 3 篇</span>
+        <span>📝 14 章</span>
+        <span>👤 <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">GitHub @Ian-cyy</a></span>
+      </div>
+    </div>
+
+    <!-- 第一章 -->
+    <h2 class="chapter" id="ch1"><span class="ch-num">一</span>比特币是什么</h2>
+    <p>比特币（Bitcoin，BTC）是一个 <strong>去中心化的数字货币系统</strong>：</p>
+    <ul>
+      <li><strong>没有央行</strong>：谁都不能印钞。</li>
+      <li><strong>没有银行</strong>：你持有的是<strong>私钥</strong>（密钥），不是"账户余额"。</li>
+      <li><strong>账本公开</strong>：谁都能下载、查看、验证全部历史交易。</li>
+      <li><strong>发行靠"挖矿"</strong>：用算力解决数学题来获得新币。</li>
+    </ul>
+    <div class="formula">比特币 = 一套"用密码学 + 工作量证明（PoW）"实现去中心化记账的系统。</div>
+
+    <!-- 第二章 -->
+    <h2 class="chapter" id="ch2"><span class="ch-num">二</span>区块链：公开账本</h2>
+    <h3>2.1 记账的方式</h3>
+    <pre><code class="language-text">区块 0（创世块）
+  │ 记录最早的交易 + 区块哈希
+  ▼
+区块 1
+  │ 记录新交易 + 上一个区块的哈希
+  ▼
+区块 2
+  │ 记录新交易 + 上一个区块的哈希
+  ▼
+区块 3 → 区块 4 → …（一条链）</code></pre>
+    <h3>2.2 区块链三个特性</h3>
+    <ul>
+      <li><strong>公开</strong>：全部记录公开可见。</li>
+      <li><strong>不可篡改</strong>：改任一区块，后面所有区块的哈希全对不上。</li>
+      <li><strong>去中心化</strong>：没有唯一服务器，账本在成千上万节点上复制。</li>
+    </ul>
+
+    <!-- 第三章 -->
+    <h2 class="chapter" id="ch3"><span class="ch-num">三</span>SHA-256：把任意数据变成"指纹"</h2>
+    <div class="formula">SHA-256 = 输入任意数据 → 输出固定 256 位（64 个十六进制字符）的"哈希值"。</div>
+    <ul>
+      <li><strong>确定性</strong>：同样的输入 → 同样的输出。</li>
+      <li><strong>单向性</strong>：有输出算不出输入（只能暴力试）。</li>
+      <li><strong>雪崩效应</strong>：改一丁点输入，输出面目全非。</li>
+      <li><strong>防碰撞</strong>：几乎找不到两个不同输入得到同一输出。</li>
+      <li>例：<code>SHA256("123")</code> → <code>a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3</code></li>
+    </ul>
+    <div class="tip-box">
+      <div class="tip-title">💡 为什么要"哈希"账本</div>
+      把每个区块做成"指纹"，形成链条；想改一笔旧账，就得重新伪造所有后续指纹——几乎不可能。
+    </div>
+
+    <!-- 第四章 -->
+    <h2 class="chapter" id="ch4"><span class="ch-num">四</span>挖矿的"题目"是什么</h2>
+    <p>把 <strong>区块头信息 + 一个随机数 nonce</strong> 一起做 SHA-256：</p>
+    <div class="formula">目标：找到 nonce，使 <code>SHA256( 区块头 + nonce )</code> 的结果 <strong>小于目标值</strong>（前若干位是 0）。</div>
+    <ul>
+      <li>题目<strong>没有"会解"的聪明方法</strong>：只能一个个试 nonce（暴力猜）。</li>
+      <li>试了几万亿次，终于试到一个符合条件 → 这个区块就算"挖"出来了。</li>
+    </ul>
+    <div class="warn-box">
+      <div class="warn-title">🌰 类比</div>
+      像掷骰子：要求"掷出 6 才有资格记账"，全世界的矿工一起掷，谁先掷出 6 谁记账并拿奖励。
+    </div>
+
+    <!-- 第五章 -->
+    <h2 class="chapter" id="ch5"><span class="ch-num">五</span>挖矿完整流程</h2>
+    <pre><code class="language-text">1. 收集内存池里的待确认交易
+2. 打包成一个"候选区块"
+3. 疯狂试 nonce：
+      SHA256(区块头 + nonce)  <  目标值 ？
+      ✗ → nonce+1 继续试
+      ✓ → 停止，广播这个区块
+4. 其他节点验证（秒级）：
+      检查题目确实满足 + 交易合法
+5. 验证通过 → 区块上链
+6. 矿工获得：区块奖励 + 手续费</code></pre>
+    <ul>
+      <li><strong>难度自动调整</strong>：全网算力涨 → 题目更难；算力跌 → 题目更易。<strong>每 2016 个区块调整一次</strong>，目标是保持约 <strong>10 分钟出一个块</strong>。</li>
+    </ul>
+
+    <!-- 第六章 -->
+    <h2 class="chapter" id="ch6"><span class="ch-num">六</span>为什么"验证"一眼就行</h2>
+    <table>
+      <tr><th></th><th>挖矿（找答案）</th><th>验证（查答案）</th></tr>
+      <tr><td>难度</td><td>极难（暴力搜索）</td><td>极容易</td></tr>
+      <tr><td>做法</td><td>试几万亿次</td><td>把答案代入算一次</td></tr>
+      <tr><td>计算量</td><td>天文数字</td><td>一次 SHA-256，毫秒级</td></tr>
+      <tr><td>类比</td><td>煎一整桌菜</td><td>尝一口就知道熟没熟</td></tr>
+    </table>
+    <div class="formula">哈希的性质决定了"解题难、验证易"——这正是 PoW 能用的根基。</div>
+
+    <!-- 第七章 -->
+    <h2 class="chapter" id="ch7"><span class="ch-num">七</span>为什么安全、为什么防作弊</h2>
+    <h3>7.1 为什么防作弊</h3>
+    <ul>
+      <li>伪造一笔不存在的交易，或双花 → 必须重算<strong>那笔交易之后的全部区块</strong>。</li>
+      <li>全网都在不停挖新块，作弊者要一直比全网快 —— <strong>算力不够？永远追不上</strong>。</li>
+      <li>理论攻击：拥有 <strong>全网 51% 以上算力</strong>才可能篡改（"51% 攻击"），代价高得离谱。</li>
+    </ul>
+    <h3>7.2 哈希在其中的角色</h3>
+    <table>
+      <tr><th>哈希特性</th><th>保障什么</th></tr>
+      <tr><td>单向性</td><td>出题容易、破解难</td></tr>
+      <tr><td>雪崩效应</td><td>篡改立刻现形</td></tr>
+      <tr><td>防碰撞</td><td>不能伪造另一份"看起来一样"的数据</td></tr>
+      <tr><td>链式结构</td><td>改一处 = 重写后面整条链</td></tr>
+    </table>
+
+    <!-- 第八章 -->
+    <h2 class="chapter" id="ch8"><span class="ch-num">八</span>挖矿算力是不是"白费"</h2>
+    <p>两种观点，本质是<strong>成本与信任</strong>之争：</p>
+    <table>
+      <tr><th>观点</th><th>理由</th></tr>
+      <tr><td>❌ 浪费能源</td><td>几十万亿美元级算力只用来猜数，太浪费</td></tr>
+      <tr><td>✅ 必要成本</td><td>正是这笔"买算力的钱"让作弊变得无利可图 → 安全 → 有人信</td></tr>
+    </table>
+    <div class="warn-box">
+      <div class="warn-title">📌 更准确的理解</div>
+      挖矿的产出不是"正确答案"，而是<strong>全网认可的"记账权"和"信任"</strong>。就像金矿挖出的黄金本身"没用"，但共识认为它值钱。
+    </div>
+
+    <!-- 第九章 -->
+    <h2 class="chapter" id="ch9"><span class="ch-num">九</span>发行机制：2100 万 · 减半 · 2140</h2>
+    <table>
+      <tr><th>规则</th><th>内容</th></tr>
+      <tr><td>总量</td><td><strong>上限 2100 万个</strong>（数学硬顶）</td></tr>
+      <tr><td>出块奖励</td><td>每 4 年<strong>减半</strong>：50 → 25 → 12.5 → 6.25 → 3.125 → …</td></tr>
+      <tr><td>出块间隔</td><td>约 10 分钟一个块（难度自动调整）</td></tr>
+      <tr><td>挖完时间</td><td>约 <strong>2140 年</strong>挖完最后一枚</td></tr>
+    </table>
+    <ul>
+      <li>奖励<strong>越来越小</strong>，新币增速放缓 → 稀缺性上升。</li>
+      <li>2140 年后无区块奖励，矿工靠 <strong>手续费</strong> 生存。</li>
+    </ul>
+
+    <!-- 第十章 -->
+    <h2 class="chapter" id="ch10"><span class="ch-num">十</span>钱归谁：私钥与公钥</h2>
+    <table>
+      <tr><th></th><th>公钥 / 地址</th><th>私钥</th></tr>
+      <tr><td>是什么</td><td>公开的"收款账号"</td><td>绝密的"签名钥匙"</td></tr>
+      <tr><td>给别人</td><td>✅ 可以</td><td>❌ 绝对不行</td></tr>
+      <tr><td>作用</td><td>收款</td><td>签名、转账</td></tr>
+      <tr><td>丢了</td><td>没事</td><td><strong>钱永远没了</strong></td></tr>
+    </table>
+    <div class="warn-box">
+      <div class="warn-title">⚠️ 铁律</div>
+      <strong>谁有私钥，谁就是主人。</strong>私钥丢了 = 币没了，没有任何机构能帮你找回（这正是"去中心化"的代价）。
+    </div>
+
+    <!-- 第十一章 -->
+    <h2 class="chapter" id="ch11"><span class="ch-num">十一</span>挖矿硬件：GPU 早已出局</h2>
+    <h3>时间线</h3>
+    <table>
+      <tr><th>阶段</th><th>设备</th></tr>
+      <tr><td>2009 早期</td><td>CPU（个人电脑）</td></tr>
+      <tr><td>2010~2012</td><td><strong>GPU</strong>（比 CPU 快几十倍）</td></tr>
+      <tr><td>2013~2014</td><td><strong>FPGA / 第一代 ASIC</strong></td></tr>
+      <tr><td>2014 至今</td><td><strong>专业 ASIC 矿机</strong>（Antminer 等）</td></tr>
+    </table>
+    <h3>为什么 GPU 出局</h3>
+    <ul>
+      <li>SHA-256 就是<strong>极简单、极重复</strong>的运算 → 专用芯片（ASIC）能比 GPU 快 <strong>数百到上千倍</strong>、功耗低得多。</li>
+      <li>比特币已经是 <strong>ASIC 的天下</strong>，GPU 挖 BTC 毫无性价比。</li>
+      <li>GPU 现在去挖 <strong>抗 ASIC 的小币种</strong>（ETH 转 PoS 后这类需求减少），或者<strong>转投 AI</strong>。</li>
+    </ul>
+    <div class="formula">有意思的反差：GPU 靠"算得又快又准"在 AI 吃香，却在比特币这里被更"笨但更专"的 ASIC 淘汰。</div>
+
+    <!-- 第十二章 -->
+    <h2 class="chapter" id="ch12"><span class="ch-num">十二</span>比特币 vs AI：算力之争</h2>
+    <table>
+      <tr><th>维度</th><th>比特币挖矿</th><th>AI 训练/推理</th></tr>
+      <tr><td>核心运算</td><td>SHA-256 哈希</td><td>矩阵乘法（GEMM）</td></tr>
+      <tr><td>需求本质</td><td>暴力猜数</td><td>海量并行数学</td></tr>
+      <tr><td>硬件</td><td>ASIC（专用）</td><td>GPU/TPU/NPU（通用）</td></tr>
+      <tr><td>有没有"聪明解法"</td><td>没有，只能硬算</td><td>有算法/架构优化空间</td></tr>
+      <tr><td>进步方向</td><td>更快更省电地"猜"</td><td>更聪明地"算"（并行、精度、算法）</td></tr>
+      <tr><td>产出</td><td>记账权 + 币</td><td>模型参数 + 智能</td></tr>
+    </table>
+    <h3>会不会互相抢算力</h3>
+    <ul>
+      <li><strong>ASIC 挖不了 AI</strong>（只能做哈希）；<strong>GPU 挖 BTC 没性价比</strong>。</li>
+      <li>两种算力<strong>不完全互通</strong>，但都抢<strong>电力、先进产能、芯片制造资源</strong>。</li>
+    </ul>
+
+    <!-- 第十三章 -->
+    <h2 class="chapter" id="ch13"><span class="ch-num">十三</span>一句话总纲</h2>
+    <div class="formula">比特币是"用算力换共识"的系统：哈希让出题难、验证易，PoW 让作弊代价高到不可能；总量 2100 万、每 4 年减半、约 2140 年挖完；私钥即所有权。它和 AI 都吃算力，但一个在"无脑猜数"上卷到 ASIC 极致，一个在"海量矩阵并行"上不断做聪明优化——同为算力，两种活法。</div>
+
+    <!-- 第十四章 -->
+    <h2 class="chapter" id="ch14"><span class="ch-num">十四</span>实时数据与风险提示</h2>
+    <div class="warn-box">
+      <div class="warn-title">⚠️ 非投资建议</div>
+      <ul>
+        <li>本页是<strong>科普笔记</strong>，不构成任何投资建议。</li>
+        <li>比特币价格、全网算力（hashrate）、难度、减半进度等 <strong>实时数据随时变化</strong>，本文资料截止 <strong>2026/10/1</strong>，查看最新数据请访问公开行情站与链上数据站。</li>
+        <li>比特币波动极大，历史上多次出现大幅下跌；参与需自担风险，只投你输得起的钱。</li>
+        <li>在中国大陆，虚拟货币相关业务活动属于非法金融活动（按现行监管规定）；本页仅作原理学习。</li>
+      </ul>
+    </div>
+
+    <div class="tip-box" style="margin-top:40px;">
+      <div class="tip-title">📚 延伸阅读（本系列其他文件）</div>
+      <ul style="margin:8px 0 0 0;">
+        <li><a href="01-大模型是什么.html" style="color:var(--accent);text-decoration:none;font-weight:600;">01-大模型是什么</a>：模型本质、参数、训练、推理、显存</li>
+        <li><a href="02-算力硬件与生态.html" style="color:var(--accent);text-decoration:none;font-weight:600;">02-算力硬件与生态</a>：CPU/GPU、CUDA、芯片厂商、国产、集群互联</li>
+        <li><a href="index.html" style="color:var(--accent);text-decoration:none;font-weight:600;">← 返回系列主页</a></li>
+      </ul>
+    </div>
+
+  </div>
+</main>
+
+<!-- 回到顶部按钮 -->
+<button class="back-to-top" id="backToTop" title="回到顶部">↑</button>
+
+<script>
+  // ===== 深色模式切换 =====
+  const themeBtn = document.getElementById('themeBtn');
+  const html = document.documentElement;
+  const savedTheme = localStorage.getItem('aibtc-03-theme');
+  if (savedTheme === 'dark') {
+    html.setAttribute('data-theme', 'dark');
+    themeBtn.textContent = '☀️';
+  }
+  themeBtn.addEventListener('click', () => {
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      themeBtn.textContent = '🌙';
+      localStorage.setItem('aibtc-03-theme', 'light');
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      themeBtn.textContent = '☀️';
+      localStorage.setItem('aibtc-03-theme', 'dark');
+    }
+  });
+
+  // ===== 移动端侧边栏 =====
+  const menuBtn = document.getElementById('menuBtn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  menuBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+  document.querySelectorAll('.toc-list a').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 900) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+      }
+    });
+  });
+
+  // ===== 滚动监听：高亮当前章节 + 进度条 + 回到顶部 =====
+  const tocLinks = document.querySelectorAll('.toc-list a');
+  const chapters = document.querySelectorAll('h2.chapter');
+  const progressBar = document.getElementById('progressBar');
+  const backToTop = document.getElementById('backToTop');
+
+  function updateActiveChapter() {
+    let current = '';
+    const scrollPos = window.scrollY + 170;   // ★ 覆盖 80+80 落位 + 10px 余量
+    chapters.forEach(ch => {
+      if (ch.offsetTop <= scrollPos) {
+        current = ch.id;
+      }
+    });
+    // ★ 滚到页面底部时强制高亮最后一章
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      current = chapters[chapters.length - 1].id;
+    }
+    tocLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('data-target') === current) {
+        link.classList.add('active');
+      }
+    });
+  }
+
+  function updateProgress() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = progress + '%';
+    if (scrollTop > 400) {
+      backToTop.classList.add('visible');
+    } else {
+      backToTop.classList.remove('visible');
+    }
+  }
+
+  window.addEventListener('scroll', () => {
+    updateActiveChapter();
+    updateProgress();
+  }, { passive: true });
+
+  backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  updateActiveChapter();
+  updateProgress();
+</script>
+
+</body>
+</html>

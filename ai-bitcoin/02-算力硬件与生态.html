@@ -1,0 +1,1167 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02 · 算力硬件与生态</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f6f8fb;
+    --bg-card: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --primary: #1a2744;
+    --primary-light: #2c4a7c;
+    --accent: #4a9eff;
+    --accent-light: #e8f2ff;
+    --code-bg: #f4f6fa;
+    --code-text: #2c3e50;
+    --formula-bg: #faf8f2;
+    --formula-border: #e8dcc0;
+    --formula-text: #5a4a2a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+    --sidebar-width: 280px;
+    --content-max: 860px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --text: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border: #334155;
+    --border-light: #1e293b;
+    --primary: #3b5998;
+    --primary-light: #4a6fa5;
+    --accent: #60a5fa;
+    --accent-light: #1e3a5f;
+    --code-bg: #1e293b;
+    --code-text: #cbd5e1;
+    --formula-bg: #1e293b;
+    --formula-border: #475569;
+    --formula-text: #fbbf24;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg);
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ===== 顶部导航栏 ===== */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.85);
+  }
+  [data-theme="dark"] .topbar { background: rgba(15,23,42,0.85); }
+
+  .topbar-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-title .dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .topbar-title .sub {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 8px;
+  }
+
+  .topbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .icon-btn {
+    width: 36px; height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .menu-btn { display: none; }
+
+  /* ===== 侧边栏 ===== */
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: var(--sidebar-width);
+    height: calc(100vh - 60px);
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px 0;
+    z-index: 90;
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar-header {
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sidebar-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .toc-list { list-style: none; padding: 0 12px; }
+  .toc-list li { margin: 2px 0; }
+  .toc-list a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13.5px;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+  }
+  .toc-list a:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+  .toc-list a.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  .toc-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    background: var(--border);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc-list a.active .toc-num {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .series-nav { padding: 12px 20px; }
+  .series-nav .sn-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .series-nav a {
+    display: block;
+    padding: 7px 12px;
+    margin: 4px 0;
+    border-radius: 7px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .series-nav a:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+  .series-nav a.cur {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ===== 主内容区 ===== */
+  .main {
+    margin-left: var(--sidebar-width);
+    margin-top: 60px;
+    padding: 40px 48px 80px;
+    min-height: calc(100vh - 60px);
+  }
+
+  .content-wrapper {
+    max-width: var(--content-max);
+    margin: 0 auto;
+  }
+
+  /* ===== 文章头部 ===== */
+  .article-header {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid var(--border);
+  }
+  .article-header .tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+  .article-header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .article-header .subtitle {
+    font-size: 17px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+  }
+  .article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .article-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* ===== 章节标题 ===== */
+  h2.chapter {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 50px 0 24px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: #fff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+    scroll-margin-top: 80px;
+  }
+  h2.chapter .ch-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 32px 0 14px;
+    padding-left: 14px;
+    border-left: 4px solid var(--accent);
+    scroll-margin-top: 80px;
+  }
+
+  h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-light);
+    margin: 22px 0 10px;
+    scroll-margin-top: 80px;
+  }
+
+  p { margin: 10px 0; text-align: justify; }
+
+  /* ===== 代码块 ===== */
+  pre, code {
+    font-family: "JetBrains Mono", "Fira Code", "DejaVu Sans Mono", "Noto Sans Mono CJK SC", monospace;
+  }
+  pre {
+    position: relative;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 13px;
+    line-height: 1.65;
+    overflow-x: auto;
+    margin: 14px 0;
+    color: var(--code-text);
+  }
+  pre .lang-label {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--border-light);
+    padding: 1px 8px;
+    border-radius: 5px;
+    letter-spacing: .5px;
+  }
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #e06c5e;
+  }
+  [data-theme="dark"] code { color: #f87171; }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* ===== 公式 ===== */
+  .formula {
+    background: var(--formula-bg);
+    border: 1px solid var(--formula-border);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 14px 0;
+    font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace;
+    font-size: 14px;
+    text-align: center;
+    color: var(--formula-text);
+    overflow-x: auto;
+  }
+
+  /* ===== 表格 ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13.5px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  th {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  td {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--bg-secondary); }
+  td code { white-space: normal; word-break: break-word; }
+
+  /* ===== 提示框 ===== */
+  .tip-box, .warn-box {
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 16px 0;
+  }
+  .tip-box {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+  }
+  .tip-box .tip-title {
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .warn-box {
+    background: #fef5e7;
+    border-left: 4px solid #f59e0b;
+  }
+  [data-theme="dark"] .warn-box { background: #422006; border-left-color: #f59e0b; }
+  .warn-box .warn-title {
+    font-weight: 700;
+    color: #d97706;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  [data-theme="dark"] .warn-box .warn-title { color: #fbbf24; }
+
+  /* ===== 列表 ===== */
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  /* ===== 回到顶部 ===== */
+  .back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 44px; height: 44px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+    z-index: 80;
+  }
+  .back-to-top.visible { opacity: 1; visibility: visible; }
+  .back-to-top:hover { transform: translateY(-2px); }
+
+  /* ===== 阅读进度条 ===== */
+  .progress-bar {
+    position: fixed;
+    top: 60px; left: 0;
+    height: 3px;
+    background: var(--accent);
+    z-index: 95;
+    transition: width 0.1s;
+  }
+
+  /* ===== 遮罩层（移动端） ===== */
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 60px; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 85;
+  }
+  .overlay.show { display: block; }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 900px) {
+    .menu-btn { display: flex; }
+    .sidebar {
+      transform: translateX(-100%);
+      box-shadow: var(--shadow-lg);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; padding: 24px 20px 60px; }
+    .article-header h1 { font-size: 24px; }
+    h2.chapter { font-size: 19px; padding: 12px 16px; }
+    h2.chapter .ch-num { width: 30px; height: 30px; font-size: 14px; }
+    .topbar-title .sub { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .main { padding: 16px 14px 50px; }
+    .article-meta { gap: 12px; font-size: 12px; }
+    pre { font-size: 12px; padding: 12px 14px; }
+    table { font-size: 12px; }
+    th, td { padding: 7px 10px; }
+  }
+
+  /* ===== 滚动条美化 ===== */
+  .sidebar::-webkit-scrollbar { width: 5px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  pre::-webkit-scrollbar { height: 6px; }
+  pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- 阅读进度条 -->
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+
+<!-- 顶部导航 -->
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menuBtn" title="目录">☰</button>
+  <div class="topbar-title">
+    <span class="dot"></span>
+    02 · 算力硬件与生态
+    <span class="sub">从算力看 AI 与比特币 · 系列第 2 篇</span>
+  </div>
+  <div class="topbar-actions">
+    <a class="icon-btn" href="../" title="返回笔记主页" style="text-decoration:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+    </a>
+    <a class="icon-btn" href="https://github.com/Ian-cyy" target="_blank" title="GitHub: Ian-cyy" style="text-decoration:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+    </a>
+    <button class="icon-btn" id="themeBtn" title="切换深色模式">🌙</button>
+  </div>
+</header>
+
+<!-- 遮罩层 -->
+<div class="overlay" id="overlay"></div>
+
+<!-- 侧边栏目录 -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h3>📑 章节目录</h3>
+  </div>
+  <ul class="toc-list">
+    <li><a href="#ch1" data-target="ch1"><span class="toc-num">一</span>CPU vs GPU</a></li>
+    <li><a href="#ch2" data-target="ch2"><span class="toc-num">二</span>显卡通用计算 GPGPU</a></li>
+    <li><a href="#ch3" data-target="ch3"><span class="toc-num">三</span>CUDA：护城河</a></li>
+    <li><a href="#ch4" data-target="ch4"><span class="toc-num">四</span>AMD 为什么没份</a></li>
+    <li><a href="#ch5" data-target="ch5"><span class="toc-num">五</span>全球芯片全景与梯队</a></li>
+    <li><a href="#ch6" data-target="ch6"><span class="toc-num">六</span>AI 公司用什么芯片</a></li>
+    <li><a href="#ch7" data-target="ch7"><span class="toc-num">七</span>华为昇腾专题</a></li>
+    <li><a href="#ch8" data-target="ch8"><span class="toc-num">八</span>TileLang 开源事件</a></li>
+    <li><a href="#ch9" data-target="ch9"><span class="toc-num">九</span>多卡与集群互联</a></li>
+    <li><a href="#ch10" data-target="ch10"><span class="toc-num">十</span>瓶颈在哪</a></li>
+    <li><a href="#ch11" data-target="ch11"><span class="toc-num">十一</span>分布式算力</a></li>
+    <li><a href="#ch12" data-target="ch12"><span class="toc-num">十二</span>AI 评测网站</a></li>
+    <li><a href="#ch13" data-target="ch13"><span class="toc-num">十三</span>一句话总纲</a></li>
+  </ul>
+  <div class="series-nav">
+    <div class="sn-title">📚 系列文章</div>
+    <a href="index.html">📖 主页 · 从算力看 AI 与比特币</a>
+    <a href="01-大模型是什么.html">01 · 大模型是什么</a>
+    <a href="02-算力硬件与生态.html" class="cur">02 · 算力硬件与生态</a>
+    <a href="03-比特币与算力.html">03 · 比特币与算力</a>
+  </div>
+  <div class="sidebar-footer">
+    资料截止：2026/10/1<br>
+    系列：从算力看 AI 与比特币<br>
+    本篇：13 章<br><br>
+    <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">
+      → GitHub: Ian-cyy
+    </a>
+  </div>
+</aside>
+
+<!-- 主内容 -->
+<main class="main">
+  <div class="content-wrapper">
+
+    <!-- 文章头部 -->
+    <div class="article-header">
+      <span class="tag">HARDWARE · CUDA · CLUSTER</span>
+      <h1>02 · 算力硬件与生态</h1>
+      <p class="subtitle">CPU/GPU → CUDA 护城河 → 芯片厂商全景 → 国产芯片 → 集群互联 → 瓶颈 → 分布式算力</p>
+      <div class="article-meta">
+        <span>🗓 资料截止 2026/10/1</span>
+        <span>📦 系列第 2 篇</span>
+        <span>📝 13 章</span>
+        <span>👤 <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">GitHub @Ian-cyy</a></span>
+      </div>
+    </div>
+
+    <!-- 第一章 -->
+    <h2 class="chapter" id="ch1"><span class="ch-num">一</span>CPU vs GPU：两种"强"</h2>
+    <div class="warn-box">
+      <div class="warn-title">⚠️ 反直觉的真相</div>
+      不是 CPU 更强，而是两者"强"的地方不同。
+    </div>
+    <table>
+      <tr><th></th><th>CPU</th><th>GPU</th></tr>
+      <tr><td>核心数</td><td>少（4~64）</td><td>多（几千~上万）</td></tr>
+      <tr><td>单核能力</td><td>强、灵活、会判断</td><td>弱、只会简单运算</td></tr>
+      <tr><td>擅长</td><td>复杂逻辑、串行任务</td><td>简单重复、海量并行</td></tr>
+      <tr><td>类比</td><td><strong>几个博士生</strong></td><td><strong>几千个小学生</strong></td></tr>
+    </table>
+    <ul>
+      <li>CPU 强在<strong>单打独斗、复杂任务</strong>（操作系统、开网页）。</li>
+      <li>GPU 强在<strong>人海战术、简单重复</strong>（给一亿像素上色）。</li>
+      <li>没有谁"取代"谁，是<strong>分工不同</strong>。</li>
+    </ul>
+
+    <!-- 第二章 -->
+    <h2 class="chapter" id="ch2"><span class="ch-num">二</span>显卡通用计算（GPGPU）</h2>
+    <div class="formula">洞察："给像素上色"和"做数学运算"本质一样——都是对海量数据做同一种简单计算。</div>
+    <ul>
+      <li>GPU 本来只画图，但既然能算颜色，就能算矩阵、物理、AI。</li>
+      <li>这就是 <strong>GPGPU（General-Purpose computing on GPU，GPU 通用计算）</strong>。</li>
+      <li>一句话：<strong>GPU 从"只会画画的画工"，被改造成"什么数都能算的计算民工"</strong>。</li>
+    </ul>
+    <h3>为什么 AI 适合 GPU</h3>
+    <ul>
+      <li>神经网络的 90% 时间在做<strong>矩阵乘加</strong>（如 4096×4096 相乘 = 几亿次"乘一下、加一下"）。</li>
+      <li>每一次<strong>极简单、彼此独立</strong> → 正好让几千个核心并行。</li>
+      <li>CPU 只有几十核，只能排队慢慢算，慢几十上百倍。</li>
+      <li>后来英伟达又专门做了<strong>矩阵运算专用核心（Tensor Core）</strong>，把这件事做到极致。</li>
+    </ul>
+
+    <!-- 第三章 -->
+    <h2 class="chapter" id="ch3"><span class="ch-num">三</span>CUDA：英伟达的护城河</h2>
+    <h3>3.1 CUDA 是什么</h3>
+    <p><strong>英伟达给自家 GPU 配的一整套软件工具包</strong>，包含：</p>
+    <ol>
+      <li><strong>语言</strong>：用 C/C++ 写 GPU 程序；</li>
+      <li><strong>编译器</strong>：把代码编成 GPU 指令；</li>
+      <li><strong>现成库</strong>（cuBLAS/cuDNN）：矩阵运算等拿来即用；</li>
+      <li><strong>生态</strong>：教程、框架、人才全围着它转。</li>
+    </ol>
+    <div class="warn-box">
+      <div class="warn-title">🚗 类比</div>
+      硬件是发动机，CUDA 是驾驶系统 + 全套工具。<strong>没有 CUDA，GPU 就是用极其晦涩的底层指令去驱动的精密机器，门槛高到几乎没法用。</strong>
+    </div>
+    <h3>3.2 护城河的本质是"迁移成本"</h3>
+    <ul>
+      <li><strong>20 年积累</strong>：几百万行代码、库、教程、论文、课程全默认 CUDA。</li>
+      <li><strong>框架绑定</strong>：PyTorch / TensorFlow 底层默认 CUDA。</li>
+      <li><strong>网络效应</strong>：用的人越多 → 库越好 → 更多人用。</li>
+      <li><strong>关键</strong>：硬件可以追，<strong>20 年的生态没法一夜复制</strong>。英伟达卖的不只是卡，是"不用重写代码"。</li>
+    </ul>
+    <h3>3.3 2006/2007 年的远见：不是专门为了 AI</h3>
+    <ul>
+      <li><strong>2006/07</strong> 推出 CUDA，动机是 <strong>GPGPU（科学计算、物理模拟、金融）</strong>，<strong>不是 AI</strong>。</li>
+      <li><strong>2012</strong> AlexNet 用两块 GTX 580 训练夺冠，深度学习爆发，正好跑在 CUDA 上。</li>
+      <li><strong>2014 起</strong>英伟达才专门为 AI 加码：cuDNN、Tensor Core（2017 Volta）。</li>
+      <li><strong>远见是"GPU 是通用并行处理器"，不是"AI"</strong>——但通用性恰好是 AI 需要的。</li>
+    </ul>
+    <h3>3.4 和游戏驱动的区别</h3>
+    <table>
+      <tr><th></th><th>游戏驱动（图形）</th><th>CUDA（计算）</th></tr>
+      <tr><td>干什么</td><td>把 DirectX/OpenGL 变成"画像素"</td><td>让你写代码让 GPU"算任意东西"</td></tr>
+      <tr><td>谁在用</td><td>玩家 / 厂商</td><td>开发者</td></tr>
+      <tr><td>灵活性</td><td>固定管线</td><td>通用编程</td></tr>
+      <tr><td>类比</td><td>让显卡<strong>画画</strong></td><td>让显卡<strong>干活/算数</strong></td></tr>
+    </table>
+    <p><strong>一块显卡两套本领</strong>：图形（打游戏）+ 计算（CUDA），都建立在同一硬件和底层驱动上。</p>
+
+    <!-- 第四章 -->
+    <h2 class="chapter" id="ch4"><span class="ch-num">四</span>AMD 为什么没份</h2>
+    <div class="formula">一句话：AMD 不是没做 AI 卡，而是"硬件能打、软件不跟"，又撞在 CUDA 护城河上。</div>
+    <h3>时间线</h3>
+    <table>
+      <tr><th>时间</th><th>事件</th></tr>
+      <tr><td>2006</td><td>AMD 收购 ATI，同时做 CPU/GPU</td></tr>
+      <tr><td>2007 起</td><td>英伟达全力押注 CUDA；AMD 重心在游戏显卡和 CPU</td></tr>
+      <tr><td>2016</td><td>AMD 才推出对标 CUDA 的 <strong>ROCm</strong>（晚近 10 年）</td></tr>
+      <tr><td>2023/12</td><td>发布 <strong>MI300X</strong>，硬件强悍、显存更大，正式冲 AI</td></tr>
+      <tr><td>2024~2026</td><td>MI325X / MI350X / MI355X / MI400 陆续上，硬件追得紧</td></tr>
+    </table>
+    <h3>为什么还是没它的事</h3>
+    <ol>
+      <li><strong>软件生态差距</strong>：ROCm 不稳、框架支持滞后，迁移成本高。</li>
+      <li><strong>起步太晚</strong>：英伟达领先 10 年。</li>
+      <li><strong>策略失误</strong>：长期把 GPU 当游戏业务。</li>
+      <li><strong>中国不买账</strong>：也受出口管制，且不是国产。</li>
+    </ol>
+    <h3>现状</h3>
+    <ul>
+      <li>主要在<strong>推理/价格敏感/备胎</strong>场景：微软、Meta、Oracle、xAI 少量采购 MI300/355X。</li>
+      <li>公开统计口径不同，英伟达在数据中心 AI 加速器市场占据明显主导；AMD 等厂商份额通常为个位数到低两位数，具体年份和口径需查最新市场报告。</li>
+      <li>AMD 也走 <strong>HIP 兼容 CUDA</strong> 路线（能追，但永远是追兵）。</li>
+    </ul>
+
+    <!-- 第五章 -->
+    <h2 class="chapter" id="ch5"><span class="ch-num">五</span>全球芯片厂商全景与梯队</h2>
+    <div class="warn-box">
+      <div class="warn-title">⚠️ 说明</div>
+      AI 芯片<strong>没有单一"全网排行榜"</strong>。以下是按「峰值能力 + 生态 + 市场地位」做的科普性分层，不等同于统一基准测试排名；具体产品还要看精度、稀疏性、功耗、软件和实际工作负载（截至 2026/10）。
+    </div>
+    <h3>T0 系统级之巅（超节点/集群）</h3>
+    <table>
+      <tr><th>产品</th><th>厂商</th><th>定位</th></tr>
+      <tr><td>GB300 / GB200 NVL72</td><td>🇺🇸 NVIDIA</td><td>全球超节点标杆</td></tr>
+      <tr><td>Rubin 系列系统</td><td>🇺🇸 NVIDIA</td><td>新一代，具体配置以官方发布为准</td></tr>
+      <tr><td>TPU v7 Ironwood 集群</td><td>🇺🇸 Google</td><td>自研超大规模</td></tr>
+      <tr><td><strong>Atlas 950 SuperPoD</strong></td><td>🇨🇳 华为</td><td>国产系统旗舰</td></tr>
+      <tr><td>Helios（MI400 机架）</td><td>🇺🇸 AMD</td><td>追赶机架级</td></tr>
+    </table>
+    <h3>T1 单卡旗舰（训练）</h3>
+    <table>
+      <tr><th>产品</th><th>厂商</th></tr>
+      <tr><td>B300 / B200</td><td>🇺🇸 NVIDIA</td></tr>
+      <tr><td>MI355X / 后续 MI4xx 系列</td><td>🇺🇸 AMD</td></tr>
+      <tr><td>TPU v7</td><td>🇺🇸 Google</td></tr>
+      <tr><td><strong>Ascend 950DT / 950PR</strong></td><td>🇨🇳 华为</td></tr>
+      <tr><td>Trainium 系列</td><td>🇺🇸 AWS</td></tr>
+      <tr><td>Maia 系列</td><td>🇺🇸 微软</td></tr>
+      <tr><td>WSE-3/4</td><td>🇺🇸 Cerebras</td></tr>
+      <tr><td>SN40L</td><td>🇺🇸 SambaNova</td></tr>
+    </table>
+    <h3>T2 高端（上代旗舰/主流训练）</h3>
+    <table>
+      <tr><th>产品</th><th>厂商</th></tr>
+      <tr><td>H200 / H100</td><td>🇺🇸 NVIDIA</td></tr>
+      <tr><td>MI300X / MI325X</td><td>🇺🇸 AMD</td></tr>
+      <tr><td>TPU v5p / v6</td><td>🇺🇸 Google</td></tr>
+      <tr><td>Gaudi 3</td><td>🇺🇸 Intel</td></tr>
+      <tr><td><strong>Ascend 910C</strong></td><td>🇨🇳 华为</td></tr>
+      <tr><td><strong>思元 690</strong></td><td>🇨🇳 寒武纪</td></tr>
+      <tr><td><strong>BR100</strong></td><td>🇨🇳 壁仞</td></tr>
+      <tr><td><strong>MTT S5000 / KUAE</strong></td><td>🇨🇳 摩尔线程</td></tr>
+      <tr><td><strong>曦云 C600</strong></td><td>🇨🇳 沐曦</td></tr>
+    </table>
+    <h3>T3 主流训练/推理</h3>
+    <table>
+      <tr><th>产品</th><th>厂商</th></tr>
+      <tr><td>L40S / L4</td><td>🇺🇸 NVIDIA</td></tr>
+      <tr><td>MI210/250</td><td>🇺🇸 AMD</td></tr>
+      <tr><td>Inferentia 2</td><td>🇺🇸 AWS</td></tr>
+      <tr><td><strong>Ascend 910B</strong></td><td>🇨🇳 华为</td></tr>
+      <tr><td><strong>昆仑芯 P800</strong></td><td>🇨🇳 百度</td></tr>
+      <tr><td><strong>天垓 150</strong></td><td>🇨🇳 天数智芯</td></tr>
+      <tr><td><strong>邃思</strong></td><td>🇨🇳 燧原</td></tr>
+    </table>
+    <h3>T4 推理/边缘/专用</h3>
+    <ul>
+      <li><strong>Ascend 310 / Atlas 300I</strong>（华为）、Groq LPU、Google TPU v5e、<strong>地平线 征程 / 黑芝麻</strong>（车载）、<strong>算能 BM1688</strong>。</li>
+    </ul>
+    <h3>市场格局</h3>
+    <table>
+      <tr><th>厂商</th><th>地位</th></tr>
+      <tr><td>🇺🇸 <strong>NVIDIA</strong></td><td>绝对霸主，~80–90%+ 市场</td></tr>
+      <tr><td>🇺🇸 AMD / Google / AWS / 微软</td><td>挑战者 / 自研，抢剩余份额</td></tr>
+      <tr><td>🇨🇳 <strong>华为昇腾</strong></td><td>国产第一，单卡约 H100 级</td></tr>
+      <tr><td>🇨🇳 寒武纪、壁仞、摩尔线程、沐曦、昆仑芯等</td><td>第二阵营，国产替代</td></tr>
+    </table>
+
+    <!-- 第六章 -->
+    <h2 class="chapter" id="ch6"><span class="ch-num">六</span>AI 公司用什么芯片</h2>
+    <div class="warn-box">
+      <div class="warn-title">⚠️ 说明</div>
+      下表是公开信息整理出的<strong>大致路线</strong>，不是完整采购清单；顶级公司的训练集群配置、租赁规模和型号组合通常不会完全公开。
+    </div>
+    <table>
+      <tr><th>公司</th><th>训练主要用</th><th>推理/专用</th><th>自研程度</th></tr>
+      <tr><td><strong>Google（Gemini）</strong></td><td><strong>自研 TPU v5p/v6/v7</strong></td><td>TPU</td><td>⭐⭐⭐ 唯一完全自研</td></tr>
+      <tr><td><strong>OpenAI（GPT）</strong></td><td>英伟达 H100/B200/GB200</td><td>英伟达</td><td>⭐ 与博通合作自研中</td></tr>
+      <tr><td><strong>Anthropic（Claude）</strong></td><td><strong>英伟达 + 谷歌 TPU + AWS Trainium</strong></td><td>同上</td><td>⭐⭐ 三家通吃</td></tr>
+      <tr><td><strong>Microsoft（Copilot）</strong></td><td>英伟达 + 自研 <strong>Maia</strong></td><td>Maia</td><td>⭐⭐</td></tr>
+      <tr><td><strong>亚马逊</strong></td><td>英伟达 + 自研 <strong>Trainium 3</strong></td><td>Inferentia</td><td>⭐⭐⭐</td></tr>
+      <tr><td><strong>Meta（Llama）</strong></td><td>英伟达（数十万卡）</td><td>自研 <strong>MTIA</strong></td><td>⭐⭐</td></tr>
+      <tr><td><strong>xAI（Grok）</strong></td><td>英伟达（Colossus）</td><td>英伟达 + 少量 AMD</td><td>⭐</td></tr>
+      <tr><td><strong>特斯拉</strong></td><td>英伟达 + 自研 <strong>Dojo</strong></td><td>Dojo</td><td>⭐⭐</td></tr>
+      <tr><td><strong>Mistral / 欧洲初创</strong></td><td>英伟达</td><td>英伟达</td><td>⭐</td></tr>
+      <tr><td><strong>DeepSeek / 月之暗面 / 智谱 / MiniMax</strong></td><td>英伟达 + 国产（昇腾等）</td><td>—</td><td>⭐⭐ 转国产</td></tr>
+      <tr><td><strong>阿里 / 百度 / 腾讯 / 字节</strong></td><td>英伟达 + 自研</td><td>自研 + 昇腾</td><td>⭐⭐</td></tr>
+    </table>
+    <h3>三种路线</h3>
+    <ol>
+      <li><strong>完全自研派</strong>：Google（TPU）、特斯拉（Dojo 部分）。</li>
+      <li><strong>自研+英伟达混用</strong>：亚马逊、微软、Meta、百度、阿里。</li>
+      <li><strong>主力靠英伟达</strong>：OpenAI、xAI、Anthropic、Mistral 及多数中国大模型公司。</li>
+    </ol>
+
+    <!-- 第七章 -->
+    <h2 class="chapter" id="ch7"><span class="ch-num">七</span>华为昇腾专题</h2>
+    <h3>7.1 是什么</h3>
+    <ul>
+      <li>华为的 <strong>AI 芯片家族（Ascend）</strong>，对标英伟达 GPU。</li>
+    </ul>
+    <h3>7.2 产品两条线</h3>
+    <table>
+      <tr><th>线</th><th>型号</th><th>用途</th></tr>
+      <tr><td>推理线</td><td><strong>昇腾 310</strong></td><td>边缘/推理，小、省电</td></tr>
+      <tr><td>训练线</td><td><strong>昇腾 910</strong></td><td>数据中心、大模型训练</td></tr>
+    </table>
+    <h3>7.3 核心架构：达芬奇（Da Vinci）</h3>
+    <ul>
+      <li><strong>Cube（立方）核</strong>：矩阵乘法（对应 Tensor Core）。</li>
+      <li><strong>Vector（向量）核</strong>：激活、归一化。</li>
+      <li><strong>Scalar（标量）核</strong>：控制流程。</li>
+    </ul>
+    <h3>7.4 代际</h3>
+    <table>
+      <tr><th>型号</th><th>时间</th><th>说明</th></tr>
+      <tr><td>昇腾 910</td><td>2019</td><td>第一代训练芯片</td></tr>
+      <tr><td>910B</td><td>2023</td><td>国产替代主力</td></tr>
+      <tr><td>910C</td><td>2024–25</td><td>双芯封装，大幅提升</td></tr>
+      <tr><td><strong>950（PR/DT）</strong></td><td>2026</td><td>新一代，架构代号 <code>dav-3510</code></td></tr>
+      <tr><td>960 / 970</td><td>2027/2028</td><td>路线图</td></tr>
+    </table>
+    <h3>7.5 官方规格（950 系列）</h3>
+    <ul>
+      <li><strong>Ascend 950PR</strong>：华为官方页面强调其面向 LLM Prefill 和推荐场景，并公布最高 1784 TFLOPS、128GB 片上内存、1.6TB/s 等指标；支持 SIMD+SIMT 混合编程和灵衢互联。</li>
+      <li><strong>Ascend 950DT</strong>：官方超节点资料披露了 96GB 片上内存、最高 4.0TB/s 等配置描述。</li>
+      <li><strong>Atlas 950 SuperPoD（超节点）</strong>：官方资料披露最高支持 1024×950DT、1 EFLOPS FP8/HiF8、2 EFLOPS MXFP4、1.72PB/s 级互联和大规模统一内存。这里的数字是<strong>系统级峰值规格</strong>，不能直接等同于单卡实测性能。</li>
+    </ul>
+    <h3>7.6 软件栈：CANN</h3>
+    <div class="formula">CANN = 华为版 CUDA（驱动 + 编译器 + 算子库 + 框架适配）。</div>
+    <table>
+      <tr><th>作用</th><th>英伟达</th><th>华为</th></tr>
+      <tr><td>软件栈</td><td>CUDA</td><td><strong>CANN</strong></td></tr>
+      <tr><td>写算子</td><td>CUDA C</td><td><strong>Ascend C</strong></td></tr>
+      <tr><td>编译器</td><td>nvcc</td><td>毕昇（bisheng）</td></tr>
+      <tr><td>算子库</td><td>cuBLAS/cuDNN</td><td>CANN 算子库 / <strong>ATB</strong></td></tr>
+      <tr><td>推理引擎</td><td>TensorRT</td><td><strong>MindIE / ATC</strong></td></tr>
+      <tr><td>框架适配</td><td>原生</td><td><strong>torch_npu</strong></td></tr>
+      <tr><td>自家框架</td><td>—</td><td><strong>MindSpore</strong></td></tr>
+    </table>
+    <table>
+      <tr><th>✅ 优势</th><th>❌ 短板</th></tr>
+      <tr><td>自主可控、信创刚需</td><td><strong>CANN 生态远不如 CUDA</strong></td></tr>
+      <tr><td>软硬一体、深度优化</td><td>算子覆盖不全、开发者少</td></tr>
+      <tr><td>国产大模型适配多</td><td>跨代兼容折腾</td></tr>
+    </table>
+    <h3>7.7 昇腾性能梯队</h3>
+    <table>
+      <tr><th>梯队</th><th>产品</th><th>关键算力</th></tr>
+      <tr><td>T0 系统旗舰</td><td>Atlas 950 SuperPoD</td><td>1 EFLOPS FP8</td></tr>
+      <tr><td>T1 新一代芯片</td><td>Ascend 950DT/PR</td><td>~1784 TFLOPS</td></tr>
+      <tr><td>T2 上代主力</td><td>Ascend 910C</td><td>~H100 级</td></tr>
+      <tr><td>T3 量产主力</td><td>Ascend 910B</td><td>~A100 级</td></tr>
+      <tr><td>T4 推理/边缘</td><td>Ascend 310 / Atlas 300I</td><td>低功耗推理</td></tr>
+    </table>
+    <div class="warn-box">
+      <div class="warn-title">📌 结论</div>
+      单卡峰值已到 H100 级、逼近 B200；系统级靠"堆规模"取胜；<strong>真实性能受软件生态拖累</strong>。
+    </div>
+
+    <!-- 第八章 -->
+    <h2 class="chapter" id="ch8"><span class="ch-num">八</span>TileLang 开源事件（9.30）</h2>
+    <h3>8.1 先澄清</h3>
+    <ul>
+      <li>本文所说的"9/30"是指 <strong>2026/9/30</strong> 的仓库更新/公告时间。</li>
+      <li><strong>DeepSeek 没开源整个 TileLang</strong>（TileLang 2025/1 已开源）。</li>
+      <li>9/30 是 <strong>TileLang 正式支持华为昇腾 950 NPU</strong>，而这套<strong>昇腾后端主要由 DeepSeek 工程师开发并开源</strong>。</li>
+      <li>类比：<strong>不是发布了 CMSIS，而是给 CMSIS 写了一个"昇腾移植层"并公开。</strong></li>
+    </ul>
+    <h3>8.2 TileLang 是什么</h3>
+    <ul>
+      <li>北大杨智团队 + 微软研究院发起，基于 Apache TVM。</li>
+      <li>用 <strong>Python 写 GPU/NPU 高性能算子</strong>（GEMM、FlashAttention 等）。</li>
+      <li><strong>一份代码，编译到多家芯片</strong>：CUDA / ROCm / Metal / 昇腾。</li>
+    </ul>
+    <h3>8.3 和 CUDA 的关系</h3>
+    <pre><code class="language-text">PyTorch
+  ├─ 走英伟达 → CUDA → NVIDIA GPU
+  └─ 走昇腾   → torch_npu → CANN → 昇腾 NPU
+
+TileLang（跨芯片翻译层）
+  ├─ 编到 CUDA   → NVIDIA GPU
+  └─ 编到 Ascend → CANN → 昇腾 NPU</code></pre>
+    <ul>
+      <li>TileLang <strong>和 CUDA 同一层，但跨芯片</strong>，是"想抽掉 CUDA 这层"的角色。</li>
+      <li>在英伟达上是"<strong>生成 CUDA</strong>"，不是"取代 CUDA"。</li>
+    </ul>
+    <h3>8.4 开源规模（实测仓库）</h3>
+    <ul>
+      <li><strong>287 个相关文件、约 4 MB</strong>（代码约 3.3 MB，估计数万行）。</li>
+      <li><code>src/ascend/</code> 就 <strong>85 个 C++ 文件、~1.9 MB</strong>：<code>codegen_pto.cc</code>(292KB)、<code>codegen_ascend.cc</code>(147KB)、<code>insert_sync.cc</code>(104KB)、<code>estimate_latency.cc</code>(88KB)、<code>layout_inference.cc</code>(74KB)、<code>auto_schedule.cc</code>(53KB)…</li>
+      <li>示例覆盖 <strong>DeepGEMM、FlashAttention（含反向）、FP8</strong>。</li>
+      <li>测试 <strong>101 个文件</strong>。</li>
+      <li><strong>结论：完整后端移植，不是 demo。</strong></li>
+    </ul>
+    <h3>8.5 用户分布</h3>
+    <ul>
+      <li><strong>产业侧高度集中在中国</strong>：华为昇腾、摩尔线程、沐曦、海光、燧原、算能均适配。</li>
+      <li>旗舰用户 <strong>DeepSeek</strong>（V3.2-Exp 起用于模型研发）。</li>
+      <li>GitHub 页面抓取时约 7.9k star / 791 fork；这是随时间变化的社区指标。</li>
+      <li>海外主要零散用于写 CUDA/AMD 算子。</li>
+    </ul>
+    <h3>8.6 意义</h3>
+    <ol>
+      <li><strong>对 DeepSeek</strong>：供应链安全、降本、声誉。</li>
+      <li><strong>对华为</strong>：白捡顶尖外援补 CANN 之上的适配。</li>
+      <li><strong>对国产链</strong>：头部 AI 公司主动下场补生态，示范效应。</li>
+      <li><strong>对 CUDA</strong>：长期威胁、短期有限。</li>
+      <li><strong>对 TileLang</strong>：获得旗舰用户 + 关键后端，解决冷启动。</li>
+    </ol>
+    <div class="formula">一次开源的本质是"用开源的方式给国产算力修路"——最大意义是信号和方向，不是短期撼动 CUDA。</div>
+
+    <!-- 第九章 -->
+    <h2 class="chapter" id="ch9"><span class="ch-num">九</span>多卡与集群：分层互联</h2>
+    <h3>9.1 节点层级</h3>
+    <pre><code class="language-text">1 张 GPU
+  ↓ 8 张卡（典型）用 NVLink 连成一块 HGX 基板
+1 个节点 = 1 台服务器（通常 8 卡，一个 OS 实例）
+  ↓ 几十个节点装进机架(rack)
+1 个机架
+  ↓ 网络互联
+1 个集群（几万 → 几十万张卡）</code></pre>
+    <ul>
+      <li><strong>节点 = 一台独立机器</strong>；一个机箱也可能塞多个节点。</li>
+      <li>少数系统把 <strong>72 张卡</strong>（GB200 NVL72）连成一个 NVLink 域。</li>
+    </ul>
+    <h3>9.2 互连层级（互连版"存储层级"）</h3>
+    <table>
+      <tr><th>层级</th><th>技术</th><th>带宽</th><th>规模</th></tr>
+      <tr><td>核心↔显存</td><td>HBM</td><td>~8 TB/s</td><td>单卡</td></tr>
+      <tr><td>卡↔卡（机内）</td><td><strong>NVLink/NVSwitch</strong></td><td>数百 GB/s 到 TB/s 级</td><td>取决于代际和拓扑</td></tr>
+      <tr><td>节点↔节点</td><td><strong>InfiniBand / RoCE</strong></td><td>通常低于机内互联</td><td>取决于网卡、链路和交换机</td></tr>
+      <tr><td>CPU↔GPU</td><td>PCIe</td><td>~64 GB/s</td><td>单机</td></tr>
+    </table>
+    <div class="tip-box">
+      <div class="tip-title">💡 越近越快越贵、规模越小</div>
+      这不是随便选的，是"距离/规模/成本"逼出来的。
+    </div>
+    <h3>9.3 NVLink vs PCIe</h3>
+    <table>
+      <tr><th></th><th>PCIe 5.0</th><th>NVLink 5</th></tr>
+      <tr><td>性质</td><td>通用硬件协议</td><td>专用硬件协议</td></tr>
+      <tr><td>带宽</td><td>~64 GB/s</td><td>~1800 GB/s</td></tr>
+      <tr><td>谁用</td><td>CPU↔GPU、通用扩展</td><td><strong>GPU↔GPU 专用</strong></td></tr>
+      <tr><td>归属</td><td>开放标准</td><td>英伟达私有</td></tr>
+    </table>
+    <ul>
+      <li><strong>NVSwitch</strong>：交换芯片，把很多 NVLink 连成"全互联"。</li>
+      <li><strong>AMD 对应</strong>：Infinity Fabric（xGMI）；开放标准 <strong>UALink</strong>。</li>
+      <li><strong>节点间</strong>用 <strong>InfiniBand / RoCE</strong>（网络）。</li>
+      <li><strong>为什么分层</strong>：NVLink 距离短、连卡数有限、极贵；InfiniBand 能铺开几万节点。</li>
+    </ul>
+    <h3>9.4 共享内存原理</h3>
+    <ul>
+      <li><strong>NVLink/NVSwitch</strong> 把多卡显存组成 <strong>统一内存池</strong>，可互相直接访问。</li>
+      <li>例：<strong>GB200 NVL72 = 72 卡一个域，130TB 统一显存</strong>。</li>
+      <li><strong>注意</strong>：老游戏技术 <strong>SLI/CrossFire 不是共享内存</strong>（各用各的显存，只分帧）。</li>
+    </ul>
+    <h3>9.5 集群不是"一块超大 PCB"</h3>
+    <ul>
+      <li>是<strong>分层互联</strong>：卡间 NVLink/NVSwitch，节点间 InfiniBand/RoCE，集群用交换机级联。</li>
+      <li>几万卡 = <strong>几万台服务器 + 大量交换机</strong>，不是一块巨型主板。</li>
+      <li>带宽靠<strong>层级结构 + 并行策略</strong>（张量/流水线/数据并行），尽量把高频通信压在节点内。</li>
+      <li>大数据集群的 PCIe 慢 → 节点内用 NVLink 绕开它。</li>
+    </ul>
+
+    <!-- 第十章 -->
+    <h2 class="chapter" id="ch10"><span class="ch-num">十</span>瓶颈到底卡在哪</h2>
+    <div class="warn-box">
+      <div class="warn-title">📌 核心结论</div>
+      很多 AI 工作负载的主要矛盾已从纯算力转向数据搬运，但不能把所有工作负载都简单归结为"只卡带宽"。
+    </div>
+    <table>
+      <tr><th>环节</th><th>瓶颈</th><th>严重度</th></tr>
+      <tr><td>单卡显存</td><td><strong>内存墙</strong>：容量+带宽不够</td><td>🔴 最核心</td></tr>
+      <tr><td>卡间互联</td><td><strong>互联墙</strong>：跨卡通信慢</td><td>🔴 最核心</td></tr>
+      <tr><td>算力(FLOPS)</td><td>相对过剩</td><td>🟡</td></tr>
+      <tr><td>供电/散热</td><td>单柜 ~100kW 逼近极限</td><td>🟠</td></tr>
+    </table>
+    <h3>供应链瓶颈</h3>
+    <table>
+      <tr><th>环节</th><th>情况</th></tr>
+      <tr><td><strong>HBM 产能</strong></td><td>🔴 最紧，三巨头产能 = 英伟达出货上限</td></tr>
+      <tr><td><strong>先进封装 CoWoS</strong></td><td>🔴 台积电产能是硬约束</td></tr>
+      <tr><td>先进制程</td><td>🟠 逼近物理极限</td></tr>
+    </table>
+    <h3>国产专属瓶颈</h3>
+    <ul>
+      <li>对国产芯片而言，<strong>软件生态（CANN、算子库、编译器、框架适配）仍是核心瓶颈之一</strong>；硬件峰值不能直接等同于应用有效算力。</li>
+    </ul>
+    <h3>最卡的那一步（按场景）</h3>
+    <table>
+      <tr><th>场景</th><th>最卡</th><th>原因</th></tr>
+      <tr><td><strong>推理</strong></td><td><strong>HBM 带宽</strong>（核心↔显存）</td><td>每字都要重读全部权重，通常不跨节点</td></tr>
+      <tr><td><strong>训练</strong></td><td>视并行策略而定，常见瓶颈是<strong>跨卡/跨节点同步</strong></td><td>卡数越多，通信占比越高，扩展效率下降</td></tr>
+    </table>
+
+    <!-- 第十一章 -->
+    <h2 class="chapter" id="ch11"><span class="ch-num">十一</span>分布式算力与个人显卡出租</h2>
+    <h3>11.1 训练/推理集群能复用吗</h3>
+    <ul>
+      <li><strong>技术上一批卡既能训练也能推理</strong>（硬件一样）。</li>
+      <li>实际做法：<strong>分池 + 混部 + 推理外包</strong> 三管齐下。
+        <ul>
+          <li>分池：训练池 / 推理池。</li>
+          <li>混部（co-location）：把推理塞进训练空闲期，提高利用率。</li>
+          <li>推理外包：DeepSeek 模型由 <strong>20+ provider</strong> 一起服务。</li>
+        </ul>
+      </li>
+      <li><strong>资源本质稀缺</strong>：给推理的卡就不能训练，是机会成本。</li>
+    </ul>
+    <h3>11.2 个人笔记本出租</h3>
+    <table>
+      <tr><th>平台</th><th>说明</th></tr>
+      <tr><td>Salad.com</td><td>最适合个人</td></tr>
+      <tr><td>Vast.ai</td><td>GPU 租赁市场，可做供给方</td></tr>
+      <tr><td>io.net</td><td>去中心化 GPU 云</td></tr>
+      <tr><td>Akash / Render</td><td>去中心化算力/渲染</td></tr>
+    </table>
+    <div class="warn-box">
+      <div class="warn-title">🧊 现实泼冷水</div>
+      <ul>
+        <li>笔记本 RTX 3060（通常为 6GB，具体视机型）<strong>显存小、散热和持续供电能力有限、收益不稳定</strong>，电费、折旧和设备损耗可能超过收入。</li>
+        <li>大厂只用数据中心级卡，<strong>不用消费级笔记本 GPU</strong>。</li>
+        <li><strong>结论</strong>：笔记本出租 ≈ 零钱，不是生意。</li>
+      </ul>
+    </div>
+    <h3>11.3 众包算力能当集群吗</h3>
+    <ul>
+      <li><strong>能众包"独立任务"</strong>（渲染、科学模拟），<strong>不能众包大模型训练</strong>。</li>
+      <li>训练中的高频同步对带宽和延迟很敏感；家庭互联网与数据中心高速互联在带宽、延迟、稳定性上存在数量级差异。</li>
+      <li>"压缩梯度"（梯度压缩/量化/稀疏化/蒸馏）<strong>存在但有限</strong>，不能把互联网训练变成可行。</li>
+      <li>大型训练必须靠<strong>数据中心级集群</strong>。</li>
+    </ul>
+
+    <!-- 第十二章 -->
+    <h2 class="chapter" id="ch12"><span class="ch-num">十二</span>AI 模型评测网站</h2>
+    <table>
+      <tr><th>网站</th><th>侧重</th><th>备注</th></tr>
+      <tr><td><strong>Artificial Analysis</strong></td><td>智能指数、价格、速度、上下文</td><td>独立第三方，选型主力</td></tr>
+      <tr><td><strong>OpenRouter</strong></td><td>真实调用流量、市场份额、单价</td><td>300+ 模型聚合网关</td></tr>
+      <tr><td><strong>LMArena</strong>（原 Chatbot Arena）</td><td>人类盲测 Elo</td><td>主观偏好</td></tr>
+      <tr><td><strong>SWE-bench</strong></td><td>真实软件工程/编码能力</td><td>GitHub issue 修 bug</td></tr>
+      <tr><td>Hugging Face Open LLM</td><td>开源模型基准</td><td>—</td></tr>
+      <tr><td>LiveBench</td><td>抗污染、定期换题</td><td>—</td></tr>
+      <tr><td>SuperCLUE</td><td>中文能力</td><td>—</td></tr>
+    </table>
+    <div class="tip-box">
+      <div class="tip-title">💡 建议组合</div>
+      性能看 Artificial Analysis + LMArena，价格看 Artificial Analysis + OpenRouter，编码看 SWE-bench；芯片实测优先看 MLPerf 和厂商/云厂商的可复现实测，并核对测试精度与软件版本。
+    </div>
+
+    <!-- 第十三章 -->
+    <h2 class="chapter" id="ch13"><span class="ch-num">十三</span>一句话总纲</h2>
+    <div class="formula">CPU 管复杂逻辑，GPU 管海量重复；AI 正好是海量重复，于是 GPU 上位；而让 GPU 真正能用的 CUDA，顺理成章成了英伟达的护城河。国产芯片硬件追得快，但卡在软件生态（CANN/TileLang 正在补）。多卡集群是"分层互联"：越近越快越贵、规模越小。当前瓶颈不在算力，而在带宽（HBM + 互联）与 HBM/封装产能，国产额外卡在软件生态。</div>
+
+    <div class="tip-box" style="margin-top:40px;">
+      <div class="tip-title">📚 延伸阅读（本系列其他文件）</div>
+      <ul style="margin:8px 0 0 0;">
+        <li><a href="01-大模型是什么.html" style="color:var(--accent);text-decoration:none;font-weight:600;">01-大模型是什么</a>：模型本质、参数、训练、推理、显存</li>
+        <li><a href="03-比特币与算力.html" style="color:var(--accent);text-decoration:none;font-weight:600;">03-比特币与算力</a>：为什么挖矿需要算力、PoW、哈希</li>
+        <li><a href="index.html" style="color:var(--accent);text-decoration:none;font-weight:600;">← 返回系列主页</a></li>
+      </ul>
+    </div>
+
+  </div>
+</main>
+
+<!-- 回到顶部按钮 -->
+<button class="back-to-top" id="backToTop" title="回到顶部">↑</button>
+
+<script>
+  // ===== 深色模式切换 =====
+  const themeBtn = document.getElementById('themeBtn');
+  const html = document.documentElement;
+  const savedTheme = localStorage.getItem('aibtc-02-theme');
+  if (savedTheme === 'dark') {
+    html.setAttribute('data-theme', 'dark');
+    themeBtn.textContent = '☀️';
+  }
+  themeBtn.addEventListener('click', () => {
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      themeBtn.textContent = '🌙';
+      localStorage.setItem('aibtc-02-theme', 'light');
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      themeBtn.textContent = '☀️';
+      localStorage.setItem('aibtc-02-theme', 'dark');
+    }
+  });
+
+  // ===== 移动端侧边栏 =====
+  const menuBtn = document.getElementById('menuBtn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  menuBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+  document.querySelectorAll('.toc-list a').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 900) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+      }
+    });
+  });
+
+  // ===== 滚动监听：高亮当前章节 + 进度条 + 回到顶部 =====
+  const tocLinks = document.querySelectorAll('.toc-list a');
+  const chapters = document.querySelectorAll('h2.chapter');
+  const progressBar = document.getElementById('progressBar');
+  const backToTop = document.getElementById('backToTop');
+
+  function updateActiveChapter() {
+    let current = '';
+    const scrollPos = window.scrollY + 170;   // ★ 覆盖 80+80 落位 + 10px 余量
+    chapters.forEach(ch => {
+      if (ch.offsetTop <= scrollPos) {
+        current = ch.id;
+      }
+    });
+    // ★ 滚到页面底部时强制高亮最后一章
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      current = chapters[chapters.length - 1].id;
+    }
+    tocLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('data-target') === current) {
+        link.classList.add('active');
+      }
+    });
+  }
+
+  function updateProgress() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = progress + '%';
+    if (scrollTop > 400) {
+      backToTop.classList.add('visible');
+    } else {
+      backToTop.classList.remove('visible');
+    }
+  }
+
+  window.addEventListener('scroll', () => {
+    updateActiveChapter();
+    updateProgress();
+  }, { passive: true });
+
+  backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  updateActiveChapter();
+  updateProgress();
+</script>
+
+</body>
+</html>

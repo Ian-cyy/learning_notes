@@ -1,0 +1,798 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>从算力看 AI 与比特币</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f6f8fb;
+    --bg-card: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --primary: #1a2744;
+    --primary-light: #2c4a7c;
+    --accent: #4a9eff;
+    --accent-light: #e8f2ff;
+    --code-bg: #f4f6fa;
+    --code-text: #2c3e50;
+    --formula-bg: #faf8f2;
+    --formula-border: #e8dcc0;
+    --formula-text: #5a4a2a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+    --sidebar-width: 280px;
+    --content-max: 860px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --text: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border: #334155;
+    --border-light: #1e293b;
+    --primary: #3b5998;
+    --primary-light: #4a6fa5;
+    --accent: #60a5fa;
+    --accent-light: #1e3a5f;
+    --code-bg: #1e293b;
+    --code-text: #cbd5e1;
+    --formula-bg: #1e293b;
+    --formula-border: #475569;
+    --formula-text: #fbbf24;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg);
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ===== 顶部导航栏 ===== */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.85);
+  }
+  [data-theme="dark"] .topbar { background: rgba(15,23,42,0.85); }
+
+  .topbar-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-title .dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .topbar-title .sub {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 8px;
+  }
+
+  .topbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .icon-btn {
+    width: 36px; height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .menu-btn { display: none; }
+
+  /* ===== 侧边栏 ===== */
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: var(--sidebar-width);
+    height: calc(100vh - 60px);
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px 0;
+    z-index: 90;
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar-header {
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sidebar-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .toc-list { list-style: none; padding: 0 12px; }
+  .toc-list li { margin: 2px 0; }
+  .toc-list a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13.5px;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+  }
+  .toc-list a:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+  .toc-list a.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  .toc-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    background: var(--border);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc-list a.active .toc-num {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* 系列文章导航 */
+  .series-nav { padding: 12px 20px; }
+  .series-nav .sn-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .series-nav a {
+    display: block;
+    padding: 7px 12px;
+    margin: 4px 0;
+    border-radius: 7px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .series-nav a:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+  .series-nav a.cur {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ===== 主内容区 ===== */
+  .main {
+    margin-left: var(--sidebar-width);
+    margin-top: 60px;
+    padding: 40px 48px 80px;
+    min-height: calc(100vh - 60px);
+  }
+
+  .content-wrapper {
+    max-width: var(--content-max);
+    margin: 0 auto;
+  }
+
+  /* ===== 文章头部 ===== */
+  .article-header {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid var(--border);
+  }
+  .article-header .tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+  .article-header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .article-header .subtitle {
+    font-size: 17px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+  }
+  .article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .article-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* ===== 章节标题 ===== */
+  h2.chapter {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 50px 0 24px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: #fff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+    scroll-margin-top: 80px;
+  }
+  h2.chapter .ch-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 32px 0 14px;
+    padding-left: 14px;
+    border-left: 4px solid var(--accent);
+    scroll-margin-top: 80px;
+  }
+
+  h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-light);
+    margin: 22px 0 10px;
+    scroll-margin-top: 80px;
+  }
+
+  p { margin: 10px 0; text-align: justify; }
+
+  /* ===== 代码块 ===== */
+  pre, code {
+    font-family: "JetBrains Mono", "Fira Code", "DejaVu Sans Mono", "Noto Sans Mono CJK SC", monospace;
+  }
+  pre {
+    position: relative;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 13px;
+    line-height: 1.65;
+    overflow-x: auto;
+    margin: 14px 0;
+    color: var(--code-text);
+  }
+  pre .lang-label {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--border-light);
+    padding: 1px 8px;
+    border-radius: 5px;
+    letter-spacing: .5px;
+  }
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #e06c5e;
+  }
+  [data-theme="dark"] code { color: #f87171; }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* ===== 公式 ===== */
+  .formula {
+    background: var(--formula-bg);
+    border: 1px solid var(--formula-border);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 14px 0;
+    font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace;
+    font-size: 14px;
+    text-align: center;
+    color: var(--formula-text);
+    overflow-x: auto;
+  }
+
+  /* ===== 表格 ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13.5px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  th {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  td {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--bg-secondary); }
+  td code { white-space: normal; word-break: break-word; }
+  td a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  td a:hover { text-decoration: underline; }
+
+  /* ===== 提示框 ===== */
+  .tip-box, .warn-box {
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 16px 0;
+  }
+  .tip-box {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+  }
+  .tip-box .tip-title {
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .warn-box {
+    background: #fef5e7;
+    border-left: 4px solid #f59e0b;
+  }
+  [data-theme="dark"] .warn-box { background: #422006; border-left-color: #f59e0b; }
+  .warn-box .warn-title {
+    font-weight: 700;
+    color: #d97706;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  [data-theme="dark"] .warn-box .warn-title { color: #fbbf24; }
+
+  /* ===== 列表 ===== */
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  /* ===== 回到顶部 ===== */
+  .back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 44px; height: 44px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+    z-index: 80;
+  }
+  .back-to-top.visible { opacity: 1; visibility: visible; }
+  .back-to-top:hover { transform: translateY(-2px); }
+
+  /* ===== 阅读进度条 ===== */
+  .progress-bar {
+    position: fixed;
+    top: 60px; left: 0;
+    height: 3px;
+    background: var(--accent);
+    z-index: 95;
+    transition: width 0.1s;
+  }
+
+  /* ===== 遮罩层（移动端） ===== */
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 60px; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 85;
+  }
+  .overlay.show { display: block; }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 900px) {
+    .menu-btn { display: flex; }
+    .sidebar {
+      transform: translateX(-100%);
+      box-shadow: var(--shadow-lg);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; padding: 24px 20px 60px; }
+    .article-header h1 { font-size: 24px; }
+    h2.chapter { font-size: 19px; padding: 12px 16px; }
+    h2.chapter .ch-num { width: 30px; height: 30px; font-size: 14px; }
+    .topbar-title .sub { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .main { padding: 16px 14px 50px; }
+    .article-meta { gap: 12px; font-size: 12px; }
+    pre { font-size: 12px; padding: 12px 14px; }
+    table { font-size: 12px; }
+    th, td { padding: 7px 10px; }
+  }
+
+  /* ===== 滚动条美化 ===== */
+  .sidebar::-webkit-scrollbar { width: 5px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  pre::-webkit-scrollbar { height: 6px; }
+  pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- 阅读进度条 -->
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+
+<!-- 顶部导航 -->
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menuBtn" title="目录">☰</button>
+  <div class="topbar-title">
+    <span class="dot"></span>
+    从算力看 AI 与比特币
+    <span class="sub">科普笔记 · 资料截止 2026/10/1</span>
+  </div>
+  <div class="topbar-actions">
+    <a class="icon-btn" href="../" title="返回笔记主页" style="text-decoration:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+    </a>
+    <a class="icon-btn" href="https://github.com/Ian-cyy" target="_blank" title="GitHub: Ian-cyy" style="text-decoration:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+    </a>
+    <button class="icon-btn" id="themeBtn" title="切换深色模式">🌙</button>
+  </div>
+</header>
+
+<!-- 遮罩层 -->
+<div class="overlay" id="overlay"></div>
+
+<!-- 侧边栏目录 -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h3>📑 本页目录</h3>
+  </div>
+  <ul class="toc-list">
+    <li><a href="#ch1" data-target="ch1"><span class="toc-num">一</span>文件结构</a></li>
+    <li><a href="#ch2" data-target="ch2"><span class="toc-num">二</span>一图看懂主线</a></li>
+    <li><a href="#ch3" data-target="ch3"><span class="toc-num">三</span>核心结论速查</a></li>
+    <li><a href="#ch4" data-target="ch4"><span class="toc-num">四</span>阅读说明</a></li>
+    <li><a href="#ch5" data-target="ch5"><span class="toc-num">五</span>适合谁</a></li>
+    <li><a href="#ch6" data-target="ch6"><span class="toc-num">六</span>主要参考入口</a></li>
+  </ul>
+  <div class="series-nav">
+    <div class="sn-title">📚 系列文章</div>
+    <a href="index.html" class="cur">📖 主页 · 从算力看 AI 与比特币</a>
+    <a href="01-大模型是什么.html">01 · 大模型是什么</a>
+    <a href="02-算力硬件与生态.html">02 · 算力硬件与生态</a>
+    <a href="03-比特币与算力.html">03 · 比特币与算力</a>
+  </div>
+  <div class="sidebar-footer">
+    资料截止：2026/10/1<br>
+    性质：科普笔记，非投资建议<br>
+    共 3 篇 · 建议顺序 01 → 02 → 03<br><br>
+    <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">
+      → GitHub: Ian-cyy
+    </a>
+  </div>
+</aside>
+
+<!-- 主内容 -->
+<main class="main">
+  <div class="content-wrapper">
+
+    <!-- 文章头部 -->
+    <div class="article-header">
+      <span class="tag">AI · COMPUTE · BITCOIN</span>
+      <h1>从算力看 AI 与比特币</h1>
+      <p class="subtitle">一个贯穿始终的主线：算力（Compute）。AI 用算力训练和推理；比特币用算力保证安全。</p>
+      <div class="article-meta">
+        <span>🗓 资料截止 2026/10/1</span>
+        <span>📚 3 篇系列笔记</span>
+        <span>⚡ 电 → 算力 → 价值</span>
+        <span>👤 <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">GitHub @Ian-cyy</a></span>
+      </div>
+    </div>
+
+    <!-- 第一章 -->
+    <h2 class="chapter" id="ch1"><span class="ch-num">一</span>文件结构</h2>
+    <table>
+      <tr><th>文件</th><th>内容</th><th>关键词</th></tr>
+      <tr><td><a href="01-大模型是什么.html">01-大模型是什么.md</a></td><td>大模型的本质、参数、训练、推理、显存</td><td>函数、token、参数、训练/推理、内存墙</td></tr>
+      <tr><td><a href="02-算力硬件与生态.html">02-算力硬件与生态.md</a></td><td>CPU/GPU、CUDA、芯片厂商、国产、集群互联</td><td>CUDA 护城河、昇腾、TileLang、NVLink、瓶颈</td></tr>
+      <tr><td><a href="03-比特币与算力.html">03-比特币与算力.md</a></td><td>比特币、PoW、哈希、挖矿、发行</td><td>区块链、SHA-256、验证、51%、2100万</td></tr>
+    </table>
+    <div class="tip-box">
+      <div class="tip-title">💡 建议阅读顺序：01 → 02 → 03</div>
+      先懂"大模型怎么吃算力"，再懂"算力硬件和生态"，最后看"比特币怎么用算力买安全"。
+    </div>
+
+    <!-- 第二章 -->
+    <h2 class="chapter" id="ch2"><span class="ch-num">二</span>一图看懂主线</h2>
+    <pre><code class="language-text">              ┌─────────────── 算力（Compute）───────────────┐
+              │                                              │
+      【AI 侧】                                        【比特币侧】
+   大模型 = 超级函数                                  区块链 = 公开账本
+   参数 = 几万亿个旋钮                                用算力解 SHA-256 难题
+        │                                                  │
+   训练 = 拧旋钮（前向+反向）                          挖矿 = 暴力试 nonce
+   推理 = 现算答案（只前向）                           验证 = 1 次哈希（极便宜）
+        │                                                  │
+   资源：GPU + HBM + 互联                             资源：ASIC
+   瓶颈：显存带宽 / 卡间互联                           瓶颈：能耗 / 51% 攻击成本
+        │                                                  │
+   价值：模型能力（生产性）                            价值：去中心化信任（安全成本）
+              └──────────────────────────────────────────────┘</code></pre>
+
+    <!-- 第三章 -->
+    <h2 class="chapter" id="ch3"><span class="ch-num">三</span>核心结论速查</h2>
+
+    <h3>AI / 大模型</h3>
+    <ul>
+      <li>大模型是<strong>满是参数的超级函数</strong>，不是查表。</li>
+      <li><strong>训练是入场费，推理是终身成本。</strong></li>
+      <li>参数不是人设的，是<strong>算法自动试错微调</strong>出来的。</li>
+      <li>推理吃<strong>显存带宽</strong>，训练吃<strong>卡间互联</strong>。</li>
+    </ul>
+
+    <h3>算力硬件</h3>
+    <ul>
+      <li><strong>CUDA 护城河 = 迁移成本</strong>，不是芯片性能。</li>
+      <li>国产硬件追得快，<strong>卡在软件生态</strong>（CANN / TileLang 在补）。</li>
+      <li>集群是<strong>分层互联</strong>：越近越快越贵、规模越小。</li>
+    </ul>
+
+    <h3>比特币</h3>
+    <ul>
+      <li>挖矿 = <strong>暴力试随机数撞一个足够小的哈希值</strong>。</li>
+      <li>安全来自<strong>"验证极快、生产极贵"</strong>的不对称。</li>
+      <li>白费的算力是它的<strong>安全费</strong>。</li>
+    </ul>
+
+    <!-- 第四章 -->
+    <h2 class="chapter" id="ch4"><span class="ch-num">四</span>阅读说明</h2>
+    <table>
+      <tr><th>类型</th><th>说明</th></tr>
+      <tr><td><strong>稳定知识</strong></td><td>CPU/GPU 分工、参数/梯度、哈希、PoW 等基础原理，变化较慢。</td></tr>
+      <tr><td><strong>动态知识</strong></td><td>模型参数、价格、芯片型号、性能梯队、市场份额和企业采购，必须看日期。</td></tr>
+      <tr><td><strong>数据口径</strong></td><td>TOPS、TFLOPS、显存带宽、集群带宽不能直接横比；不同精度、稀疏/稠密模式和软件栈会改变结果。</td></tr>
+      <tr><td><strong>事实与估计</strong></td><td>文中用"官方"表示厂商公开规格；用"估计/量级"表示公开信息不足时的保守概括。</td></tr>
+    </table>
+    <div class="warn-box">
+      <div class="warn-title">⚠️ 免责声明</div>
+      本文是科普笔记，不是投资、采购或安全建议。模型名称、芯片路线、价格、性能和市场份额都可能快速变化；动态数据应以厂商公告、官方文档和实时榜单为准。
+    </div>
+
+    <!-- 第五章 -->
+    <h2 class="chapter" id="ch5"><span class="ch-num">五</span>适合谁</h2>
+    <ul>
+      <li>想搞懂"AI 大模型 / 算力 / 芯片"但被术语劝退的人。</li>
+      <li>想理清"英伟达护城河、国产芯片、TileLang"来龙去脉的人。</li>
+      <li>想知道"比特币到底在算什么、为什么费电"的人。</li>
+    </ul>
+
+    <!-- 第六章 -->
+    <h2 class="chapter" id="ch6"><span class="ch-num">六</span>主要参考入口</h2>
+    <table>
+      <tr><th>资源</th><th>用途</th></tr>
+      <tr><td><a href="https://artificialanalysis.ai" target="_blank" rel="noopener">Artificial Analysis</a></td><td>模型智能指数、价格、速度与上下文窗口。</td></tr>
+      <tr><td><a href="https://openrouter.ai/rankings" target="_blank" rel="noopener">OpenRouter Rankings</a></td><td>真实 API 用量、模型价格与市场份额。</td></tr>
+      <tr><td><a href="https://lmarena.ai" target="_blank" rel="noopener">LMArena</a></td><td>人类盲测偏好榜。</td></tr>
+      <tr><td><a href="https://www.swebench.com" target="_blank" rel="noopener">SWE-bench</a></td><td>软件工程任务榜。</td></tr>
+      <tr><td><a href="https://github.com/tile-ai/tilelang" target="_blank" rel="noopener">TileLang GitHub</a></td><td>TileLang 源码、后端与更新记录。</td></tr>
+      <tr><td><a href="https://www.hiascend.com/" target="_blank" rel="noopener">昇腾社区</a></td><td>CANN、Ascend 芯片与 Atlas 产品资料。</td></tr>
+      <tr><td><a href="https://mlcommons.org/" target="_blank" rel="noopener">MLCommons</a></td><td>MLPerf 训练与推理基准。</td></tr>
+      <tr><td><a href="https://developer.bitcoin.org/devguide/" target="_blank" rel="noopener">Bitcoin Developer Guide</a></td><td>比特币协议与开发文档。</td></tr>
+    </table>
+    <div class="tip-box" style="margin-top:40px;">
+      <div class="tip-title">📖 本笔记说明</div>
+      <p style="margin:6px 0 0 0;">整理自一次系统性的问答讨论，内容偏科普与理解。动态数据按 <strong>2026/10/1</strong> 截止；发布前后应再次核验官方资料。</p>
+    </div>
+
+  </div>
+</main>
+
+<!-- 回到顶部按钮 -->
+<button class="back-to-top" id="backToTop" title="回到顶部">↑</button>
+
+<script>
+  // ===== 深色模式切换 =====
+  const themeBtn = document.getElementById('themeBtn');
+  const html = document.documentElement;
+  const savedTheme = localStorage.getItem('aibtc-home-theme');
+  if (savedTheme === 'dark') {
+    html.setAttribute('data-theme', 'dark');
+    themeBtn.textContent = '☀️';
+  }
+  themeBtn.addEventListener('click', () => {
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      themeBtn.textContent = '🌙';
+      localStorage.setItem('aibtc-home-theme', 'light');
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      themeBtn.textContent = '☀️';
+      localStorage.setItem('aibtc-home-theme', 'dark');
+    }
+  });
+
+  // ===== 移动端侧边栏 =====
+  const menuBtn = document.getElementById('menuBtn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  menuBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+  document.querySelectorAll('.toc-list a').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 900) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+      }
+    });
+  });
+
+  // ===== 滚动监听：高亮当前章节 + 进度条 + 回到顶部 =====
+  const tocLinks = document.querySelectorAll('.toc-list a');
+  const chapters = document.querySelectorAll('h2.chapter');
+  const progressBar = document.getElementById('progressBar');
+  const backToTop = document.getElementById('backToTop');
+
+  function updateActiveChapter() {
+    let current = '';
+    const scrollPos = window.scrollY + 170;   // ★ 覆盖 80+80 落位 + 10px 余量
+    chapters.forEach(ch => {
+      if (ch.offsetTop <= scrollPos) {
+        current = ch.id;
+      }
+    });
+    // ★ 滚到页面底部时强制高亮最后一章
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      current = chapters[chapters.length - 1].id;
+    }
+    tocLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('data-target') === current) {
+        link.classList.add('active');
+      }
+    });
+  }
+
+  function updateProgress() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = progress + '%';
+    if (scrollTop > 400) {
+      backToTop.classList.add('visible');
+    } else {
+      backToTop.classList.remove('visible');
+    }
+  }
+
+  window.addEventListener('scroll', () => {
+    updateActiveChapter();
+    updateProgress();
+  }, { passive: true });
+
+  backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  updateActiveChapter();
+  updateProgress();
+</script>
+
+</body>
+</html>

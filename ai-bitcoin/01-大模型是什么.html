@@ -1,0 +1,1010 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 · 大模型是什么</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f6f8fb;
+    --bg-card: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --primary: #1a2744;
+    --primary-light: #2c4a7c;
+    --accent: #4a9eff;
+    --accent-light: #e8f2ff;
+    --code-bg: #f4f6fa;
+    --code-text: #2c3e50;
+    --formula-bg: #faf8f2;
+    --formula-border: #e8dcc0;
+    --formula-text: #5a4a2a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+    --sidebar-width: 280px;
+    --content-max: 860px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --text: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border: #334155;
+    --border-light: #1e293b;
+    --primary: #3b5998;
+    --primary-light: #4a6fa5;
+    --accent: #60a5fa;
+    --accent-light: #1e3a5f;
+    --code-bg: #1e293b;
+    --code-text: #cbd5e1;
+    --formula-bg: #1e293b;
+    --formula-border: #475569;
+    --formula-text: #fbbf24;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg);
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ===== 顶部导航栏 ===== */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.85);
+  }
+  [data-theme="dark"] .topbar { background: rgba(15,23,42,0.85); }
+
+  .topbar-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-title .dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .topbar-title .sub {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 8px;
+  }
+
+  .topbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .icon-btn {
+    width: 36px; height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .menu-btn { display: none; }
+
+  /* ===== 侧边栏 ===== */
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: var(--sidebar-width);
+    height: calc(100vh - 60px);
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px 0;
+    z-index: 90;
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar-header {
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sidebar-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .toc-list { list-style: none; padding: 0 12px; }
+  .toc-list li { margin: 2px 0; }
+  .toc-list a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13.5px;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+  }
+  .toc-list a:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+  .toc-list a.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  .toc-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    background: var(--border);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc-list a.active .toc-num {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .series-nav { padding: 12px 20px; }
+  .series-nav .sn-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .series-nav a {
+    display: block;
+    padding: 7px 12px;
+    margin: 4px 0;
+    border-radius: 7px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .series-nav a:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+  .series-nav a.cur {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ===== 主内容区 ===== */
+  .main {
+    margin-left: var(--sidebar-width);
+    margin-top: 60px;
+    padding: 40px 48px 80px;
+    min-height: calc(100vh - 60px);
+  }
+
+  .content-wrapper {
+    max-width: var(--content-max);
+    margin: 0 auto;
+  }
+
+  /* ===== 文章头部 ===== */
+  .article-header {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid var(--border);
+  }
+  .article-header .tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+  .article-header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .article-header .subtitle {
+    font-size: 17px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+  }
+  .article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .article-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* ===== 章节标题 ===== */
+  h2.chapter {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 50px 0 24px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: #fff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+    scroll-margin-top: 80px;
+  }
+  h2.chapter .ch-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 32px 0 14px;
+    padding-left: 14px;
+    border-left: 4px solid var(--accent);
+    scroll-margin-top: 80px;
+  }
+
+  h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-light);
+    margin: 22px 0 10px;
+    scroll-margin-top: 80px;
+  }
+
+  p { margin: 10px 0; text-align: justify; }
+
+  /* ===== 代码块 ===== */
+  pre, code {
+    font-family: "JetBrains Mono", "Fira Code", "DejaVu Sans Mono", "Noto Sans Mono CJK SC", monospace;
+  }
+  pre {
+    position: relative;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 13px;
+    line-height: 1.65;
+    overflow-x: auto;
+    margin: 14px 0;
+    color: var(--code-text);
+  }
+  pre .lang-label {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--border-light);
+    padding: 1px 8px;
+    border-radius: 5px;
+    letter-spacing: .5px;
+  }
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #e06c5e;
+  }
+  [data-theme="dark"] code { color: #f87171; }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* ===== 公式 ===== */
+  .formula {
+    background: var(--formula-bg);
+    border: 1px solid var(--formula-border);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 14px 0;
+    font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace;
+    font-size: 14px;
+    text-align: center;
+    color: var(--formula-text);
+    overflow-x: auto;
+  }
+
+  /* ===== 表格 ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13.5px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  th {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  td {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--bg-secondary); }
+  td code { white-space: normal; word-break: break-word; }
+
+  /* ===== 提示框 ===== */
+  .tip-box, .warn-box {
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 16px 0;
+  }
+  .tip-box {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+  }
+  .tip-box .tip-title {
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .warn-box {
+    background: #fef5e7;
+    border-left: 4px solid #f59e0b;
+  }
+  [data-theme="dark"] .warn-box { background: #422006; border-left-color: #f59e0b; }
+  .warn-box .warn-title {
+    font-weight: 700;
+    color: #d97706;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  [data-theme="dark"] .warn-box .warn-title { color: #fbbf24; }
+
+  /* ===== 列表 ===== */
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  /* ===== 回到顶部 ===== */
+  .back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 44px; height: 44px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+    z-index: 80;
+  }
+  .back-to-top.visible { opacity: 1; visibility: visible; }
+  .back-to-top:hover { transform: translateY(-2px); }
+
+  /* ===== 阅读进度条 ===== */
+  .progress-bar {
+    position: fixed;
+    top: 60px; left: 0;
+    height: 3px;
+    background: var(--accent);
+    z-index: 95;
+    transition: width 0.1s;
+  }
+
+  /* ===== 遮罩层（移动端） ===== */
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 60px; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 85;
+  }
+  .overlay.show { display: block; }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 900px) {
+    .menu-btn { display: flex; }
+    .sidebar {
+      transform: translateX(-100%);
+      box-shadow: var(--shadow-lg);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; padding: 24px 20px 60px; }
+    .article-header h1 { font-size: 24px; }
+    h2.chapter { font-size: 19px; padding: 12px 16px; }
+    h2.chapter .ch-num { width: 30px; height: 30px; font-size: 14px; }
+    .topbar-title .sub { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .main { padding: 16px 14px 50px; }
+    .article-meta { gap: 12px; font-size: 12px; }
+    pre { font-size: 12px; padding: 12px 14px; }
+    table { font-size: 12px; }
+    th, td { padding: 7px 10px; }
+  }
+
+  /* ===== 滚动条美化 ===== */
+  .sidebar::-webkit-scrollbar { width: 5px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  pre::-webkit-scrollbar { height: 6px; }
+  pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- 阅读进度条 -->
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+
+<!-- 顶部导航 -->
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menuBtn" title="目录">☰</button>
+  <div class="topbar-title">
+    <span class="dot"></span>
+    01 · 大模型是什么
+    <span class="sub">从算力看 AI 与比特币 · 系列第 1 篇</span>
+  </div>
+  <div class="topbar-actions">
+    <a class="icon-btn" href="../" title="返回笔记主页" style="text-decoration:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+    </a>
+    <a class="icon-btn" href="https://github.com/Ian-cyy" target="_blank" title="GitHub: Ian-cyy" style="text-decoration:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+    </a>
+    <button class="icon-btn" id="themeBtn" title="切换深色模式">🌙</button>
+  </div>
+</header>
+
+<!-- 遮罩层 -->
+<div class="overlay" id="overlay"></div>
+
+<!-- 侧边栏目录 -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h3>📑 章节目录</h3>
+  </div>
+  <ul class="toc-list">
+    <li><a href="#ch1" data-target="ch1"><span class="toc-num">一</span>本质：巨大的函数</a></li>
+    <li><a href="#ch2" data-target="ch2"><span class="toc-num">二</span>token 与计算流程</a></li>
+    <li><a href="#ch3" data-target="ch3"><span class="toc-num">三</span>能理解，不是查表</a></li>
+    <li><a href="#ch4" data-target="ch4"><span class="toc-num">四</span>参数与显存占用</a></li>
+    <li><a href="#ch5" data-target="ch5"><span class="toc-num">五</span>训练 vs 推理</a></li>
+    <li><a href="#ch6" data-target="ch6"><span class="toc-num">六</span>参数如何定出</a></li>
+    <li><a href="#ch7" data-target="ch7"><span class="toc-num">七</span>显存与存储层级</a></li>
+    <li><a href="#ch8" data-target="ch8"><span class="toc-num">八</span>为什么要几万张卡</a></li>
+    <li><a href="#ch9" data-target="ch9"><span class="toc-num">九</span>主流模型参数估算</a></li>
+    <li><a href="#ch10" data-target="ch10"><span class="toc-num">十</span>一句话总纲</a></li>
+  </ul>
+  <div class="series-nav">
+    <div class="sn-title">📚 系列文章</div>
+    <a href="index.html">📖 主页 · 从算力看 AI 与比特币</a>
+    <a href="01-大模型是什么.html" class="cur">01 · 大模型是什么</a>
+    <a href="02-算力硬件与生态.html">02 · 算力硬件与生态</a>
+    <a href="03-比特币与算力.html">03 · 比特币与算力</a>
+  </div>
+  <div class="sidebar-footer">
+    资料截止：2026/10/1<br>
+    系列：从算力看 AI 与比特币<br>
+    本篇：10 章<br><br>
+    <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">
+      → GitHub: Ian-cyy
+    </a>
+  </div>
+</aside>
+
+<!-- 主内容 -->
+<main class="main">
+  <div class="content-wrapper">
+
+    <!-- 文章头部 -->
+    <div class="article-header">
+      <span class="tag">AI · LLM · COMPUTE</span>
+      <h1>01 · 大模型是什么</h1>
+      <p class="subtitle">本质是函数 → 参数是旋钮 → 训练是拧旋钮 → 推理是用函数 → 全程吃显存和算力</p>
+      <div class="article-meta">
+        <span>🗓 资料截止 2026/10/1</span>
+        <span>📦 系列第 1 篇</span>
+        <span>📝 10 章</span>
+        <span>👤 <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">GitHub @Ian-cyy</a></span>
+      </div>
+    </div>
+
+    <!-- 第一章 -->
+    <h2 class="chapter" id="ch1"><span class="ch-num">一</span>本质：大模型是一个巨大的函数</h2>
+    <p>大模型（LLM）<strong>不是数据库，也不是"存答案的哈希表"</strong>，它更像：</p>
+    <div class="formula">一个用海量参数拟合出来的超级函数：输入文字 → 输出文字。</div>
+    <ul>
+      <li><strong>参数（权重）不是"存好的答案"</strong>，而是几亿到几万亿个<strong>系数 / 旋钮</strong>。</li>
+      <li>模型<strong>不是"查"出答案，而是"现算"出答案</strong>：每次都用同一套参数、根据你的输入实时计算。</li>
+      <li>因此同一个问题每次结果几乎一样，<strong>不是因为查表，而是因为计算过程一样</strong>。</li>
+    </ul>
+    <h4>类比（逐个记牢）</h4>
+    <table>
+      <tr><th>类比</th><th>对应</th></tr>
+      <tr><td>一个固定公式 <code>f(x)=...</code></td><td>模型参数固定</td></tr>
+      <tr><td>代入 <code>x=3</code> 去算</td><td>输入你的问题</td></tr>
+      <tr><td>算出结果</td><td>生成答案</td></tr>
+      <tr><td>公式固定，但每个 x 都要现算</td><td>参数固定，但每个问题都要现算</td></tr>
+    </table>
+    <h4>关键推论</h4>
+    <ul>
+      <li>参数固定 ≠ 答案固定：答案取决于<strong>输入</strong>。</li>
+      <li>想枚举"所有输入→输出"当查表？<strong>可能输入近乎无限，存储装不下，所以只能学规律、现算</strong>——这就是"泛化"。</li>
+    </ul>
+
+    <!-- 第二章 -->
+    <h2 class="chapter" id="ch2"><span class="ch-num">二</span>从输入到输出：token 与计算流程</h2>
+    <h3>2.1 文字如何变成数字</h3>
+    <pre><code class="language-text">"今天天气"
+   ↓ 切分成 token（词块）：[今、天、天气]  （不同模型切法不同）
+   ↓ 每个 token 映射成整数 ID：[1234, 5678, 9012]
+   ↓ 每个 ID 变成一串数字（向量 / embedding）</code></pre>
+    <h3>2.2 生成一个字的完整流程</h3>
+    <pre><code class="language-text">输入向量
+  → 第 1 层：矩阵乘 + 注意力(Attention)
+  → 第 2 层：矩阵乘 + 注意力
+  → …（几十 ~ 上百层）
+  → 输出向量
+  → 转成"词表里每个词的概率"（softmax）
+  → 按采样策略选出下一个 token："真"
+  → 把这个字接回输入，重复，生成下一个字</code></pre>
+    <div class="tip-box">
+      <div class="tip-title">💡 要点</div>
+      <ul>
+        <li>每生成一个 token 通常需要一次解码阶段的前向计算（forward pass）；"token"不一定等于一个汉字或一个单词。</li>
+        <li>核心动作就是 <strong>"输入向量 × 权重矩阵"，一层层算下去</strong>。</li>
+        <li>权重（参数）固定，<strong>输入每次都不同，所以每次都得算</strong>。</li>
+      </ul>
+    </div>
+    <div class="warn-box">
+      <div class="warn-title">⚠️ 为什么推理也叫"自回归生成"</div>
+      一个字一个字往外蹦，每蹦一个字都要重跑一遍网络。
+    </div>
+
+    <!-- 第三章 -->
+    <h2 class="chapter" id="ch3"><span class="ch-num">三</span>为什么它"能理解"，而不是"查表"</h2>
+    <table>
+      <tr><th></th><th>哈希表 / 数据库</th><th>大模型</th></tr>
+      <tr><td>存什么</td><td>输入→输出 的映射</td><td>海量参数（系数）</td></tr>
+      <tr><td>怎么给答案</td><td>查</td><td><strong>算</strong></td></tr>
+      <tr><td>遇到没见过的问题</td><td>查不到</td><td>能"泛化"推断</td></tr>
+      <tr><td>存储需求</td><td>要存下所有组合（不可能）</td><td>固定大小，拟合规律</td></tr>
+    </table>
+    <h4>为什么不能是哈希表</h4>
+    <ul>
+      <li>可能的句子是<strong>天文数字（近乎无限）</strong>，不可能全部存下。</li>
+      <li>模型改学<strong>语言的统计规律</strong>，把规律压缩进参数里，<strong>用有限的参数应对无限的输入</strong>。</li>
+    </ul>
+    <div class="warn-box">
+      <div class="warn-title">⚠️ 注意</div>
+      模型确实"记住"了一些事实（存在权重里），但它不是精准索引，而是<strong>统计+计算</strong>的产物。
+    </div>
+
+    <!-- 第四章 -->
+    <h2 class="chapter" id="ch4"><span class="ch-num">四</span>参数、参数量与显存占用</h2>
+    <h3>4.1 参数是什么</h3>
+    <ul>
+      <li>神经网络的每一层里，有大量<strong>权重矩阵</strong>，矩阵里的每个数字就是一个参数。</li>
+      <li>参数在训练中不断被微调，最终"拧"到一组能很好预测下一个词的值。</li>
+    </ul>
+    <h3>4.2 参数量级</h3>
+    <table>
+      <tr><th>规模</th><th>总参数</th><th>典型</th></tr>
+      <tr><td>小</td><td>1B ~ 10B</td><td>端侧 / 轻量</td></tr>
+      <tr><td>中</td><td>30B ~ 100B</td><td>通用</td></tr>
+      <tr><td>大</td><td>200B ~ 700B</td><td>前沿开源</td></tr>
+      <tr><td>超大</td><td>1T ~ 2T+</td><td>顶级闭源 / MoE</td></tr>
+    </table>
+    <h3>4.3 参数量 → 显存占用</h3>
+    <p><strong>粗略公式</strong>：<code>权重显存 ≈ 参数量 × 每个参数占的字节数</code></p>
+    <p>实际部署还要加上运行时开销、临时激活、KV Cache、量化元数据和框架缓冲区；训练还要额外存梯度、优化器状态和检查点。</p>
+    <table>
+      <tr><th>精度</th><th>每参数字节</th><th>说明</th></tr>
+      <tr><td>FP32</td><td>4 B</td><td>训练常用高精度</td></tr>
+      <tr><td>FP16 / BF16</td><td>2 B</td><td>主流推理/训练</td></tr>
+      <tr><td>FP8</td><td>1 B</td><td>新硬件支持</td></tr>
+      <tr><td>INT4 / FP4</td><td>0.5 B</td><td>极限量化</td></tr>
+    </table>
+    <table>
+      <tr><th>参数量</th><th>FP16</th><th>FP8</th><th>INT4</th></tr>
+      <tr><td>8B</td><td>16 GB</td><td>8 GB</td><td>4 GB</td></tr>
+      <tr><td>70B</td><td>140 GB</td><td>70 GB</td><td>35 GB</td></tr>
+      <tr><td>200B</td><td>400 GB</td><td>200 GB</td><td>100 GB</td></tr>
+      <tr><td>552B</td><td>~1.1 TB</td><td>~552 GB</td><td>~276 GB</td></tr>
+      <tr><td>1T</td><td>~2 TB</td><td>~1 TB</td><td>~500 GB</td></tr>
+    </table>
+    <p><strong>结论</strong>：前沿模型的权重是 <strong>TB 级显存</strong>，单卡装不下 → 必须切分到几十上百张卡。</p>
+    <h3>4.4 MoE：又大又省的关键</h3>
+    <ul>
+      <li><strong>MoE（混合专家）</strong>：总参数很大，但每次只<strong>激活一小部分</strong>。</li>
+      <li>例：DeepSeek V4.1 Flash 约 <strong>552B 总参数 / 8B 激活</strong>。</li>
+      <li>好处：模型容量大（强），单次计算量小（快、省）。</li>
+    </ul>
+
+    <!-- 第五章 -->
+    <h2 class="chapter" id="ch5"><span class="ch-num">五</span>训练 vs 推理</h2>
+    <table>
+      <tr><th>维度</th><th>训练（Training）</th><th>推理（Inference）</th></tr>
+      <tr><td>目的</td><td><strong>学</strong></td><td><strong>用</strong></td></tr>
+      <tr><td>计算</td><td>前向 + 反向</td><td>只前向</td></tr>
+      <tr><td>数据</td><td>海量，多轮</td><td>单条 / 批量</td></tr>
+      <tr><td>参数</td><td>不断被调整</td><td>固定不变</td></tr>
+      <tr><td>精度</td><td>高（FP32/BF16）</td><td>可低（INT8/FP4）</td></tr>
+      <tr><td>显存</td><td>权重+梯度+优化器状态，<strong>3~4 倍</strong></td><td>权重 + KV Cache + 激活</td></tr>
+      <tr><td>成本</td><td>一次性巨额</td><td>长期随用户增长</td></tr>
+      <tr><td>硬件侧重</td><td>大集群 + 高速互联</td><td>低延迟 / 高吞吐 / 省电</td></tr>
+    </table>
+    <div class="tip-box">
+      <div class="tip-title">💡 两个记忆点</div>
+      <ul>
+        <li><strong>训练是入场费，推理是终身成本。</strong></li>
+        <li><strong>训练要"前向 + 反向"两遍，推理只要"前向"一遍。</strong></li>
+      </ul>
+    </div>
+    <h3>5.1 为什么推理能用低精度、训练不行</h3>
+    <ul>
+      <li><strong>训练容错低</strong>：要用误差反复微调上万亿参数，低精度误差累积会让模型"学废"。</li>
+      <li><strong>推理容错高</strong>：在可接受的质量损失范围内，可以压成 INT8/FP4，更省显存、更快；并不是所有模型和任务都能"几乎不变"。</li>
+    </ul>
+    <h3>5.2 推理为什么常受内存墙影响</h3>
+    <ul>
+      <li>自回归解码阶段需要反复读取权重；对稠密模型，可以近似理解为每生成一个 token 都要遍历大部分权重。</li>
+      <li>MoE、批处理、权重驻留、缓存和算子融合会改变实际流量，因此"每个 token 完整重读全部权重"只是帮助理解的近似。</li>
+      <li>计算本身很快，但显存带宽有限，读不完就得等；低批量解码尤其容易受<strong>带宽和访存</strong>影响。</li>
+    </ul>
+    <h3>5.3 KV Cache</h3>
+    <ul>
+      <li>推理时要把<strong>上下文（你前面说过的话）</strong>缓存下来，叫 <strong>KV Cache</strong>。</li>
+      <li>它<strong>随对话变长而增长</strong>，<strong>每个并发用户各占一份</strong> → 用户越多，显存越挤。</li>
+    </ul>
+
+    <!-- 第六章 -->
+    <h2 class="chapter" id="ch6"><span class="ch-num">六</span>训练是如何"定出"参数的</h2>
+    <div class="formula">核心：不是人设，是算法自动"试错微调"。</div>
+    <h3>6.1 五步循环</h3>
+    <pre><code class="language-text">1. 随机初始化参数（像乱拧的几万亿个旋钮）
+2. 前向：喂一句数据 → 模型输出它的预测
+3. 算损失：预测 vs 正确答案 → 一个"误差"数字
+4. 反向传播：算每个参数对误差的"责任"（梯度 = 该往哪拧、拧多少）
+5. 更新：每个参数朝"减小误差"的方向微调一丁点
+   → 换下一条数据，重复 2~5（亿万次）</code></pre>
+    <h3>6.2 关键概念</h3>
+    <ul>
+      <li><strong>损失函数（Loss）</strong>：衡量"预测离正确答案有多远"。</li>
+      <li><strong>梯度（Gradient）</strong>：损失对每个参数的变化方向。</li>
+      <li><strong>反向传播（Backpropagation）</strong>：用链式法则把误差"分摊"到每个参数。</li>
+      <li><strong>梯度下降（Gradient Descent）</strong>：沿梯度反方向小步移动。</li>
+      <li><strong>学习率（Learning Rate）</strong>：步子大小。太大震荡，太小太慢。</li>
+      <li><strong>优化器（Optimizer）</strong>：Adam / AdamW / Muon 等，自动调整步长。演进的优化器能更快收敛。</li>
+    </ul>
+    <h3>6.3 与 PID 闭环控制的类比（很贴切）</h3>
+    <table>
+      <tr><th>控制论（PID）</th><th>训练</th></tr>
+      <tr><td>目标 − 实际 = 误差</td><td>预测 − 正确答案 = <strong>损失</strong></td></tr>
+      <tr><td>误差决定怎么调</td><td><strong>梯度</strong>决定方向</td></tr>
+      <tr><td>P 增益</td><td><strong>学习率</strong></td></tr>
+      <tr><td>D 阻尼</td><td><strong>动量（Momentum）</strong></td></tr>
+      <tr><td>自适应调节</td><td><strong>Adam 优化器</strong></td></tr>
+    </table>
+    <p>差异：这里是<strong>几万亿个旋钮同时闭环</strong>，而且"山"不止一个谷底、高度非线性。</p>
+    <h3>6.4 "在浓雾里下山"类比</h3>
+    <div class="warn-box">
+      <div class="warn-title">🌫 类比</div>
+      你在浓雾的山上找谷底（误差最小点）：摸脚下坡度（梯度），往低处迈一小步，重复亿万次，最终滚到谷底。
+    </div>
+    <h3>6.5 换更强算法能减少算力依赖吗</h3>
+    <ul>
+      <li><strong>能，但有限</strong>：
+        <ul>
+          <li>✅ 更好的优化器（SGD→Adam→Muon）确实<strong>迭代更少、收敛更快</strong>。</li>
+          <li>❌ 但一般只带来 <strong>1.5~3 倍</strong>提升，不是 100 倍。</li>
+          <li>且<strong>缩放定律</strong>：模型越大，反而要更多数据和算力。</li>
+        </ul>
+      </li>
+      <li><strong>结论</strong>：算法效率是一个真杠杆，但替代不了"堆规模"。</li>
+    </ul>
+    <h3>6.6 为什么训练也用 GPU</h3>
+    <ul>
+      <li>和推理一样是<strong>海量矩阵运算</strong>，但训练要<strong>前向 + 反向</strong>都算。</li>
+      <li>还要额外存<strong>梯度 + 优化器状态</strong>（比推理多吃 3~4 倍显存）。</li>
+    </ul>
+
+    <!-- 第七章 -->
+    <h2 class="chapter" id="ch7"><span class="ch-num">七</span>显存与存储层级</h2>
+    <h3>7.1 为什么模型必须放显存</h3>
+    <ul>
+      <li>推理阶段需要高频读取权重，通常需要高带宽显存。</li>
+      <li>NVMe SSD 常见为数 GB/s；DDR5 系统内存带宽通常为几十到数百 GB/s；高端 HBM 显存可达到数 TB/s。它们不是同一测量口径，不能简单相除。</li>
+      <li>如果模型放到系统内存或 SSD，技术上可以运行，但通常会受到 PCIe、内存带宽、延迟和数据搬运影响，速度明显下降。</li>
+    </ul>
+    <div class="warn-box">
+      <div class="warn-title">⚠️ 修正</div>
+      推理<strong>技术上可以放内存甚至硬盘</strong>（消费级 llama.cpp 的 offload），只是<strong>慢很多</strong>；<strong>训练几乎必须全放显存</strong>。
+    </div>
+    <h3>7.2 存储层级全景</h3>
+    <table>
+      <tr><th>类型</th><th>颗粒</th><th>原理</th><th>速度</th><th>断电</th><th>成本/容量</th></tr>
+      <tr><td>硬盘 HDD</td><td>磁盘</td><td>磁性、机械</td><td>最慢</td><td>保留</td><td>最便宜/大</td></tr>
+      <tr><td>固态 SSD</td><td>NAND 闪存</td><td>电子存储，<strong>按块擦写</strong></td><td>快(GB/s)</td><td>保留</td><td>便宜/大</td></tr>
+      <tr><td>内存/显存</td><td>DRAM</td><td>电容存电荷，<strong>随机访问，需刷新</strong></td><td>很快</td><td>丢失</td><td>中/中</td></tr>
+      <tr><td>显存(高端)</td><td>HBM</td><td>DRAM 3D 堆叠，和 GPU 封装直连</td><td>极快(TB/s)</td><td>丢失</td><td>贵/小</td></tr>
+      <tr><td>缓存</td><td>SRAM</td><td>触发器</td><td>最快</td><td>丢失</td><td>最贵/最小</td></tr>
+    </table>
+    <ul>
+      <li><strong>为什么 DRAM 比 NAND 快</strong>：DRAM 能随机访问单元；NAND 要整块擦除，慢得多。</li>
+      <li><strong>为什么 HBM 的总带宽通常比 DDR5 高</strong>：<strong>位宽更宽</strong>、<strong>3D 堆叠/先进封装</strong>、<strong>靠近或直接连接 GPU 内存控制器</strong>。但"显存不走 PCIe"不等于所有 GPU 访问都完全不经过系统总线，具体取决于架构和数据路径。</li>
+    </ul>
+    <h3>7.3 为什么不用 SRAM 当显存</h3>
+    <table>
+      <tr><th></th><th>SRAM</th><th>DRAM(HBM)</th></tr>
+      <tr><td>每 bit 晶体管</td><td><strong>~6 个</strong></td><td>1 管 + 1 电容</td></tr>
+      <tr><td>密度</td><td>低（面积大）</td><td>高</td></tr>
+      <tr><td>每字节成本</td><td>贵 10~100 倍</td><td>低</td></tr>
+      <tr><td>容量</td><td>几十 MB</td><td>80~288 GB</td></tr>
+    </table>
+    <ul>
+      <li><strong>密度是硬墙</strong>：SRAM 太占面积，装不下大模型。</li>
+      <li>类比：SRAM = <strong>手边小桌</strong>（快、小）；DRAM = <strong>大仓库</strong>（慢点、能堆满）。</li>
+      <li>例外：<strong>Cerebras</strong> 用整片晶圆做 SRAM 主存（~44GB），代价是天价。</li>
+    </ul>
+    <h3>7.4 量化</h3>
+    <ul>
+      <li>把 FP16 权重压成 INT8/FP4，<strong>显存和计算量大幅下降</strong>，质量几乎不变。</li>
+      <li>这是降推理成本的核心手段之一。</li>
+    </ul>
+    <h3>7.5 DRAM 容量上限</h3>
+    <ul>
+      <li>截至本文日期，部分高端 AI 加速器的显存容量已达到约 192~288GB；具体取决于产品、HBM 代际和堆叠配置。</li>
+      <li>HBM4、更多堆叠层数和 3D DRAM 可能继续提高容量，但路线图和实际产品要以厂商发布为准。</li>
+      <li>物理墙：DRAM 电容缩小会带来漏电、刷新和良率问题；<strong>3D DRAM</strong> 是重要方向，但不是已经兑现的统一标准。</li>
+      <li><strong>容量不是模型上限</strong>，因为可以<strong>多卡拼</strong>。</li>
+    </ul>
+
+    <!-- 第八章 -->
+    <h2 class="chapter" id="ch8"><span class="ch-num">八</span>为什么训练要几万张卡</h2>
+    <p><strong>两个原因，缺一不可：</strong></p>
+    <h3>原因 1：单卡装不下</h3>
+    <ul>
+      <li>训练需同时存 <strong>权重 + 梯度 + 优化器状态</strong>（Adam 额外 2~3 份）。</li>
+      <li>1T 模型 FP16 光权重就约 2TB；训练时再加梯度、优化器状态和激活，可能达到数 TB 甚至更高。</li>
+      <li>单卡 150GB → <strong>必须把模型切开分到多卡</strong>（模型并行）。</li>
+    </ul>
+    <h3>原因 2：为了快</h3>
+    <ul>
+      <li>切数据、多卡同时算（数据并行），加快"亿万次循环"。</li>
+    </ul>
+    <h3>通信是扩展瓶颈</h3>
+    <ul>
+      <li>每训练一步，几万张卡的梯度要<strong>互相同步、汇总</strong>。</li>
+      <li>机内 NVLink 和跨节点网络的带宽、延迟通常都低于卡内 HBM；具体数值取决于代际、链路数量和网络拓扑，不能用单一数字代表所有集群。</li>
+      <li>卡越多，通信占比越高 → <strong>加速比不线性、效率下降</strong>。</li>
+    </ul>
+    <div class="formula">装不下 → 被迫切分；切分 → 产生通信；通信 → 限制扩展。</div>
+
+    <!-- 第九章 -->
+    <h2 class="chapter" id="ch9"><span class="ch-num">九</span>主流模型参数与显存估算</h2>
+    <div class="warn-box">
+      <div class="warn-title">⚠️ 官方多不公开，★ 为估计值，仅供量级参考</div>
+    </div>
+    <table>
+      <tr><th>模型</th><th>总参数</th><th>激活参数</th><th>备注</th></tr>
+      <tr><td>DeepSeek V4.1 Flash</td><td>~552B</td><td>~8B</td><td>MoE</td></tr>
+      <tr><td>DeepSeek V4 Pro</td><td>★ ~1T 级</td><td>数十 B</td><td>MoE</td></tr>
+      <tr><td>Claude Opus 5.5 / Fable 5.x</td><td>★ 数百 B~1T 级</td><td>—</td><td>Anthropic 不公开</td></tr>
+      <tr><td>Claude Sonnet 5.5</td><td>★ 百 B 级</td><td>—</td><td>不公开</td></tr>
+      <tr><td>GPT-6 系列（Astra/Sol/Terra/Luna）</td><td>★ 1T~2T 级</td><td>—</td><td>OpenAI 不公开</td></tr>
+    </table>
+    <h4>显存换算示例</h4>
+    <ul>
+      <li>552B @ FP16 ≈ <strong>1.1 TB</strong></li>
+      <li>552B @ FP8 ≈ <strong>552 GB</strong></li>
+      <li>552B @ INT4 ≈ <strong>276 GB</strong></li>
+    </ul>
+    <p>这就是为什么前沿模型经常需要切分到多张甚至大量加速器，并用<strong>高带宽显存 + 高速互联</strong>；具体卡数取决于参数量、精度、并行策略和训练/推理目标。</p>
+
+    <!-- 第十章 -->
+    <h2 class="chapter" id="ch10"><span class="ch-num">十</span>一句话总纲</h2>
+    <div class="formula">大模型是一个参数极多（百 B~T 级）、占显存极大（数百 GB~数 TB）的"超级函数"：参数是"规律"不是"答案库"，所以不能查表、只能现算；现算就是海量简单矩阵运算，正好用 GPU 多核并行跑。训练是把这些参数"拧"好（费时又费显存），推理是拿拧好的参数"现算"答案（费带宽）。</div>
+
+    <div class="tip-box" style="margin-top:40px;">
+      <div class="tip-title">📚 延伸阅读（本系列其他文件）</div>
+      <ul style="margin:8px 0 0 0;">
+        <li><a href="02-算力硬件与生态.html" style="color:var(--accent);text-decoration:none;font-weight:600;">02-算力硬件与生态</a>：CPU/GPU、CUDA、芯片厂商、国产、集群互联</li>
+        <li><a href="03-比特币与算力.html" style="color:var(--accent);text-decoration:none;font-weight:600;">03-比特币与算力</a>：为什么挖矿需要算力、PoW、哈希</li>
+        <li><a href="index.html" style="color:var(--accent);text-decoration:none;font-weight:600;">← 返回系列主页</a></li>
+      </ul>
+    </div>
+
+  </div>
+</main>
+
+<!-- 回到顶部按钮 -->
+<button class="back-to-top" id="backToTop" title="回到顶部">↑</button>
+
+<script>
+  // ===== 深色模式切换 =====
+  const themeBtn = document.getElementById('themeBtn');
+  const html = document.documentElement;
+  const savedTheme = localStorage.getItem('aibtc-01-theme');
+  if (savedTheme === 'dark') {
+    html.setAttribute('data-theme', 'dark');
+    themeBtn.textContent = '☀️';
+  }
+  themeBtn.addEventListener('click', () => {
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      themeBtn.textContent = '🌙';
+      localStorage.setItem('aibtc-01-theme', 'light');
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      themeBtn.textContent = '☀️';
+      localStorage.setItem('aibtc-01-theme', 'dark');
+    }
+  });
+
+  // ===== 移动端侧边栏 =====
+  const menuBtn = document.getElementById('menuBtn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  menuBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+  document.querySelectorAll('.toc-list a').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 900) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+      }
+    });
+  });
+
+  // ===== 滚动监听：高亮当前章节 + 进度条 + 回到顶部 =====
+  const tocLinks = document.querySelectorAll('.toc-list a');
+  const chapters = document.querySelectorAll('h2.chapter');
+  const progressBar = document.getElementById('progressBar');
+  const backToTop = document.getElementById('backToTop');
+
+  function updateActiveChapter() {
+    let current = '';
+    const scrollPos = window.scrollY + 170;   // ★ 覆盖 80+80 落位 + 10px 余量
+    chapters.forEach(ch => {
+      if (ch.offsetTop <= scrollPos) {
+        current = ch.id;
+      }
+    });
+    // ★ 滚到页面底部时强制高亮最后一章
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      current = chapters[chapters.length - 1].id;
+    }
+    tocLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('data-target') === current) {
+        link.classList.add('active');
+      }
+    });
+  }
+
+  function updateProgress() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = progress + '%';
+    if (scrollTop > 400) {
+      backToTop.classList.add('visible');
+    } else {
+      backToTop.classList.remove('visible');
+    }
+  }
+
+  window.addEventListener('scroll', () => {
+    updateActiveChapter();
+    updateProgress();
+  }, { passive: true });
+
+  backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  updateActiveChapter();
+  updateProgress();
+</script>
+
+</body>
+</html>
