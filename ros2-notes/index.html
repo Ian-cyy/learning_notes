@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的学习笔记</title>
+    <title>ROS2 学习笔记</title>
     <style>
         :root {
             --bg: #f5f5f5;
@@ -13,7 +13,6 @@
             --link: #0969da;
             --subtitle: #888;
             --desc: #999;
-            --time: #bbb;
             --footer: #bbb;
             --shadow: rgba(0,0,0,0.08);
             --toggle-bg: #ffffff;
@@ -27,7 +26,6 @@
             --link: #60a5fa;
             --subtitle: #94a3b8;
             --desc: #94a3b8;
-            --time: #64748b;
             --footer: #64748b;
             --shadow: rgba(0,0,0,0.4);
             --toggle-bg: #1e293b;
@@ -55,7 +53,6 @@
             border: 1px solid var(--toggle-border);
             background: var(--toggle-bg);
             color: var(--text);
-            font-size: 18px;
             line-height: 1;
             cursor: pointer;
             display: flex;
@@ -78,15 +75,15 @@
             margin-bottom: 8px;
             color: var(--text-strong);
         }
-        .github-top {
+        .back-top {
             margin-bottom: 8px;
         }
-        .github-top a {
+        .back-top a {
             color: var(--link);
             text-decoration: none;
             font-size: 14px;
         }
-        .github-top a:hover {
+        .back-top a:hover {
             text-decoration: underline;
         }
         .subtitle {
@@ -123,25 +120,11 @@
             font-size: 13px;
             margin-top: 4px;
         }
-        .nav-list a .time-row {
-            display: flex;
-            gap: 24px;
-            color: var(--time);
-            font-size: 12px;
-            margin-top: 8px;
-        }
         footer {
             text-align: center;
             color: var(--footer);
             font-size: 12px;
             margin-top: 60px;
-        }
-        footer a {
-            color: var(--footer);
-            text-decoration: none;
-        }
-        footer a:hover {
-            text-decoration: underline;
         }
     </style>
 </head>
@@ -153,76 +136,33 @@
     </button>
 
     <div class="container">
-        <h1>我的学习笔记</h1>
-        <p class="github-top">GitHub: <a href="https://github.com/Ian-cyy" target="_blank">@Ian-cyy</a></p>
-        <p class="subtitle">嵌入式 / 机器人 / 控制算法 项目笔记汇总</p>
+        <p class="back-top"><a href="../">← 返回笔记主页</a></p>
+        <h1>ROS2 学习笔记</h1>
+        <p class="subtitle">树莓派 + ROS2 Humble · 系列练习笔记</p>
 
         <ul class="nav-list">
-            <!-- 每个 li 对应一个子文件夹项目，href 写相对路径，按创建日期最新在上排序 -->
             <li>
-                <a href="./ai-bitcoin/">
-                    <span class="title">从算力看 AI 与比特币</span>
-                    <span class="desc">AI 算力 · 大模型 · AI 硬件生态 · 比特币挖矿（系列 3 篇）</span>
-                    <span class="time-row">
-                        <span>创建时间：2026年10月1日</span>
-                        <span>更新时间：2026年10月1日</span>
-                    </span>
+                <a href="./tf2-urdf/">
+                    <span class="title">坐标变换篇 · TF2 + URDF + RViz2</span>
+                    <span class="desc">坐标变换 · URDF 模型 · RViz2 可视化 · 树莓派 + ROS2</span>
                 </a>
             </li>
             <li>
-                <a href="./ros2-notes/">
-                    <span class="title">ROS2 学习笔记</span>
-                    <span class="desc">launch.py · Parameters + YAML · TF2 + URDF + RViz2（系列 3 篇）</span>
-                    <span class="time-row">
-                        <span>创建时间：2026年9月17日</span>
-                        <span>更新时间：2026年9月24日</span>
-                    </span>
+                <a href="./parameters-yaml/">
+                    <span class="title">Parameters + YAML 练习笔记</span>
+                    <span class="desc">参数声明 / 回调 · YAML 参数文件 · launch 集成 · 树莓派 + ROS2</span>
                 </a>
             </li>
             <li>
-                <a href="./stm32-pins/">
-                    <span class="title">STM32 引脚速查</span>
-                    <span class="desc">F103 / F407 / G431 引脚分布图与功能总表</span>
-                    <span class="time-row">
-                        <span>创建时间：2026年9月3日</span>
-                        <span>更新时间：2026年9月3日</span>
-                    </span>
-                </a>
-            </li>
-            <li>
-                <a href="./RDK-X5-remote/">
-                    <span class="title">RDK-X5 远程连接配置</span>
-                    <span class="desc">SSH / VNC / lightdm / dummy虚拟显卡 无头远程桌面笔记</span>
-                    <span class="time-row">
-                        <span>创建时间：2026年9月2日</span>
-                        <span>更新时间：2026年9月2日</span>
-                    </span>
-                </a>
-            </li>
-            <li>
-                <a href="./FOC/">
-                    <span class="title">FOC 电机控制</span>
-                    <span class="desc">无刷电机磁场定向控制学习笔记</span>
-                    <span class="time-row">
-                        <span>创建时间：2026年8月25日</span>
-                        <span>更新时间：2026年8月25日</span>
-                    </span>
-                </a>
-            </li>
-            <li>
-                <a href="./IAP-Bootloader/">
-                    <span class="title">IAP-Bootloader 在线升级</span>
-                    <span class="desc">STM32G431 串口 IAP 在线升级系统（Bootloader / 上位机 / App 工程）</span>
-                    <span class="time-row">
-                        <span>创建时间：2026年8月21日</span>
-                        <span>更新时间：2026年8月21日</span>
-                    </span>
+                <a href="./launch/">
+                    <span class="title">launch.py 练习笔记</span>
+                    <span class="desc">从零到入门 · ament_python 手敲练习 · 树莓派 + ROS2</span>
                 </a>
             </li>
         </ul>
 
         <footer>
-            <p>GitHub: <a href="https://github.com/Ian-cyy" target="_blank">@Ian-cyy</a></p>
+            <p>GitHub: <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--footer);">@Ian-cyy</a></p>
             <p style="margin-top:6px;">Powered by GitHub Pages</p>
         </footer>
     </div>
