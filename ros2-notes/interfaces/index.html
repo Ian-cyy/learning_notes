@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROS2 第四部分：自定义接口 + 串口节点 练习笔记</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f6f8fb;
+    --bg-card: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --primary: #1a2744;
+    --primary-light: #2c4a7c;
+    --accent: #4a9eff;
+    --accent-light: #e8f2ff;
+    --code-bg: #f4f6fa;
+    --code-text: #2c3e50;
+    --formula-bg: #faf8f2;
+    --formula-border: #e8dcc0;
+    --formula-text: #5a4a2a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+    --sidebar-width: 280px;
+    --content-max: 860px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --text: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border: #334155;
+    --border-light: #1e293b;
+    --primary: #3b5998;
+    --primary-light: #4a6fa5;
+    --accent: #60a5fa;
+    --accent-light: #1e3a5f;
+    --code-bg: #1e293b;
+    --code-text: #cbd5e1;
+    --formula-bg: #1e293b;
+    --formula-border: #475569;
+    --formula-text: #fbbf24;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg);
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.85);
+  }
+  [data-theme="dark"] .topbar { background: rgba(15,23,42,0.85); }
+
+  .topbar-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-title .dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .topbar-title .sub {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 8px;
+  }
+
+  .topbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .icon-btn {
+    width: 36px; height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .menu-btn { display: none; }
+
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: var(--sidebar-width);
+    height: calc(100vh - 60px);
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px 0;
+    z-index: 90;
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar-header {
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sidebar-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .toc-list { list-style: none; padding: 0 12px; }
+  .toc-list li { margin: 2px 0; }
+  .toc-list a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13.5px;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+  }
+  .toc-list a:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+  .toc-list a.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  .toc-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    background: var(--border);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc-list a.active .toc-num {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .main {
+    margin-left: var(--sidebar-width);
+    margin-top: 60px;
+    padding: 40px 48px 80px;
+    min-height: calc(100vh - 60px);
+  }
+
+  .content-wrapper {
+    max-width: var(--content-max);
+    margin: 0 auto;
+  }
+
+  .article-header {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid var(--border);
+  }
+  .article-header .tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+  .article-header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .article-header .subtitle {
+    font-size: 17px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+  }
+  .article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .article-meta span { display: flex; align-items: center; gap: 6px; }
+
+  h2.chapter {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 50px 0 24px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: #fff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+    scroll-margin-top: 80px;
+  }
+  h2.chapter .ch-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 32px 0 14px;
+    padding-left: 14px;
+    border-left: 4px solid var(--accent);
+    scroll-margin-top: 80px;
+  }
+
+  h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-light);
+    margin: 22px 0 10px;
+    scroll-margin-top: 80px;
+  }
+
+  p { margin: 10px 0; text-align: justify; }
+
+  pre, code {
+    font-family: "JetBrains Mono", "Fira Code", "DejaVu Sans Mono", "Noto Sans Mono CJK SC", monospace;
+  }
+  pre {
+    position: relative;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 13px;
+    line-height: 1.65;
+    overflow-x: auto;
+    margin: 14px 0;
+    color: var(--code-text);
+  }
+  pre .lang-label {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--border-light);
+    padding: 1px 8px;
+    border-radius: 5px;
+    letter-spacing: .5px;
+  }
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #e06c5e;
+  }
+  [data-theme="dark"] code { color: #f87171; }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  .formula {
+    background: var(--formula-bg);
+    border: 1px solid var(--formula-border);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 14px 0;
+    font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace;
+    font-size: 14px;
+    text-align: center;
+    color: var(--formula-text);
+    overflow-x: auto;
+  }
+
+  .category-bar {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 18px;
+    margin: 30px 0 14px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .category-bar::before {
+    content: "";
+    width: 4px; height: 16px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13.5px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  th {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  td {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--bg-secondary); }
+  td code { white-space: normal; word-break: break-word; }
+
+  .tip-box, .warn-box {
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 16px 0;
+  }
+  .tip-box {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+  }
+  .tip-box .tip-title {
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .warn-box {
+    background: #fef5e7;
+    border-left: 4px solid #f59e0b;
+  }
+  [data-theme="dark"] .warn-box { background: #422006; border-left-color: #f59e0b; }
+  .warn-box .warn-title {
+    font-weight: 700;
+    color: #d97706;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  [data-theme="dark"] .warn-box .warn-title { color: #fbbf24; }
+
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  .checklist { list-style: none; padding-left: 4px; }
+  .checklist li { margin: 6px 0; }
+  .checklist li::before {
+    content: "☐";
+    color: var(--accent);
+    font-weight: 700;
+    margin-right: 8px;
+  }
+
+  .status-done { color: #22c55e; font-weight: 700; }
+  .status-todo { color: #f59e0b; font-weight: 700; }
+
+  .back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 44px; height: 44px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+    z-index: 80;
+  }
+  .back-to-top.visible { opacity: 1; visibility: visible; }
+  .back-to-top:hover { transform: translateY(-2px); }
+
+  .progress-bar {
+    position: fixed;
+    top: 60px; left: 0;
+    height: 3px;
+    background: var(--accent);
+    z-index: 95;
+    transition: width 0.1s;
+  }
+
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 60px; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 85;
+  }
+  .overlay.show { display: block; }
+
+  @media (max-width: 900px) {
+    .menu-btn { display: flex; }
+    .sidebar {
+      transform: translateX(-100%);
+      box-shadow: var(--shadow-lg);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; padding: 24px 20px 60px; }
+    .article-header h1 { font-size: 24px; }
+    h2.chapter { font-size: 19px; padding: 12px 16px; }
+    h2.chapter .ch-num { width: 30px; height: 30px; font-size: 14px; }
+    .topbar-title .sub { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .main { padding: 16px 14px 50px; }
+    .article-meta { gap: 12px; font-size: 12px; }
+    pre { font-size: 12px; padding: 12px 14px; }
+    table { font-size: 12px; }
+    th, td { padding: 7px 10px; }
+  }
+
+  .sidebar::-webkit-scrollbar { width: 5px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  pre::-webkit-scrollbar { height: 6px; }
+  pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menuBtn" title="目录">☰</button>
+  <div class="topbar-title">
+    <span class="dot"></span>
+    ROS2 自定义接口 + 串口节点
+    <span class="sub">第四部分练习笔记 · ROS2 Humble</span>
+  </div>
+  <div class="topbar-actions">
+    <a class="icon-btn" href="../../" title="返回笔记主页" style="text-decoration:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+    </a>
+    <a class="icon-btn" href="https://github.com/Ian-cyy" target="_blank" title="GitHub: Ian-cyy" style="text-decoration:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+    </a>
+    <button class="icon-btn" id="themeBtn" title="切换深色模式">🌙</button>
+  </div>
+</header>
+
+<div class="overlay" id="overlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h3>📑 章节目录</h3>
+  </div>
+  <ul class="toc-list">
+    <li><a href="#ch0" data-target="ch0"><span class="toc-num">零</span>为什么要自定义接口</a></li>
+    <li><a href="#ch1" data-target="ch1"><span class="toc-num">一</span>接口包 robot_interfaces</a></li>
+    <li><a href="#ch2" data-target="ch2"><span class="toc-num">二</span>自定义 msg 发布/订阅</a></li>
+    <li><a href="#ch3" data-target="ch3"><span class="toc-num">三</span>自定义 srv</a></li>
+    <li><a href="#ch4" data-target="ch4"><span class="toc-num">四</span>自定义 action</a></li>
+    <li><a href="#ch5" data-target="ch5"><span class="toc-num">五</span>串口节点 serial_bridge</a></li>
+    <li><a href="#ch6" data-target="ch6"><span class="toc-num">六</span>无硬件测试</a></li>
+    <li><a href="#ch7" data-target="ch7"><span class="toc-num">七</span>命令速查</a></li>
+    <li><a href="#ch8" data-target="ch8"><span class="toc-num">八</span>踩坑清单</a></li>
+    <li><a href="#ch9" data-target="ch9"><span class="toc-num">九</span>学完自测</a></li>
+    <li><a href="#ch10" data-target="ch10"><span class="toc-num">十</span>与真实项目对照</a></li>
+  </ul>
+  <div class="sidebar-footer">
+    工程：~/ros2_learn_ws_01<br>
+    环境：树莓派 · ROS2 Humble<br>
+    共 11 章 · 练习笔记<br><br>
+    <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">
+      → GitHub: Ian-cyy
+    </a>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="content-wrapper">
+
+    <div class="article-header">
+      <p class="crumbs" style="margin:0 0 12px;font-size:13px;">
+        <a href="../" style="color:var(--accent);text-decoration:none;">← 返回 ROS2 学习笔记</a>
+        <span style="color:var(--text-muted);"> · </span>
+        <a href="../../" style="color:var(--accent);text-decoration:none;">笔记主页</a>
+      </p>
+      <span class="tag">ROS2 · 自定义接口 · 串口节点</span>
+      <h1>ROS2 第四部分：自定义接口 + 串口节点 练习笔记</h1>
+      <p class="subtitle">msg / srv / action → 话题 ↔ 0xCC 帧 ↔ 下位机 · 全部代码 + 实操 + 踩坑</p>
+      <div class="article-meta">
+        <span>🗓 2026-10-14</span>
+        <span>🖥 树莓派 + ROS2 Humble</span>
+        <span>📦 robot_interfaces + python_launch_demo</span>
+        <span>📝 11 章</span>
+        <span>👤 <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">GitHub @Ian-cyy</a></span>
+      </div>
+    </div>
+
+    <!-- 第零章 -->
+    <h2 class="chapter" id="ch0"><span class="ch-num">零</span>为什么要自定义接口 + 串口节点</h2>
+    <ul>
+      <li><code>std_msgs/String</code> 只能发字符串；真实机器人要发<strong>结构化数据</strong>（速度、状态、模式）。</li>
+      <li><strong>msg</strong> = 话题的数据格式；<strong>srv</strong> = 一问一答；<strong>action</strong> = 长任务（带进度、可取消）。</li>
+      <li><strong>串口节点</strong> = 把"ROS2 话题"翻译成"下位机协议帧"的桥：</li>
+    </ul>
+    <pre><code class="language-text">ROS2 上层                          下位机（F407）
+/motor_cmd (MotorCmd) ──┐
+                        ├─ 串口节点(serial_bridge) ── 0xCC帧 ──&gt; 电机
+/robot_status (RobotStatus) &lt;─┘</code></pre>
+    <div class="tip-box">
+      <div class="tip-title">💡 一句话</div>
+      话题是"接口"，0xCC 帧是"协议"，串口节点就是两者之间的<strong>翻译官</strong>。
+    </div>
+
+    <!-- 第一章 -->
+    <h2 class="chapter" id="ch1"><span class="ch-num">一</span>接口包 robot_interfaces（ament_cmake）</h2>
+    <div class="warn-box">
+      <div class="warn-title">⚠️ 接口包必须是 ament_cmake</div>
+      Python 包不能生成自定义消息，接口包要和 Python 节点包<strong>分开</strong>。
+    </div>
+    <pre><span class="lang-label">bash</span><code class="language-bash">cd ~/ros2_learn_ws_01/src
+ros2 pkg create --build-type ament_cmake robot_interfaces</code></pre>
+    <h3>1.1 接口定义</h3>
+    <pre><span class="lang-label">text</span><code class="language-text"># msg/MotorCmd.msg
+float32 vx
+float32 vy
+float32 wz
+
+# msg/RobotStatus.msg
+float32 battery
+uint8   mode
+bool    online
+
+# srv/SetMode.srv  (--- 上是请求, 下是应答)
+uint8 mode
+---
+bool   success
+string message
+
+# action/MoveDistance.action  (三段: goal/result/feedback, 两个 ---)
+float32 distance
+---
+bool    finished
+float32 traveled
+---
+float32 remaining</code></pre>
+    <h3>1.2 CMakeLists.txt</h3>
+    <pre><span class="lang-label">cmake</span><code class="language-cmake">cmake_minimum_required(VERSION 3.8)
+project(robot_interfaces)
+
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/MotorCmd.msg"
+  "msg/RobotStatus.msg"
+  "srv/SetMode.srv"
+  "action/MoveDistance.action"
+)
+
+ament_export_dependencies(rosidl_default_runtime)
+ament_package()</code></pre>
+    <h3>1.3 package.xml（加 4 行依赖）</h3>
+    <pre><span class="lang-label">xml</span><code class="language-xml">  &lt;buildtool_depend&gt;ament_cmake&lt;/buildtool_depend&gt;
+  &lt;buildtool_depend&gt;rosidl_default_generators&lt;/buildtool_depend&gt;
+  &lt;exec_depend&gt;rosidl_default_runtime&lt;/exec_depend&gt;
+  &lt;member_of_group&gt;rosidl_interface_packages&lt;/member_of_group&gt;</code></pre>
+    <h3>1.4 编译 + 验证</h3>
+    <pre><span class="lang-label">bash</span><code class="language-bash">cd ~/ros2_learn_ws_01
+colcon build --symlink-install
+source install/setup.bash
+ros2 interface show robot_interfaces/msg/MotorCmd
+ros2 interface show robot_interfaces/action/MoveDistance   # 能看到三段
+ros2 interface list | grep robot_interfaces                # 列出 4 个</code></pre>
+
+    <!-- 第二章 -->
+    <h2 class="chapter" id="ch2"><span class="ch-num">二</span>自定义 msg 的发布 / 订阅</h2>
+    <p>先在 <code>python_launch_demo/package.xml</code> 加 <code>&lt;exec_depend&gt;robot_interfaces&lt;/exec_depend&gt;</code>。</p>
+    <pre><span class="lang-label">python</span><code class="language-python">import rclpy
+from rclpy.node import Node
+from robot_interfaces.msg import MotorCmd
+
+
+class MotorCmdPub(Node):
+    def __init__(self):
+        super().__init__('motor_cmd_pub')
+        self.pub = self.create_publisher(MotorCmd, 'motor_cmd', 10)
+        self.create_timer(1.0, self.tick)
+
+    def tick(self):
+        msg = MotorCmd()
+        msg.vx, msg.vy, msg.wz = 0.2, 0.0, 0.0
+        self.pub.publish(msg)
+        self.get_logger().info(f'发指令 vx={msg.vx:.2f} vy={msg.vy:.2f} wz={msg.wz:.2f}')
+
+
+def main():
+    rclpy.init()
+    node = MotorCmdPub()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    node.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()</code></pre>
+    <p>验证：</p>
+    <pre><span class="lang-label">bash</span><code class="language-bash">colcon build --symlink-install &amp;&amp; source install/setup.bash
+ros2 run python_launch_demo motor_cmd_pub      # 终端1
+ros2 run python_launch_demo motor_cmd_sub      # 终端2 -&gt; 收到
+# 命令行手动发:
+ros2 topic pub /motor_cmd robot_interfaces/msg/MotorCmd "{vx: 0.5, vy: 0.0, wz: 0.0}" -r 1</code></pre>
+
+    <!-- 第三章 -->
+    <h2 class="chapter" id="ch3"><span class="ch-num">三</span>自定义 srv（服务 / 客户端）</h2>
+    <pre><span class="lang-label">python</span><code class="language-python">import rclpy
+from rclpy.node import Node
+from robot_interfaces.srv import SetMode
+
+
+class SetModeServer(Node):
+    def __init__(self):
+        super().__init__('set_mode_server')
+        self.srv = self.create_service(SetMode, 'set_mode', self.handle)
+        self.mode = 0
+
+    def handle(self, request, response):
+        if request.mode in (1, 2, 3, 4):
+            self.mode = request.mode
+            response.success, response.message = True, f'模式切换为 {request.mode}'
+        else:
+            response.success, response.message = False, f'非法模式 {request.mode}'
+        self.get_logger().info(response.message)
+        return response
+
+
+def main():
+    rclpy.init()
+    node = SetModeServer()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    node.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()</code></pre>
+    <p>验证：</p>
+    <pre><span class="lang-label">bash</span><code class="language-bash">ros2 run python_launch_demo set_mode_server       # 终端1
+ros2 run python_launch_demo set_mode_client 2     # -&gt; success=True
+ros2 run python_launch_demo set_mode_client 9     # -&gt; success=False
+ros2 service call /set_mode robot_interfaces/srv/SetMode "{mode: 3}"</code></pre>
+    <div class="tip-box">
+      <div class="tip-title">💡 对应真实需求</div>
+      树莓派给 F407 发 <code>SET_MODE</code> 本质就是一个 srv（请求 mode → 返回是否接受）。
+    </div>
+
+    <!-- 第四章 -->
+    <h2 class="chapter" id="ch4"><span class="ch-num">四</span>自定义 action（长任务）</h2>
+    <pre><span class="lang-label">python</span><code class="language-python">import time
+import rclpy
+from rclpy.action import ActionServer
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.node import Node
+from robot_interfaces.action import MoveDistance
+
+
+class MoveDistanceServer(Node):
+    def __init__(self):
+        super().__init__('move_distance_server')
+        self._server = ActionServer(self, MoveDistance, 'move_distance', self.execute_cb)
+
+    def execute_cb(self, goal_handle):
+        target = goal_handle.request.distance
+        traveled, step, dt = 0.0, 0.05, 0.1
+        feedback = MoveDistance.Feedback()
+        while traveled &lt; target:
+            if goal_handle.is_cancel_requested:
+                goal_handle.canceled()
+                result = MoveDistance.Result(); result.finished, result.traveled = False, traveled
+                return result
+            traveled += step
+            feedback.remaining = max(0.0, target - traveled)
+            goal_handle.publish_feedback(feedback)
+            time.sleep(dt)
+        goal_handle.succeed()
+        result = MoveDistance.Result(); result.finished, result.traveled = True, traveled
+        return result
+
+
+def main():
+    rclpy.init()
+    node = MoveDistanceServer()
+    executor = MultiThreadedExecutor()   # 否则 time.sleep 期间收不到"取消"
+    executor.add_node(node)
+    try:
+        executor.spin()
+    except KeyboardInterrupt:
+        pass
+    node.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()</code></pre>
+    <pre><span class="lang-label">bash</span><code class="language-bash">ros2 run python_launch_demo move_distance_server
+ros2 run python_launch_demo move_distance_client
+ros2 action send_goal /move_distance robot_interfaces/action/MoveDistance "{distance: 2.0}" --feedback</code></pre>
+    <div class="warn-box">
+      <div class="warn-title">💡 要点</div>
+      action = goal + result + feedback，可取消；导航/抓取这类长任务用它。真实代码别用 <code>time.sleep</code>，用定时器 + 状态机（这里为演示直观）。
+    </div>
+
+    <!-- 第五章 -->
+    <h2 class="chapter" id="ch5"><span class="ch-num">五</span>串口节点 serial_bridge ★重头戏</h2>
+    <h3>5.1 依赖（apt，不要只用 pip）</h3>
+    <pre><span class="lang-label">bash</span><code class="language-bash">sudo apt install python3-serial
+python3 -c "import serial; print(serial.__version__)"</code></pre>
+    <h3>5.2 教学协议</h3>
+    <pre><code class="language-text">帧: 0xCC | TYPE | LEN | DATA | CRC8(0x07) | 0x55
+  TYPE 0x01 HEARTBEAT  无数据
+  TYPE 0x10 MOTOR_CMD  DATA = vx,vy,wz (int16 大端, mm/s)
+  TYPE 0x11 STATUS     DATA = battery(uint8 %) + mode(uint8)</code></pre>
+    <h3>5.3 serial_bridge.py（节选）</h3>
+    <pre><span class="lang-label">python</span><code class="language-python">import struct, threading
+import rclpy
+import serial
+from rclpy.node import Node
+from robot_interfaces.msg import MotorCmd, RobotStatus
+
+HEAD, TAIL = 0xCC, 0x55
+TYPE_HEARTBEAT, TYPE_MOTOR_CMD, TYPE_STATUS = 0x01, 0x10, 0x11
+
+
+def crc8(data: bytes) -&gt; int:
+    crc = 0
+    for b in data:
+        crc ^= b
+        for _ in range(8):
+            crc = ((crc &lt;&lt; 1) ^ 0x07) &amp; 0xFF if crc &amp; 0x80 else (crc &lt;&lt; 1) &amp; 0xFF
+    return crc
+
+
+def build_frame(typ: int, data: bytes = b"") -&gt; bytes:
+    body = bytes([typ, len(data)]) + data
+    return bytes([HEAD]) + body + bytes([crc8(body), TAIL])
+
+
+class SerialBridge(Node):
+    def __init__(self):
+        super().__init__('serial_bridge')
+        self.declare_parameter('port', '/dev/ttyUSB0')
+        self.declare_parameter('baud', 115200)
+        port = self.get_parameter('port').value
+        baud = self.get_parameter('baud').value
+        self.ser = serial.Serial(port, baud, timeout=0.05)
+
+        self.status_pub = self.create_publisher(RobotStatus, 'robot_status', 10)
+        self.create_subscription(MotorCmd, 'motor_cmd', self.on_cmd, 10)
+        self.create_timer(1.0, self.send_heartbeat)
+
+        self.rx_buf = bytearray()
+        self.running = True
+        self.rx_thread = threading.Thread(target=self.read_loop, daemon=True)
+        self.rx_thread.start()
+
+    def on_cmd(self, msg: MotorCmd):
+        data = struct.pack('&gt;hhh', int(msg.vx * 1000), int(msg.vy * 1000), int(msg.wz * 1000))
+        self.ser.write(build_frame(TYPE_MOTOR_CMD, data))
+
+    def send_heartbeat(self):
+        self.ser.write(build_frame(TYPE_HEARTBEAT))
+
+    def read_loop(self):
+        while self.running and rclpy.ok():
+            chunk = self.ser.read(64)
+            if chunk:
+                self.rx_buf += chunk
+                self.parse_frames()
+
+    def parse_frames(self):
+        while len(self.rx_buf) &gt;= 5:
+            if self.rx_buf[0] != HEAD:              # 对齐帧头
+                self.rx_buf.pop(0)
+                continue
+            length = self.rx_buf[2]
+            total = length + 5
+            if len(self.rx_buf) &lt; total:            # 不够一帧
+                return
+            frame = bytes(self.rx_buf[:total])
+            del self.rx_buf[:total]
+            if frame[-1] != TAIL:                   # 帧尾错
+                continue
+            if crc8(frame[1:3 + length]) != frame[3 + length]:   # CRC 错
+                continue
+            self.handle_frame(frame[1], frame[3:3 + length])
+
+    def handle_frame(self, typ, data):
+        if typ == TYPE_STATUS and len(data) &gt;= 2:
+            msg = RobotStatus()
+            msg.battery, msg.mode, msg.online = float(data[0]), int(data[1]), True
+            self.status_pub.publish(msg)
+
+    def destroy_node(self):
+        self.running = False
+        if self.ser.is_open:
+            self.ser.close()
+        super().destroy_node()</code></pre>
+    <div class="tip-box">
+      <div class="tip-title">💡 要点</div>
+      <ul style="margin:6px 0 0 0;">
+        <li>发：订阅回调里打包帧写串口；收：<strong>后台线程</strong>读 + 状态机断帧；</li>
+        <li>端口/波特率做成 <strong>parameter</strong>；心跳定时器（对应 F407 的 3s 超时保护）。</li>
+      </ul>
+    </div>
+
+    <!-- 第六章 -->
+    <h2 class="chapter" id="ch6"><span class="ch-num">六</span>无硬件测试（socat + 假 F407）</h2>
+    <pre><span class="lang-label">bash</span><code class="language-bash">sudo apt install socat
+socat -d -d pty,raw,echo=0 pty,raw,echo=0    # 记下两个 /dev/pts/N</code></pre>
+    <p>四个终端跑全链路：</p>
+    <pre><span class="lang-label">bash</span><code class="language-bash"># 终端0: socat 虚拟串口对（保持运行）
+socat -d -d pty,raw,echo=0 pty,raw,echo=0
+# 终端1: 假下位机（第二个 pty）
+python3 tools/fake_f407.py
+# 终端2: 串口节点（第一个 pty）
+ros2 run python_launch_demo serial_bridge --ros-args -p port:=/dev/pts/4
+# 终端3: 看状态
+ros2 topic echo /robot_status
+# 终端4: 发指令
+ros2 topic pub /motor_cmd robot_interfaces/msg/MotorCmd "{vx: 0.3, vy: 0.0, wz: 0.0}" -r 1</code></pre>
+    <div class="tip-box">
+      <div class="tip-title">✅ 预期</div>
+      假 F407 打印"收到指令…"；<code>/robot_status</code> 每秒收到电量/模式；串口节点打印 TX/RX 日志。
+    </div>
+
+    <!-- 第七章 -->
+    <h2 class="chapter" id="ch7"><span class="ch-num">七</span>命令速查</h2>
+    <table>
+      <tr><th>命令</th><th>作用</th></tr>
+      <tr><td><code>ros2 interface show 包/msg/X</code></td><td>查看接口定义</td></tr>
+      <tr><td><code>ros2 topic pub /话题 包/msg/X "{字段: 值}"</code></td><td>命令行发自定义消息</td></tr>
+      <tr><td><code>ros2 service call /服务 包/srv/X "{字段: 值}"</code></td><td>命令行调服务</td></tr>
+      <tr><td><code>ros2 action send_goal /动作 包/action/X "{字段: 值}" --feedback</code></td><td>命令行发 action</td></tr>
+      <tr><td><code>socat -d -d pty,raw,echo=0 pty,raw,echo=0</code></td><td>造虚拟串口对</td></tr>
+      <tr><td><code>ros2 run pkg node --ros-args -p port:=/dev/pts/4</code></td><td>传参启动</td></tr>
+    </table>
+
+    <!-- 第八章 -->
+    <h2 class="chapter" id="ch8"><span class="ch-num">八</span>踩坑清单</h2>
+    <table>
+      <tr><th>坑</th><th>说明</th></tr>
+      <tr><td>接口包用 Python 建</td><td><strong>必须 ament_cmake</strong> 才能生成自定义接口</td></tr>
+      <tr><td>找不到自定义类型</td><td>忘了 <code>source install/setup.bash</code>，或消费包 package.xml 没加 <code>exec_depend</code></td></tr>
+      <tr><td>srv/action 的 <code>---</code></td><td>数量写错（srv 1 个、action 2 个）导致编译失败</td></tr>
+      <tr><td><code>pip install pyserial</code> 后 import 失败</td><td>ROS2 用系统 python → <code>sudo apt install python3-serial</code></td></tr>
+      <tr><td>串口节点卡死</td><td>读串口别放主线程阻塞，用<strong>后台线程</strong> + <code>timeout</code></td></tr>
+      <tr><td>断帧错位</td><td>状态机要处理"帧头不对齐/长度不够/CRC 错"三种情况</td></tr>
+      <tr><td>action 取消没反应</td><td>单线程执行器被 <code>time.sleep</code> 阻塞 → 用 <code>MultiThreadedExecutor</code></td></tr>
+      <tr><td>后台线程里调 rclpy</td><td>publish 可以；别在子线程 spin/建节点，退出先停线程再关节点</td></tr>
+      <tr><td>虚拟串口换路径</td><td>socat 每次 <code>/dev/pts/N</code> 会变，用固定软链或每次看输出</td></tr>
+      <tr><td>改完 setup.py</td><td>重新 <code>colcon build --symlink-install</code></td></tr>
+    </table>
+
+    <!-- 第九章 -->
+    <h2 class="chapter" id="ch9"><span class="ch-num">九</span>学完自测</h2>
+    <ul class="checklist">
+      <li>能说出 msg / srv / action 各自的适用场景</li>
+      <li>会建接口包（CMake）并定义 msg/srv/action、编译、<code>interface show</code></li>
+      <li>会在 Python 节点里发布/订阅自定义 msg</li>
+      <li>会写 srv 服务端+客户端（知道 <code>---</code> 分隔请求/应答）</li>
+      <li>会写 action 服务端+客户端（含 feedback、取消）</li>
+      <li>会写串口节点：话题→打包 0xCC 帧→串口；后台线程读→解析→发话题</li>
+      <li>知道 CRC8 校验和帧解析状态机怎么写</li>
+      <li>会用 socat + 假下位机做无硬件闭环测试</li>
+      <li>能把端口/波特率做成参数，用 launch 组合启动</li>
+    </ul>
+
+    <!-- 第十章 -->
+    <h2 class="chapter" id="ch10"><span class="ch-num">十</span>与真实项目对照（救援机器人 ROS2）</h2>
+    <p>上面的练习是<strong>教学版</strong>（假协议 0x10/0x11）。真实工程 <code>~/ros2_ws</code> 的接口与桥：</p>
+    <h3>10.1 真实的 robot_interfaces（本练习的"本尊"）</h3>
+    <table>
+      <tr><th>类型</th><th>文件</th><th>字段</th></tr>
+      <tr><td>msg</td><td><code>ArmJointCmd.msg</code></td><td>q1..q6(int16) + pid + repeats（→ F103 0xAA）</td></tr>
+      <tr><td>msg</td><td><code>TargetPos.msg</code></td><td>header + x + y + id + valid（视觉目标）</td></tr>
+      <tr><td>msg</td><td><code>BallOrder.msg</code></td><td>header + uint8[] order（球出现顺序）</td></tr>
+      <tr><td>msg</td><td><code>F407Event.msg</code></td><td>event + mode（含常量 SET_MODE/ALIGNED/ABORT）</td></tr>
+      <tr><td>srv</td><td><code>SetMode.srv</code></td><td>mode → accepted</td></tr>
+      <tr><td>srv</td><td><code>SelectTarget.srv</code></td><td>id + color → ok</td></tr>
+      <tr><td>srv</td><td><code>SetResolution.srv</code></td><td>width + height → ok</td></tr>
+      <tr><td>srv</td><td><code>ArmSeq.srv</code></td><td>pose + repeats → ok（发录制姿态帧）</td></tr>
+    </table>
+    <p><strong>特点</strong>：真实项目<strong>只用 msg + srv，没有 action</strong>（流程靠"话题驱动 + 状态机"）。</p>
+
+    <h3>10.2 串口节点 = 我们的 f407_bridge / arm_bridge</h3>
+    <ul>
+      <li>练习里的 <code>serial_bridge</code>（话题↔0xCC）<strong>就是</strong>真实工程的 <code>f407_bridge</code>：订阅 <code>/f407/pos,/done,/backup</code> → 打包 <strong>0xCC</strong> 帧；后台线程读串口 → <code>protocol.py</code> 断帧+CRC8 → 发 <code>/f407/events</code>。</li>
+      <li><code>arm_bridge</code> 同理（话题 <code>/arm/cmd,/arm/seq</code> ↔ <strong>0xAA</strong> 关节帧，q3/q4 取反，连发防丢）。</li>
+      <li><strong>真实 0xCC 帧</strong>：<code>CC | TYPE | LEN | DATA | CRC8(0x07) | 55</code>；TYPE 有 HEARTBEAT/SET_MODE/ALIGNED/ABORT/POS(id)/DONE/BACKUP/ARM_REPORT。</li>
+    </ul>
+
+    <h3>10.3 为什么真实项目用 msg/srv、不用 action</h3>
+    <ul>
+      <li>车/臂的控制是<strong>周期性、事件驱动</strong>（POS 25Hz、SET_MODE 事件、DONE 事件）→ msg + srv 足够；</li>
+      <li>action 适合"一个可取消的长任务"（如"走2米带进度"），我们的 20 段路径是 <strong>F407 侧状态机</strong>在跑，Pi 只发事件/坐标 → 不需要 action；</li>
+      <li>练习里写 action 是为了<strong>掌握 ROS2 全套接口</strong>（面试常问），实际项目按需选型。</li>
+    </ul>
+
+    <div class="tip-box">
+      <div class="tip-title">🚀 一句话</div>
+      练习里手写的 <code>robot_interfaces</code> + <code>serial_bridge</code>，就是真实工程 <code>robot_interfaces</code> + <code>f407_bridge/arm_bridge</code> 的      <strong>简化教学版</strong>；学完这份，读真机代码就通了。
+    </div>
+
+  </div>
+</main>
+
+<button class="back-to-top" id="backToTop" title="回到顶部">↑</button>
+
+<script>
+  const themeBtn = document.getElementById('themeBtn');
+  const html = document.documentElement;
+  const savedTheme = localStorage.getItem('interfaces-theme');
+  if (savedTheme === 'dark') {
+    html.setAttribute('data-theme', 'dark');
+    themeBtn.textContent = '☀️';
+  }
+  themeBtn.addEventListener('click', () => {
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      themeBtn.textContent = '🌙';
+      localStorage.setItem('interfaces-theme', 'light');
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      themeBtn.textContent = '☀️';
+      localStorage.setItem('interfaces-theme', 'dark');
+    }
+  });
+
+  const menuBtn = document.getElementById('menuBtn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  menuBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+  document.querySelectorAll('.toc-list a').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 900) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+      }
+    });
+  });
+
+  const tocLinks = document.querySelectorAll('.toc-list a');
+  const chapters = document.querySelectorAll('h2.chapter');
+  const progressBar = document.getElementById('progressBar');
+  const backToTop = document.getElementById('backToTop');
+
+  function updateActiveChapter() {
+    let current = '';
+    const scrollPos = window.scrollY + 170;
+    chapters.forEach(ch => {
+      if (ch.offsetTop <= scrollPos) { current = ch.id; }
+    });
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      current = chapters[chapters.length - 1].id;
+    }
+    tocLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('data-target') === current) { link.classList.add('active'); }
+    });
+  }
+
+  function updateProgress() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = progress + '%';
+    if (scrollTop > 400) { backToTop.classList.add('visible'); }
+    else { backToTop.classList.remove('visible'); }
+  }
+
+  window.addEventListener('scroll', () => {
+    updateActiveChapter();
+    updateProgress();
+  }, { passive: true });
+
+  backToTop.addEventListener('click', () => { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+
+  updateActiveChapter();
+  updateProgress();
+</script>
+
+</body>
+</html>
