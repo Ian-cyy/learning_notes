@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>经典控制 · MuJoCo 笔记</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f6f8fb;
+    --bg-card: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --primary: #1a2744;
+    --primary-light: #2c4a7c;
+    --accent: #4a9eff;
+    --accent-light: #e8f2ff;
+    --code-bg: #f4f6fa;
+    --code-text: #2c3e50;
+    --formula-bg: #faf8f2;
+    --formula-border: #e8dcc0;
+    --formula-text: #5a4a2a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+    --sidebar-width: 280px;
+    --content-max: 860px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --text: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border: #334155;
+    --border-light: #1e293b;
+    --primary: #3b5998;
+    --primary-light: #4a6fa5;
+    --accent: #60a5fa;
+    --accent-light: #1e3a5f;
+    --code-bg: #1e293b;
+    --code-text: #cbd5e1;
+    --formula-bg: #1e293b;
+    --formula-border: #475569;
+    --formula-text: #fbbf24;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg);
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ===== 顶部导航栏 ===== */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.85);
+  }
+  [data-theme="dark"] .topbar { background: rgba(15,23,42,0.85); }
+
+  .topbar-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-title .dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .topbar-title .sub {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 8px;
+  }
+
+  .topbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .icon-btn {
+    width: 36px; height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .menu-btn { display: none; }
+
+  /* ===== 侧边栏 ===== */
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: var(--sidebar-width);
+    height: calc(100vh - 60px);
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px 0;
+    z-index: 90;
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar-header {
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sidebar-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .toc-list { list-style: none; padding: 0 12px; }
+  .toc-list li { margin: 2px 0; }
+  .toc-list a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13.5px;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+  }
+  .toc-list a:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+  .toc-list a.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  .toc-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    background: var(--border);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc-list a.active .toc-num {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* 系列文章导航 */
+  .series-nav { padding: 12px 20px; }
+  .series-nav .sn-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .series-nav a {
+    display: block;
+    padding: 7px 12px;
+    margin: 4px 0;
+    border-radius: 7px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .series-nav a:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+  .series-nav a.cur {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ===== 主内容区 ===== */
+  .main {
+    margin-left: var(--sidebar-width);
+    margin-top: 60px;
+    padding: 40px 48px 80px;
+    min-height: calc(100vh - 60px);
+  }
+
+  .content-wrapper {
+    max-width: var(--content-max);
+    margin: 0 auto;
+  }
+
+  /* ===== 文章头部 ===== */
+  .article-header {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid var(--border);
+  }
+  .article-header .tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+  .article-header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .article-header .subtitle {
+    font-size: 17px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+  }
+  .article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .article-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* ===== 章节标题 ===== */
+  h2.chapter {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 50px 0 24px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: #fff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+    scroll-margin-top: 80px;
+  }
+  h2.chapter .ch-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 32px 0 14px;
+    padding-left: 14px;
+    border-left: 4px solid var(--accent);
+    scroll-margin-top: 80px;
+  }
+
+  h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-light);
+    margin: 22px 0 10px;
+    scroll-margin-top: 80px;
+  }
+
+  p { margin: 10px 0; text-align: justify; }
+
+  /* ===== 代码块 ===== */
+  pre, code {
+    font-family: "JetBrains Mono", "Fira Code", "DejaVu Sans Mono", "Noto Sans Mono CJK SC", monospace;
+  }
+  pre {
+    position: relative;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 13px;
+    line-height: 1.65;
+    overflow-x: auto;
+    margin: 14px 0;
+    color: var(--code-text);
+  }
+  pre .lang-label {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--border-light);
+    padding: 1px 8px;
+    border-radius: 5px;
+    letter-spacing: .5px;
+  }
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #e06c5e;
+  }
+  [data-theme="dark"] code { color: #f87171; }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* ===== 公式 ===== */
+  .formula {
+    background: var(--formula-bg);
+    border: 1px solid var(--formula-border);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 14px 0;
+    font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace;
+    font-size: 14px;
+    text-align: center;
+    color: var(--formula-text);
+    overflow-x: auto;
+  }
+
+  /* ===== 表格 ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13.5px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  th {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  td {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--bg-secondary); }
+  td code { white-space: normal; word-break: break-word; }
+  td a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  td a:hover { text-decoration: underline; }
+
+  /* ===== 提示框 ===== */
+  .tip-box, .warn-box {
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 16px 0;
+  }
+  .tip-box {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+  }
+  .tip-box .tip-title {
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .warn-box {
+    background: #fef5e7;
+    border-left: 4px solid #f59e0b;
+  }
+  [data-theme="dark"] .warn-box { background: #422006; border-left-color: #f59e0b; }
+  .warn-box .warn-title {
+    font-weight: 700;
+    color: #d97706;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  [data-theme="dark"] .warn-box .warn-title { color: #fbbf24; }
+
+  /* ===== 列表 ===== */
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  /* ===== 回到顶部 ===== */
+  .back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 44px; height: 44px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+    z-index: 80;
+  }
+  .back-to-top.visible { opacity: 1; visibility: visible; }
+  .back-to-top:hover { transform: translateY(-2px); }
+
+  /* ===== 阅读进度条 ===== */
+  .progress-bar {
+    position: fixed;
+    top: 60px; left: 0;
+    height: 3px;
+    background: var(--accent);
+    z-index: 95;
+    transition: width 0.1s;
+  }
+
+  /* ===== 遮罩层（移动端） ===== */
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 60px; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 85;
+  }
+  .overlay.show { display: block; }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 900px) {
+    .menu-btn { display: flex; }
+    .sidebar {
+      transform: translateX(-100%);
+      box-shadow: var(--shadow-lg);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; padding: 24px 20px 60px; }
+    .article-header h1 { font-size: 24px; }
+    h2.chapter { font-size: 19px; padding: 12px 16px; }
+    h2.chapter .ch-num { width: 30px; height: 30px; font-size: 14px; }
+    .topbar-title .sub { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .main { padding: 16px 14px 50px; }
+    .article-meta { gap: 12px; font-size: 12px; }
+    pre { font-size: 12px; padding: 12px 14px; }
+    table { font-size: 12px; }
+    th, td { padding: 7px 10px; }
+  }
+
+  /* ===== 滚动条美化 ===== */
+  .sidebar::-webkit-scrollbar { width: 5px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  pre::-webkit-scrollbar { height: 6px; }
+  pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style></head><body>
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menuBtn" title="目录">☰</button>
+  <div class="topbar-title"><span class="dot"></span>经典控制<span class="sub">PID / LQR / MPC / VMC · 2026/10/29</span></div>
+  <div class="topbar-actions"><a class="icon-btn" href="../../" title="返回笔记主页" style="text-decoration:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg></a><a class="icon-btn" href="https://github.com/Ian-cyy" target="_blank" title="GitHub: Ian-cyy" style="text-decoration:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg></a>
+    <button class="icon-btn" id="themeBtn" title="切换深色模式">🌙</button></div>
+</header>
+<div class="overlay" id="overlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header"><h3>📑 本页目录</h3></div>
+  <ul class="toc-list"><li><a href="#ch1" data-target="ch1"><span class="toc-num">01</span>CartPole：PID 与两种 MPC</a></li>
+<li><a href="#ch2" data-target="ch2"><span class="toc-num">02</span>Furuta（旋转倒立摆）：能量摆起 + LQR</a></li>
+<li><a href="#ch3" data-target="ch3"><span class="toc-num">03</span>Go2 站立与抗推：PD / LQR / MPC 对比</a></li>
+<li><a href="#ch4" data-target="ch4"><span class="toc-num">04</span>Go2 单刚体 MPC 与 VMC trot（实验）</a></li></ul>
+  <div class="series-nav"><div class="sn-title">📚 MuJoCo 系列</div>
+<a href="../">📖 主页 · MuJoCo · 控制 · RL</a>
+<a href="../basics/">01 · MuJoCo 基础</a>
+<a href="../control/" class="cur">02 · 经典控制</a>
+<a href="../rl/">03 · 强化学习 · Go2</a>
+<a href="../mydog/">04 · 自建狗</a></div>
+  <div class="sidebar-footer">环境：MuJoCo / MJX / Brax(PPO)<br>
+共 4 篇 · 合并为一页<br>
+<a href="https://github.com/Ian-cyy/mujoco-control-rl" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">→ 源码仓库</a></div>
+</aside>
+<main class="main"><div class="content-wrapper">
+  <div class="article-header"><span class="tag">CONTROL · PID · LQR · MPC</span><h1>经典控制</h1>
+    <p class="subtitle">PID / LQR / MPC / VMC</p>
+    <div class="article-meta"><span>🗓 2026-10-29</span><span>📚 4 篇</span>
+      <span>🖥 MuJoCo / MJX / Brax</span>
+      <span>👤 <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">GitHub @Ian-cyy</a></span></div>
+  </div>
+<h2 class="chapter" id="ch1"><span class="ch-num">01</span>CartPole：PID 与两种 MPC</h2>
+<blockquote>
+<p>最小可玩的控制实验台。用同一套 MuJoCo 倒立摆对比：<strong>PID</strong> vs <strong>采样 MPC</strong> vs <strong>线性 QP-MPC</strong>。
+代码：<code>~/mujoco_ws/cartpole/{mpc_cartpole.py, mpc_cartpole_qp.py}</code></p>
+</blockquote>
+<h3>1. 系统</h3>
+<ul>
+<li>状态 <code>x, θ, ẋ, θ̇</code>（4 维）；控制 = 小车水平力 <code>u ∈ [-30, 30] N</code>。</li>
+<li><code>dt = 0.01s</code>；XML 内嵌在脚本里（<code>CART_XML</code>）。</li>
+</ul>
+<h3>2. PID（基线）</h3>
+<pre><span class="lang-label">python</span><code class="language-python">u = K_ANG*θ + K_DTH*θ̇ + K_X*x + K_VX*ẋ      # 负反馈，clip 到 ±30
+</code></pre>
+<p>调参结论：<code>K_ANG=180, K_DTH=10, K_X=4, K_VX=5</code>（杆稳 + 车回中）。</p>
+<h3>3. 采样 MPC（<code>mpc_cartpole.py</code>）—— 最直白的 MPC</h3>
+<p>每步：
+1. 读状态；
+2. 随机撒 <code>N_SAMPLES=400</code> 组、每组 <code>H=60</code> 步的分段常数输入（<code>REPEAT=5</code>，一段保持 5 拍）；
+3. <code>mujoco.rollout.rollout(...)</code> 并行“快进”60 步；
+4. 代价打分：<code>Σ W_ANG·θ² + W_X·x² + W_VX·ẋ² + W_DTH·θ̇² + W_U·u²</code> + 终端代价；
+5. <code>argmin</code> 取最优序列的<strong>第 1 步</strong>下发，下一拍重来。</p>
+<p>核心代码：<code>cartpole/mpc_cartpole.py</code> 的 <code>mpc_action()</code>（<code>:60-74</code>）。
+- 关键点：<strong>物理引擎当预测模型</strong>，不用建模、不用梯度；缺点是维数一高就撒不中。</p>
+<h3>4. 线性 QP-MPC（<code>mpc_cartpole_qp.py</code>）—— 真正的 MPC</h3>
+<p>思路：线性化 + 展开成二次规划（QP），用 OSQP 求精确最优。
+1. <strong>线性化</strong>：在平衡点数值求 <code>A,B</code>：<code>mjd_transitionFD(m, d, 1e-6, True, A, B, ...)</code>（<code>:55</code>）；
+2. <strong>展开</strong>：<code>X = Sx·x0 + Su·U</code>（<code>Sx/Su</code> 由 A,B 累乘，<code>:58-63</code>，只算一次）；
+3. <strong>二次型</strong>：代价 <code>Σ xᵀQx + uᵀRu</code> → <code>½ Uᵀ P U + qᵀU</code>
+   - <code>Q_WEIGHT=[1,100,1,1]</code>(x,θ,ẋ,θ̇)，<code>R=0.01</code>，<code>N_HORIZON=30</code>
+   - <code>P = 2(Suᵀ Q̄ Su + R̄)</code>（启动算一次）、<code>q = 2 Suᵀ Q̄ Sx·x</code>（每步更新）
+4. <strong>约束</strong> <code>|u|≤Umax</code> → <code>osqp</code> 求解，取 <code>U[0]</code>（<code>:86-89</code>）。</p>
+<h3>5. 抗扰实验结论（<code>--compare</code>，推小车 0.1s）</h3>
+<table>
+<thead>
+<tr>
+<th>控制器</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>PID</strong> / <strong>线性 QP-MPC</strong></td>
+<td>都能稳到 <strong>~50N</strong>（接近物理上限）</td>
+</tr>
+<tr>
+<td>采样 MPC</td>
+<td>明显更差</td>
+</tr>
+</tbody>
+</table>
+<p><strong>持续恒力</strong>（力一直存在，非冲量）：
+- PID / 采样 MPC 停在有限偏移（可接受）；
+- <strong>QP-MPC 会跑偏</strong>（因为它是围绕平衡点的线性模型 + 短视界开环预测）。</p>
+<p><strong>结论</strong>：冲量扰动下 QP-MPC 追平 PID；<strong>持续外力场景用 PID</strong>；采样 MPC 在本任务无优势。</p>
+<h3>6. 复现</h3>
+<pre><span class="lang-label">bash</span><code class="language-bash">cd ~/mujoco_ws
+python3 cartpole/mpc_cartpole.py                 # 默认 PID
+python3 cartpole/mpc_cartpole.py --controller mpc --headless 400
+python3 cartpole/mpc_cartpole_qp.py              # 默认 QP-MPC
+python3 cartpole/mpc_cartpole_qp.py --compare    # 三种抗扰对比
+</code></pre>
+<h3>7. 要点总结（可迁移）</h3>
+<ul>
+<li>MPC 的四件套：<strong>测量 → 预测(H步) → 优化/采样选最优 → 只执行第一步</strong>。</li>
+<li>采样法简单但高维无效；线性 QP 精准、适合短视界；非线性用 CasADi+IPOPT（见 <code>04_Go2_SRBD_MPC</code>）。</li>
+<li>线性 MPC 的软肋：<strong>模型在平衡点外失准 + 短视界开环</strong>，遇到持续偏置会跑偏。</li>
+</ul>
+<h2 class="chapter" id="ch2"><span class="ch-num">02</span>Furuta（旋转倒立摆）：能量摆起 + LQR</h2>
+<blockquote>
+<p>比 CartPole 多一个维度：摆杆绕<strong>可旋转的臂</strong>摆动。目标：<strong>摆起 + 稳住 + 被打倒能自恢复</strong>。
+代码：<code>~/mujoco_ws/furuta/</code></p>
+</blockquote>
+<h3>1. 系统</h3>
+<ul>
+<li>旋转臂（电机驱动）+ 摆杆（自由摆）。状态含臂角/角速度、摆角/角速度。</li>
+<li>难点：平衡点附近是<strong>倒立不稳定</strong>，需要先把能量“泵”上来（摆起），再 LQR 平衡。</li>
+</ul>
+<h3>2. 两条路线</h3>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>做法</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>矮模型系列</td>
+<td>靠“杆戳地/撞限位”辅助摆起</td>
+<td>能起但<strong>不能自恢复</strong></td>
+</tr>
+<tr>
+<td><code>furuta_swingup.py</code></td>
+<td><strong>抬高模型 + 闭环泵能 + LQR</strong></td>
+<td><strong>成品：既能摆起，又能被打倒后自恢复</strong></td>
+</tr>
+<tr>
+<td><code>mpc_furuta.py</code> / <code>furuta_lqr_mpc.py</code></td>
+<td>能量法 + LQR / 平衡期 MPC</td>
+<td>参考/实验</td>
+</tr>
+<tr>
+<td><code>furuta_mpc.py</code></td>
+<td>纯 MPC（CEM）摆起</td>
+<td>未完全成功</td>
+</tr>
+</tbody>
+</table>
+<h3>3. 闭环泵能（关键）</h3>
+<p>能量法摆起：让系统总能量趋向倒立静止能量 <code>E*</code>，按能量差施加控制。
+本项目的<strong>闭环泵能律</strong>（抬高模型）：</p>
+<pre><code>u = k · φ̇ · cos(φ) · clip((-E)/Esc, 0, 1)      # φ=摆角
+参数：k=80, Esc=0.2
+</code></pre>
+<ul>
+<li>只用“加能量”且按能量差自动收敛 → 摆起后自然停机交给 LQR。</li>
+<li>实测：<strong>803 步 / 1.61s 摆起</strong>；被 knock（20~150）打倒后<strong>能自己重新泵起并稳住</strong>。</li>
+<li>开环正弦（只能加不能减）会把杆打飞 → 弃用。</li>
+</ul>
+<h3>4. LQR 平衡</h3>
+<ul>
+<li>线性化后求 Riccati 解，全状态反馈。</li>
+<li>参数（矮模型最优）：<code>Q = [10, 50000, 1, 1]</code>，<code>R = 0.5</code>。</li>
+<li>调参脚本：<code>furuta/furuta_tune.py</code>。</li>
+</ul>
+<h3>5. 经验总结</h3>
+<ol>
+<li><strong>先摆起、再平衡</strong>：分阶段（能量摆起 → 切换 LQR），比端到端 MPC 稳。</li>
+<li>泵能要<strong>闭环</strong>（按能量差），开环正弦不可控。</li>
+<li><strong>模型抬高</strong>消除了“靠戳地摆起”的病态依赖，才可能自恢复。</li>
+<li>LQR 是<strong>局部</strong>最优：只在平衡点附近有效，所以摆起阶段必须交给能量法。</li>
+</ol>
+<h3>6. 复现</h3>
+<pre><span class="lang-label">bash</span><code class="language-bash">cd ~/mujoco_ws
+python3 furuta/furuta_swingup.py          # 成品：摆起 + 平衡（可 knock 测试）
+python3 furuta/furuta_tune.py             # 调参
+python3 furuta/furuta_lqr_mpc.py          # 能量 + LQR + 平衡期 MPC
+</code></pre>
+<h3>7. 与 CartPole / Go2 的关系</h3>
+<ul>
+<li>都是「不稳定平衡 + 反馈」范式；Furuta 多了“能量注入”这一层。</li>
+<li>这里的<strong>分阶段控制思想</strong>（摆起→平衡）也是后面 RL 多技能切换（walk↔getup）的直觉来源。</li>
+</ul>
+<h2 class="chapter" id="ch3"><span class="ch-num">03</span>Go2 站立与抗推：PD / LQR / MPC 对比</h2>
+<blockquote>
+<p>用 Unitree Go2 模型做「四脚站立 + 抗外力推」的经典控制实验，扫描增益、给出结论。
+代码：<code>~/mujoco_ws/go2/</code>（<code>go2_stand.py</code>、<code>go2_push_test.py</code>、多个 <code>*_sweep.py</code>）
+详细结论原文：<code>go2/go2_结论.md</code></p>
+</blockquote>
+<h3>1. 任务与指标</h3>
+<ul>
+<li>任务：Go2 站住；被推力 <code>xfrc</code> 推后能否恢复。</li>
+<li><strong>恢复步数</strong>：推后回到稳态所需步数（下界 <code>HOLD_STEPS=30</code> → 最快 29）。</li>
+<li><strong>survival/16</strong>：方向{+x,-x,+y,-y} × 力{300,600N} × 时长{0.1,0.3s} 中“能恢复”的个数。</li>
+<li>⚠️ survival 对力<strong>非单调</strong>（300N 能恢复、250N 反而倒）→ “临界推力二分法”不可用。</li>
+</ul>
+<h3>2. 三种控制器</h3>
+<ul>
+<li><strong>PD</strong>（关节位置伺服）：<code>τ = KP(q*−q) − KD·q̇</code>。</li>
+<li><strong>LQR</strong>：线性化 + 全状态反馈。</li>
+<li><strong>采样 MPC</strong>：随机采样/CEM 预测，选最优首步（同 CartPole 思路）。</li>
+</ul>
+<h3>3. 关键结论</h3>
+<ol>
+<li><strong>采样 MPC 无益</strong>（此任务）：开环 + 视界太短(H=15, 0.03s) + 代价与“抗推”不对齐，300N 时甚至更差。</li>
+<li><strong>LQR 受“不可控中性模态”限制</strong>：
+   - 浮动基 + 脚踩地 → 基底水平平移电机改不了，闭环特征值钉在 ≈1（轻阻尼）；
+   - <strong>任何 Q/R 都压不下来</strong>，细调 Q/R 对鲁棒性几乎无提升（最好 4/16）；
+   - 大冲击出线性区即失效。</li>
+<li><strong>PD 最抗推</strong>：抗推<strong>主要由增益决定</strong>
+   - <code>KD</code> 越大越抗推（过大不稳）；<code>KP:KD≈2:1</code> 最优；
+   - 甜区 <strong>KP≈300, KD≈150 → survival 13/16</strong>；机制：高 KP 使力矩常饱和(近似 bang-bang)、高 KD 强阻尼 → 机身像刚性块，靠宽支撑面扛冲击。</li>
+<li>方向/时长强依赖：<code>+x</code>(前)最抗、<code>-x</code>/侧向最弱；短冲量(0.1s) ≫ 持续力(0.3s)。</li>
+<li><strong>重力前馈在浮动基上无效</strong>（机身重力由接触承担），反而更差。</li>
+</ol>
+<h3>4. 关键数字</h3>
+<table>
+<thead>
+<tr>
+<th>控制器</th>
+<th>100N 恢复步数</th>
+<th>survival/16</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PD 旧默认 60/3</td>
+<td>238</td>
+<td>2</td>
+</tr>
+<tr>
+<td>PD 140/60</td>
+<td>29</td>
+<td>9</td>
+</tr>
+<tr>
+<td><strong>PD 300/150（现行默认）</strong></td>
+<td><strong>29</strong></td>
+<td><strong>13</strong></td>
+</tr>
+<tr>
+<td>LQR（最好配置）</td>
+<td>29</td>
+<td>4</td>
+</tr>
+<tr>
+<td>MPC(LQR 底) 300N</td>
+<td>204 / 倒</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3>5. 现行设置</h3>
+<ul>
+<li><code>go2_stand.py</code>：<strong><code>KP=300.0, KD=150.0</code></strong>，<code>PD_FF=False</code>（重力前馈默认关）。</li>
+<li><code>--controller pd|mpc|lqr</code>、<code>--mpc-base pd|lqr</code>。</li>
+</ul>
+<h3>6. 复现</h3>
+<pre><span class="lang-label">bash</span><code class="language-bash">cd ~/mujoco_ws/go2
+python3 go2_stand.py                                   # 默认 PD(300/150)
+python3 go2_stand.py --controller lqr
+python3 go2_stand.py --controller mpc --mpc-base lqr
+python3 go2_push_test.py --controller pd --headless --force 100   # 打印恢复步数
+python3 go2_pd_sweep.py --force 100        # KP×KD 网格
+python3 go2_lqr_fine.py                    # LQR Q/R 多方向 survival
+</code></pre>
+<p>窗口里双击身体后 <strong>Ctrl+右键施力</strong>可手动推。</p>
+<h3>7. 启示</h3>
+<ul>
+<li>“站着硬扛”对浮动基四足有上限；想更抗推需要<strong>主动迈步/接触切换</strong>（步态、全身控制 WBC/MPC、或 RL）——这正是后面 RL 的动机。</li>
+<li>结果仅限仿真（单点 <code>xfrc</code> 推力），真机还有摩擦/延迟/电机饱和。</li>
+</ul>
+<h2 class="chapter" id="ch4"><span class="ch-num">04</span>Go2 单刚体 MPC 与 VMC trot（实验）</h2>
+<blockquote>
+<p>进阶经典控制：把 Go2 当作<strong>单刚体</strong>做 MPC 求四足接触力，再映射成关节力矩；外加足端轨迹 + VMC 平衡的原地 trot。
+代码：<code>~/mujoco_ws/go2_mpc/{mpc_go2_srbd.py, go2_vmc_trot.py}</code></p>
+</blockquote>
+<h3>1. SRBD（单刚体动力学）MPC —— <code>mpc_go2_srbd.py</code></h3>
+<p><strong>思想</strong>：忽略腿的动力学，把整机当一个刚体；决策变量是<strong>四只脚的接触力</strong>，MPC 每拍解一次。</p>
+<ul>
+<li>状态 <code>x</code>（12 维）：位置(3) + 姿态 rpy(3) + 线速度(3) + 角速度(3)。</li>
+<li>控制 <code>u</code>（12 维）：4 腿 × 3 维足端力 <code>f_FL,f_FR,f_RL,f_RR</code>（世界系）。</li>
+<li>刚体动力学：<code>v̇ = g + Σf/m</code>，<code>ω̇ = I⁻¹ Σ(r_i × f_i)</code>。</li>
+<li>参数：<code>m=15.2</code>，<code>I=[0.08,0.24,0.24]</code>，视界 <code>N=12</code>，<code>dt=0.03</code>。</li>
+<li>代价：<code>Qx = diag(50×3, 30×3, 200×3, 10×3)</code>（位置/姿态/速度/角速度），<code>Ru=1e-4</code>。</li>
+<li>求解器：<strong>CasADi + IPOPT</strong>（非线性规划，<code>ca.nlpsol('mpc','ipopt',...)</code>）。</li>
+<li>输出：四脚接触力 → 用<strong>腿雅可比</strong> <code>τ = Jᵀ f</code> 映射成关节力矩；摆动腿用足端 PD。</li>
+</ul>
+<p>运行：</p>
+<pre><span class="lang-label">bash</span><code class="language-bash">cd ~/mujoco_ws/go2_mpc
+python3 mpc_go2_srbd.py --gait stand --time 5
+python3 mpc_go2_srbd.py --gait trot --time 10 --view
+</code></pre>
+<h3>2. VMC + 足端轨迹 trot —— <code>go2_vmc_trot.py</code></h3>
+<p><strong>分层</strong>：上层生成<strong>足端轨迹</strong>（支撑/摆动），腿 <strong>IK</strong> 求关节角，关节 PD 跟踪；再加一层 <strong>VMC（虚拟模型控制）</strong>平衡：用机身高度/姿态/速度误差去微调足端目标。
+- 关键参数：<code>Z_REF=0.25</code>（机身参考高度）、<code>T=0.5s</code>（步态周期）。
+- 摆动腿：足端走贝塞尔/正弦弧；支撑腿：足端相对机身向后推。
+- VMC：<code>足端目标 = 名义足端 + 由(高度误差, 姿态误差, 速度误差)生成的修正</code>。</p>
+<h3>3. 踩过的坑（重要）</h3>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>原因</th>
+<th>修法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>腿抬不起来/翻倒</td>
+<td>IK 少了 <code>cdof</code> / 未在 IK 前 <code>mj_forward</code></td>
+<td>IK 前先 <code>mj_forward</code>，用正确自由度</td>
+</tr>
+<tr>
+<td>整机不稳、垮塌</td>
+<td>只有足端 PD，缺平衡反馈</td>
+<td>加 VMC/平衡层（本项目未完全跑通）</td>
+</tr>
+<tr>
+<td>原地 trot 变成扑腾/后溜</td>
+<td>足端 z 挂在机身、无地面锁定；相位/符号错</td>
+<td>足端锁地面高度 + 正确屈膝相位</td>
+</tr>
+</tbody>
+</table>
+<h3>4. 结论（诚实）</h3>
+<ul>
+<li>SRBD-MPC 能把接触力算出来并驱动，但<strong>手写整套稳定步态非常难</strong>（对象是浮动基 + 接触切换）。</li>
+<li>VMC 能补一点平衡，但<strong>本项目未做到稳定 trot</strong>（和后面自建狗“手写 trot 也失败”是同一个难点）。</li>
+<li>这也是转向上 <strong>强化学习</strong> 的直接原因：接触/步态这种东西，用优化或 RL 端到端学，比手搭更省力。</li>
+</ul>
+<h3>5. 对比 RL 的取舍</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>经典（SRBD-MPC/VMC）</th>
+<th>强化学习</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>可解释/可控</td>
+<td>强（有模型）</td>
+<td>弱（黑盒）</td>
+</tr>
+<tr>
+<td>接触/步态</td>
+<td>极难手调</td>
+<td>擅长（端到端）</td>
+</tr>
+<tr>
+<td>实时性</td>
+<td>MPC 求解重</td>
+<td>策略推理极轻（ONNX）</td>
+</tr>
+<tr>
+<td>sim2real</td>
+<td>依赖模型精度</td>
+<td>靠域随机化</td>
+</tr>
+</tbody>
+</table>
+<div class="tip-box" style="margin-top:40px;"><div class="tip-title">💻 配套源码</div>
+本笔记对应源码：<a href="https://github.com/Ian-cyy/mujoco-control-rl" target="_blank" rel="noopener">github.com/Ian-cyy/mujoco-control-rl</a>
+&nbsp;·&nbsp; <a href="../">← 返回目录</a></div>
+</div></main>
+<button class="back-to-top" id="backToTop" title="回到顶部">↑</button>
+<script>
+  // ===== 深色模式切换 =====
+  const themeBtn = document.getElementById('themeBtn');
+  const html = document.documentElement;
+  const savedTheme = localStorage.getItem('mj-notes-theme');
+  if (savedTheme === 'dark') {
+    html.setAttribute('data-theme', 'dark');
+    themeBtn.textContent = '☀️';
+  }
+  themeBtn.addEventListener('click', () => {
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      themeBtn.textContent = '🌙';
+      localStorage.setItem('mj-notes-theme', 'light');
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      themeBtn.textContent = '☀️';
+      localStorage.setItem('mj-notes-theme', 'dark');
+    }
+  });
+
+  // ===== 移动端侧边栏 =====
+  const menuBtn = document.getElementById('menuBtn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  menuBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+  document.querySelectorAll('.toc-list a').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 900) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+      }
+    });
+  });
+
+  // ===== 滚动监听：高亮当前章节 + 进度条 + 回到顶部 =====
+  const tocLinks = document.querySelectorAll('.toc-list a');
+  const chapters = document.querySelectorAll('h2.chapter');
+  const progressBar = document.getElementById('progressBar');
+  const backToTop = document.getElementById('backToTop');
+
+  function updateActiveChapter() {
+    let current = '';
+    const scrollPos = window.scrollY + 170;   // ★ 覆盖 80+80 落位 + 10px 余量
+    chapters.forEach(ch => {
+      if (ch.offsetTop <= scrollPos) {
+        current = ch.id;
+      }
+    });
+    // ★ 滚到页面底部时强制高亮最后一章
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      current = chapters[chapters.length - 1].id;
+    }
+    tocLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('data-target') === current) {
+        link.classList.add('active');
+      }
+    });
+  }
+
+  function updateProgress() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = progress + '%';
+    if (scrollTop > 400) {
+      backToTop.classList.add('visible');
+    } else {
+      backToTop.classList.remove('visible');
+    }
+  }
+
+  window.addEventListener('scroll', () => {
+    updateActiveChapter();
+    updateProgress();
+  }, { passive: true });
+
+  backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  updateActiveChapter();
+  updateProgress();
+</script></body></html>

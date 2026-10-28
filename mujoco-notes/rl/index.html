@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>强化学习 · Go2 · MuJoCo 笔记</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f6f8fb;
+    --bg-card: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --primary: #1a2744;
+    --primary-light: #2c4a7c;
+    --accent: #4a9eff;
+    --accent-light: #e8f2ff;
+    --code-bg: #f4f6fa;
+    --code-text: #2c3e50;
+    --formula-bg: #faf8f2;
+    --formula-border: #e8dcc0;
+    --formula-text: #5a4a2a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+    --sidebar-width: 280px;
+    --content-max: 860px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --text: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border: #334155;
+    --border-light: #1e293b;
+    --primary: #3b5998;
+    --primary-light: #4a6fa5;
+    --accent: #60a5fa;
+    --accent-light: #1e3a5f;
+    --code-bg: #1e293b;
+    --code-text: #cbd5e1;
+    --formula-bg: #1e293b;
+    --formula-border: #475569;
+    --formula-text: #fbbf24;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg);
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ===== 顶部导航栏 ===== */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.85);
+  }
+  [data-theme="dark"] .topbar { background: rgba(15,23,42,0.85); }
+
+  .topbar-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-title .dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .topbar-title .sub {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 8px;
+  }
+
+  .topbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .icon-btn {
+    width: 36px; height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .menu-btn { display: none; }
+
+  /* ===== 侧边栏 ===== */
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: var(--sidebar-width);
+    height: calc(100vh - 60px);
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px 0;
+    z-index: 90;
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar-header {
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sidebar-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .toc-list { list-style: none; padding: 0 12px; }
+  .toc-list li { margin: 2px 0; }
+  .toc-list a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13.5px;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+  }
+  .toc-list a:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+  .toc-list a.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  .toc-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    background: var(--border);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc-list a.active .toc-num {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* 系列文章导航 */
+  .series-nav { padding: 12px 20px; }
+  .series-nav .sn-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .series-nav a {
+    display: block;
+    padding: 7px 12px;
+    margin: 4px 0;
+    border-radius: 7px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .series-nav a:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+  .series-nav a.cur {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ===== 主内容区 ===== */
+  .main {
+    margin-left: var(--sidebar-width);
+    margin-top: 60px;
+    padding: 40px 48px 80px;
+    min-height: calc(100vh - 60px);
+  }
+
+  .content-wrapper {
+    max-width: var(--content-max);
+    margin: 0 auto;
+  }
+
+  /* ===== 文章头部 ===== */
+  .article-header {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid var(--border);
+  }
+  .article-header .tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+  .article-header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .article-header .subtitle {
+    font-size: 17px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+  }
+  .article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .article-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* ===== 章节标题 ===== */
+  h2.chapter {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 50px 0 24px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: #fff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+    scroll-margin-top: 80px;
+  }
+  h2.chapter .ch-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 32px 0 14px;
+    padding-left: 14px;
+    border-left: 4px solid var(--accent);
+    scroll-margin-top: 80px;
+  }
+
+  h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-light);
+    margin: 22px 0 10px;
+    scroll-margin-top: 80px;
+  }
+
+  p { margin: 10px 0; text-align: justify; }
+
+  /* ===== 代码块 ===== */
+  pre, code {
+    font-family: "JetBrains Mono", "Fira Code", "DejaVu Sans Mono", "Noto Sans Mono CJK SC", monospace;
+  }
+  pre {
+    position: relative;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 13px;
+    line-height: 1.65;
+    overflow-x: auto;
+    margin: 14px 0;
+    color: var(--code-text);
+  }
+  pre .lang-label {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--border-light);
+    padding: 1px 8px;
+    border-radius: 5px;
+    letter-spacing: .5px;
+  }
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #e06c5e;
+  }
+  [data-theme="dark"] code { color: #f87171; }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* ===== 公式 ===== */
+  .formula {
+    background: var(--formula-bg);
+    border: 1px solid var(--formula-border);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 14px 0;
+    font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace;
+    font-size: 14px;
+    text-align: center;
+    color: var(--formula-text);
+    overflow-x: auto;
+  }
+
+  /* ===== 表格 ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13.5px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  th {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  td {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--bg-secondary); }
+  td code { white-space: normal; word-break: break-word; }
+  td a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  td a:hover { text-decoration: underline; }
+
+  /* ===== 提示框 ===== */
+  .tip-box, .warn-box {
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 16px 0;
+  }
+  .tip-box {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+  }
+  .tip-box .tip-title {
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .warn-box {
+    background: #fef5e7;
+    border-left: 4px solid #f59e0b;
+  }
+  [data-theme="dark"] .warn-box { background: #422006; border-left-color: #f59e0b; }
+  .warn-box .warn-title {
+    font-weight: 700;
+    color: #d97706;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  [data-theme="dark"] .warn-box .warn-title { color: #fbbf24; }
+
+  /* ===== 列表 ===== */
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  /* ===== 回到顶部 ===== */
+  .back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 44px; height: 44px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+    z-index: 80;
+  }
+  .back-to-top.visible { opacity: 1; visibility: visible; }
+  .back-to-top:hover { transform: translateY(-2px); }
+
+  /* ===== 阅读进度条 ===== */
+  .progress-bar {
+    position: fixed;
+    top: 60px; left: 0;
+    height: 3px;
+    background: var(--accent);
+    z-index: 95;
+    transition: width 0.1s;
+  }
+
+  /* ===== 遮罩层（移动端） ===== */
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 60px; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 85;
+  }
+  .overlay.show { display: block; }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 900px) {
+    .menu-btn { display: flex; }
+    .sidebar {
+      transform: translateX(-100%);
+      box-shadow: var(--shadow-lg);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; padding: 24px 20px 60px; }
+    .article-header h1 { font-size: 24px; }
+    h2.chapter { font-size: 19px; padding: 12px 16px; }
+    h2.chapter .ch-num { width: 30px; height: 30px; font-size: 14px; }
+    .topbar-title .sub { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .main { padding: 16px 14px 50px; }
+    .article-meta { gap: 12px; font-size: 12px; }
+    pre { font-size: 12px; padding: 12px 14px; }
+    table { font-size: 12px; }
+    th, td { padding: 7px 10px; }
+  }
+
+  /* ===== 滚动条美化 ===== */
+  .sidebar::-webkit-scrollbar { width: 5px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  pre::-webkit-scrollbar { height: 6px; }
+  pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style></head><body>
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menuBtn" title="目录">☰</button>
+  <div class="topbar-title"><span class="dot"></span>强化学习 · Go2<span class="sub">PPO · 环境 · 训练 · 部署 · 2026/10/29</span></div>
+  <div class="topbar-actions"><a class="icon-btn" href="../../" title="返回笔记主页" style="text-decoration:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg></a><a class="icon-btn" href="https://github.com/Ian-cyy" target="_blank" title="GitHub: Ian-cyy" style="text-decoration:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg></a>
+    <button class="icon-btn" id="themeBtn" title="切换深色模式">🌙</button></div>
+</header>
+<div class="overlay" id="overlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header"><h3>📑 本页目录</h3></div>
+  <ul class="toc-list"><li><a href="#ch1" data-target="ch1"><span class="toc-num">01</span>强化学习概念与 PPO（直觉版）</a></li>
+<li><a href="#ch2" data-target="ch2"><span class="toc-num">02</span>Go2 环境与训练</a></li>
+<li><a href="#ch3" data-target="ch3"><span class="toc-num">03</span>Go2 四个任务：walk / getup / run / standjump</a></li>
+<li><a href="#ch4" data-target="ch4"><span class="toc-num">04</span>ONNX 导出与部署</a></li>
+<li><a href="#ch5" data-target="ch5"><span class="toc-num">05</span>踩坑与调参</a></li>
+<li><a href="#ch6" data-target="ch6"><span class="toc-num">06</span>RL 术语 / 英文词速查（语境对照）</a></li></ul>
+  <div class="series-nav"><div class="sn-title">📚 MuJoCo 系列</div>
+<a href="../">📖 主页 · MuJoCo · 控制 · RL</a>
+<a href="../basics/">01 · MuJoCo 基础</a>
+<a href="../control/">02 · 经典控制</a>
+<a href="../rl/" class="cur">03 · 强化学习 · Go2</a>
+<a href="../mydog/">04 · 自建狗</a></div>
+  <div class="sidebar-footer">环境：MuJoCo / MJX / Brax(PPO)<br>
+共 6 篇 · 合并为一页<br>
+<a href="https://github.com/Ian-cyy/mujoco-control-rl" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">→ 源码仓库</a></div>
+</aside>
+<main class="main"><div class="content-wrapper">
+  <div class="article-header"><span class="tag">REINFORCEMENT LEARNING · GO2</span><h1>强化学习 · Go2</h1>
+    <p class="subtitle">PPO · 环境 · 训练 · 部署</p>
+    <div class="article-meta"><span>🗓 2026-10-29</span><span>📚 6 篇</span>
+      <span>🖥 MuJoCo / MJX / Brax</span>
+      <span>👤 <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">GitHub @Ian-cyy</a></span></div>
+  </div>
+<h2 class="chapter" id="ch1"><span class="ch-num">01</span>强化学习概念与 PPO（直觉版）</h2>
+<blockquote>
+<p>这一篇把 RL 的“话”讲清楚，够读懂后面的 Go2 实战。原理直觉为主，少公式。</p>
+</blockquote>
+<h3>1. 三个词的关系</h3>
+<pre><code>机器学习(ML)
+ ├─ 监督学习：给 (输入,标签)，学映射
+ ├─ 无监督学习：只给数据，找结构
+ └─ 强化学习(RL)：给奖励，在交互中试错学“怎么做”
+深度学习(DL) 是“模型结构”维度（神经网络），可以和上面三种交叉。
+</code></pre>
+<p>一句话：<strong>RL = 通过和环境交互、按奖励试错，学一个策略</strong>。</p>
+<h3>2. 核心概念（对照机器狗）</h3>
+<table>
+<thead>
+<tr>
+<th>概念</th>
+<th>英文</th>
+<th>机器狗里是什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>智能体</td>
+<td>Agent</td>
+<td>策略网络（控制关节）</td>
+</tr>
+<tr>
+<td>环境</td>
+<td>Environment</td>
+<td>MuJoCo 物理世界</td>
+</tr>
+<tr>
+<td>观测</td>
+<td>Observation</td>
+<td>IMU、关节角、速度、指令（本体感知）</td>
+</tr>
+<tr>
+<td>动作</td>
+<td>Action</td>
+<td>关节目标/力矩增量</td>
+</tr>
+<tr>
+<td>奖励</td>
+<td>Reward</td>
+<td>走得快、站得稳、别摔的加权和</td>
+</tr>
+<tr>
+<td>策略</td>
+<td>Policy π(a|s)</td>
+<td>给定观测输出动作的神经网络</td>
+</tr>
+<tr>
+<td>价值</td>
+<td>Value V(s)</td>
+<td>当前状态未来能拿多少奖励（评论家估计）</td>
+</tr>
+<tr>
+<td>优势</td>
+<td>Advantage A</td>
+<td>“这个动作比平均好多少”，PPO 用</td>
+</tr>
+<tr>
+<td>回合</td>
+<td>Episode</td>
+<td>从 reset 到摔倒/超时</td>
+</tr>
+<tr>
+<td>折扣</td>
+<td>γ</td>
+<td>未来奖励打折</td>
+</tr>
+</tbody>
+</table>
+<h3>3. MDP</h3>
+<p>环境被建模为马尔可夫决策过程 <code>(S, A, P, R, γ)</code>。RL 的目标：找到策略 <code>π</code> 使<strong>期望累计折扣奖励</strong>最大。
+- on-policy（PPO 属于）：用<strong>当前策略</strong>采的数据更新，稳定但样本效率一般。
+- off-policy（SAC/DDPG）：用经验池，样本效率高，但调参更敏感。</p>
+<h3>4. PPO 直觉（本项目用的算法）</h3>
+<ul>
+<li>演员-评论家（Actor-Critic）：Actor 出动作，Critic 估价值。</li>
+<li><strong>近端</strong>：限制每次更新时策略变化不能太大（clip 比率 <code>r_t = π_new/π_old</code> 到 <code>[1-ε, 1+ε]</code>），避免“一步走崩”。</li>
+<li>优势估计用 GAE（广义优势估计），平衡偏差/方差。</li>
+<li>行为：<strong>稳定的深度 RL 基线</strong>，不需要太精细调参就能训出不错策略。</li>
+</ul>
+<p>关键超参（<code>train_jax_ppo.py</code> / <code>locomotion_params.py</code>）：学习率、<code>num_envs</code>、<code>num_timesteps</code>、<code>discounting</code>、<code>entropy_cost</code>、mini-batch 数等。</p>
+<h3>5. 奖励设计（reward shaping）</h3>
+<p>奖励决定“学成什么样”，比算法更重要：
+- <strong>跟踪类</strong>（正）：速度跟踪 <code>exp(-(v-v_cmd)²/σ)</code>、姿态保持、抬脚高度。
+- <strong>惩罚类</strong>（负）：力矩、动作变化率、关节限位、终止（摔倒）。
+- <strong>陷阱 reward hacking</strong>：策略会找“刷分但不做事”的捷径。例：用“抬脚高度方差”做对称奖励 → 策略干脆<strong>都不抬脚</strong>（方差=0 拿满分）。设计要防“退化解”。
+- 常用结构：<code>reward = clip(Σ 权重×各项, 0, …)</code>，每步再乘 <code>dt</code>。</p>
+<h3>6. 指标怎么读（TensorBoard）</h3>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>含义 / 健康信号</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>eval/episode_reward</code></td>
+<td>总奖励，应上升后平台</td>
+</tr>
+<tr>
+<td><code>eval/avg_episode_length</code></td>
+<td>平均回合长度，满值=不摔</td>
+</tr>
+<tr>
+<td><code>eval/episode_reward/&lt;项&gt;</code></td>
+<td>各分项，定位是哪项在变</td>
+</tr>
+<tr>
+<td><code>eval/episode_reward_std</code></td>
+<td>方差，过大=不稳定</td>
+</tr>
+<tr>
+<td><code>training/kl_mean</code></td>
+<td>策略更新幅度，过大=崩</td>
+</tr>
+<tr>
+<td><code>training/sps</code></td>
+<td>每秒步数（吞吐）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>重要</strong>：reward 高 ≠ 行为好（可能被刷分）。最终要<strong>逐脚/逐行为验证</strong>（见 03/04 篇）。</p>
+<h3>7. 该训多久 / 并行</h3>
+<ul>
+<li><code>num_timesteps</code> 不是累计（每次运行从 0 数），续训靠 <code>--load_checkpoint_path</code>。</li>
+<li><code>num_envs</code> 越大采样越快，但吃显存（本项目 6G 上 2048 常用，OOM 降到 1024）。</li>
+<li>通常几千万步收敛；看 reward 平台 + 行为验证，而不是死等步数。</li>
+</ul>
+<h2 class="chapter" id="ch2"><span class="ch-num">02</span>Go2 环境与训练</h2>
+<blockquote>
+<p>用 <code>mujoco_playground</code>（DeepMind）+ <code>Brax PPO</code> 在 Go2 上做 locomotion。
+代码：<code>~/mujoco_ws/go2_rl/mjplay/</code></p>
+</blockquote>
+<h3>1. 工具栈</h3>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MuJoCo / MJX</td>
+<td>物理引擎 / GPU 并行版</td>
+</tr>
+<tr>
+<td>mujoco_playground</td>
+<td>环境集合 + 训练脚手架（我们基于它写 Go2 env）</td>
+</tr>
+<tr>
+<td>Brax</td>
+<td>JAX 的 RL 库（PPO）</td>
+</tr>
+<tr>
+<td>JAX</td>
+<td>自动微分 + JIT + GPU</td>
+</tr>
+<tr>
+<td>TensorBoard</td>
+<td>训练曲线</td>
+</tr>
+</tbody>
+</table>
+<p>安装要点（版本强相关，见 05 篇）：<code>mujoco_playground v0.1.0</code>（支持 Py3.10）、<code>mjx 3.15</code>、<code>jax 0.6.2</code>；menagerie 的 <code>unitree_go1/go2</code> 放到 playground 期望的 <code>external_deps</code> 路径。</p>
+<h3>2. 环境（registry 里的名字）</h3>
+<table>
+<thead>
+<tr>
+<th>环境</th>
+<th>任务</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Go2JoystickFlatTerrain</code></td>
+<td>行走（可指定 vx/vy/wz）</td>
+<td>主 walk 环境</td>
+</tr>
+<tr>
+<td><code>Go2Getup</code></td>
+<td>倒地起身</td>
+<td>obs 42，动作相对当前</td>
+</tr>
+<tr>
+<td><code>Go2JumpFlatTerrain</code></td>
+<td>跑/蹦</td>
+<td>由 jump 演化</td>
+</tr>
+<tr>
+<td><code>Go2StandJumpFlatTerrain</code></td>
+<td>立定跳越墙</td>
+<td>墙 0.15m，obs 48</td>
+</tr>
+<tr>
+<td><code>MyDogStandFlatTerrain</code> / <code>MyDogWalkFlatTerrain</code></td>
+<td>自建狗站立/行走</td>
+<td>见 04 篇</td>
+</tr>
+</tbody>
+</table>
+<p>目录：<code>mjplay/mujoco_playground/_src/locomotion/go2/</code>（<code>joystick.py</code>/<code>getup.py</code>/<code>jump.py</code>/<code>stand_jump.py</code> + <code>xmls/</code>）。</p>
+<h3>3. 训练命令</h3>
+<pre><span class="lang-label">bash</span><code class="language-bash">cd ~/mujoco_ws/go2_rl/mjplay
+python3 -u learning/train_jax_ppo.py --env_name=Go2JoystickFlatTerrain \
+  --num_timesteps=100000000 --num_envs=2048 --num_evals=10 \
+  --domain_randomization=True --use_tb=True --num_videos=0 --suffix=myrun
+</code></pre>
+<ul>
+<li><code>--suffix</code> 决定日志目录名：<code>logs/&lt;ENV&gt;-&lt;时间&gt;-&lt;suffix&gt;/</code>。</li>
+<li><code>--domain_randomization=True</code>：域随机化（摩擦/质量/质心等），利于 sim2real。</li>
+<li><code>--num_videos=0</code>：不录视频（省时）。</li>
+<li>续训：加 <code>--load_checkpoint_path=logs/&lt;run&gt;/checkpoints</code>（仅<strong>同族</strong>任务、obs/动作一致才行）。</li>
+</ul>
+<h3>4. 监控</h3>
+<pre><span class="lang-label">bash</span><code class="language-bash">cd ~/mujoco_ws/go2_rl/mjplay
+tensorboard --logdir logs
+</code></pre>
+<p>看 <code>eval/episode_reward</code> 上升后平台、<code>avg_episode_length</code> 满值、分项是否健康（见 01 篇第 6 节）。</p>
+<h3>5. checkpoint 语义（易错）</h3>
+<ul>
+<li>脚本里 <code>num_timesteps</code> <strong>每次从 0 数</strong>；真正进度看 <code>checkpoints/0000*</code> 目录名的步数。</li>
+<li>checkpoint <strong>只在 eval 时保存</strong>；<code>num_evals</code> 太小会丢中间进度。</li>
+<li>导出/续训都用具体步数目录最稳（或传 <code>checkpoints/</code> 让它取最新）。</li>
+</ul>
+<h3>6. 显存 / 吞吐</h3>
+<ul>
+<li>6G（RTX 3060 Laptop）：<code>num_envs=2048</code> 常用；OOM 就 1024。</li>
+<li>首次运行含 <strong>JIT/XLA 编译</strong>（几分钟）正常；训练中 GPU 忽满忽停是编译/日志/存盘。</li>
+<li><strong>训练（JAX）和使用/查看（ONNX）不要同时开</strong>，两个 JAX 进程会挤爆内存。</li>
+</ul>
+<h3>7. 观测/动作（walk）</h3>
+<ul>
+<li>obs 48 维（本体感知，<strong>无视觉 → 盲走</strong>），含指令；privileged 观测给 Critic（可选）。</li>
+<li>动作 = 相对默认姿态的关节增量（乘 action_scale），env 内做 PD 转力矩。</li>
+</ul>
+<p>详见 <code>mjplay/.../go2/joystick.py</code> 与 <code>03_Go2四任务</code> 篇。</p>
+<h2 class="chapter" id="ch3"><span class="ch-num">03</span>Go2 四个任务：walk / getup / run / standjump</h2>
+<blockquote>
+<p>同一个 Go2 平台，做了 4 个技能。每个任务改动、结果、导出如下。</p>
+</blockquote>
+<h3>1. Walk（行走）<code>Go2JoystickFlatTerrain</code></h3>
+<ul>
+<li>目标：按指令 <code>vx/vy/wz</code> 走。</li>
+<li>obs 48（本体感知，无视觉），动作=关节增量，env 内 PD。</li>
+<li>训练：~100M + DR，收敛后换多个种子；是主策略。</li>
+<li>导出：<code>go2_policy.onnx</code>。</li>
+</ul>
+<h3>2. Getup（倒地起身）<code>Go2Getup</code></h3>
+<ul>
+<li>移植自 go1 的 <code>getup.py</code> + <code>scene_mjx_fullcollisions_flat_terrain.xml</code>。</li>
+<li>obs <strong>42</strong>（无 linvel/command）；动作 = <strong>当前关节角 + a×0.5</strong>（相对当前，非默认姿态）。</li>
+<li>reward：orientation / torso_height / posture（站直且到位才给）/ stand_still；<code>energy_termination=1e5</code> + 非有限值也终止。</li>
+<li>reset：随机倒地；<strong>在地面附近放置</strong>（不自由落体撞击）+ settle 0.5s。</li>
+<li><strong>关键修复（NaN 毒死训练）</strong>：朴素移植 + DR 会在 ~13M 变 NaN。修法：① obs/reward <code>nan_to_num + clip</code>；② reset 地面附近起步；③ 有限能量终止。</li>
+<li>结果：<strong>no-DR 100M，reward 0.1→~17.6（~46M 后平台）</strong>，无 NaN、ep_len 恒 300。</li>
+<li>导出：<code>go2_getup.onnx</code>（no-DR）、<code>go2_getup_dr.onnx</code>（DR）。</li>
+</ul>
+<h3>3. Run（跑/蹦）<code>Go2JumpFlatTerrain</code></h3>
+<ul>
+<li>由 jump 任务演化，策略学成“跑/弹跳（bound）”式快速移动。</li>
+<li>导出：<code>go2_run.onnx</code>；查看 <code>onnx_go2_run_viewer.py</code>。</li>
+</ul>
+<h3>4. StandJump（立定跳越墙）<code>Go2StandJumpFlatTerrain</code></h3>
+<ul>
+<li>场景：<code>scene_mjx_feetonly_wall_flat_terrain.xml</code>，墙高 <strong>0.15m</strong>。</li>
+<li>obs <strong>48</strong>（加 forwardvector）；动作 12。</li>
+<li>reward 设计（多版迭代）：<code>cross</code>（越墙）/<code>stay</code>（落地稳定）/<code>fall_penalty</code>/<code>air_forward</code>（空中前向）/<code>air_height</code>/<code>heading</code>。</li>
+<li>结果：v4 训到 ~69M，reward 峰值 ~11；导出 <code>go2_stand_jump.onnx</code>。</li>
+</ul>
+<h3>5. 多技能切换（运行时）</h3>
+<ul>
+<li>一个时刻只跑一个策略；多个 ONNX 靠<strong>状态机</strong>调度。</li>
+<li>翻倒检测（IMU gravity 偏离 / 机身高度低）→ 切 getup；站起后切回 walk。</li>
+<li><code>onnx_go2_switch_viewer.py</code> 实测：推倒 → ~2.2s 自起 → 切回走路。</li>
+<li>注意：不同技能的 obs 维度/拼装、动作映射不同，各自用自己的那套。</li>
+</ul>
+<h3>6. 结果速览</h3>
+<table>
+<thead>
+<tr>
+<th>任务</th>
+<th>环境</th>
+<th>obs</th>
+<th>关键结果</th>
+<th>ONNX</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>walk</td>
+<td>Go2JoystickFlatTerrain</td>
+<td>48</td>
+<td>稳定行走/抗扰</td>
+<td>go2_policy.onnx</td>
+</tr>
+<tr>
+<td>getup</td>
+<td>Go2Getup</td>
+<td>42</td>
+<td>reward→17.6，无 NaN</td>
+<td>go2_getup(_dr).onnx</td>
+</tr>
+<tr>
+<td>run</td>
+<td>Go2JumpFlatTerrain</td>
+<td>48</td>
+<td>跑/弹跳</td>
+<td>go2_run.onnx</td>
+</tr>
+<tr>
+<td>standjump</td>
+<td>Go2StandJumpFlatTerrain</td>
+<td>48</td>
+<td>越 0.15m 墙，reward~11</td>
+<td>go2_stand_jump.onnx</td>
+</tr>
+</tbody>
+</table>
+<h2 class="chapter" id="ch4"><span class="ch-num">04</span>ONNX 导出与部署</h2>
+<blockquote>
+<p>训练用 JAX，部署用 ONNX + onnxruntime（轻、跨平台、真机友好）。
+脚本：<code>~/mujoco_ws/go2_rl/scripts/export_go2_onnx.py</code></p>
+</blockquote>
+<h3>1. 思路：手搓 ONNX 图（不需要 TensorFlow）</h3>
+<p>策略是个 MLP：<code>(obs − mean)/std → Dense-swish ×N → Dense → 取前 act 维 → tanh</code>。
+直接从 Brax checkpoint 里取权重，手搭 ONNX 计算图。</p>
+<p>步骤（<code>export_go2_onnx.py</code>）：
+1. <code>ckpt_load(checkpoint)</code> → <code>normalizer, params</code>；取 <code>normalizer.mean/std["state"]</code>、<code>params["params"]["hidden_i"]["kernel"/"bias"]</code>。
+2. 用 <code>onnx.helper</code> 搭节点：
+   - <code>Sub(obs, mean) → Div(·, std)</code> 归一化；
+   - 每层 <code>MatMul → Add</code>；激活用 <strong>swish = x·sigmoid(x)</strong>（<code>Sigmoid</code>+<code>Mul</code>）；
+   - 最后一层 <code>Split</code> 成 <code>loc, scale</code>，对 <code>loc</code> 取 <strong>Tanh</strong> 得动作。
+3. 设 <strong>opset 11</strong>、<strong>ir_version 10</strong>（新版 IR 会导致 onnxruntime 报 “Unsupported IR version”）。
+4. <code>onnx.checker.check_model</code> + 用 onnxruntime 和 JAX 推理<strong>数值比对</strong>（应 &lt;1e-5）。</p>
+<h3>2. 导出命令</h3>
+<pre><span class="lang-label">bash</span><code class="language-bash">cd ~/mujoco_ws/go2_rl
+sed 's/Go2JoystickFlatTerrain/&lt;ENV&gt;/' scripts/export_go2_onnx.py &gt; /tmp/export.py
+python3 /tmp/export.py --ckpt mjplay/logs/&lt;run&gt;/checkpoints --out policies/&lt;name&gt;.onnx
+</code></pre>
+<ul>
+<li><code>--ckpt</code> 传 <code>checkpoints/</code>（自动取最新）或具体 <code>0000*</code> 目录。</li>
+<li>脚本会打印每层权重形状 + 最后的 <code>max abs diff</code>（应为 0 或 1e-6 量级）。</li>
+</ul>
+<h3>3. 轻量查看器（onnxruntime + 普通 MuJoCo，秒开）</h3>
+<pre><span class="lang-label">bash</span><code class="language-bash">python3 scripts/onnx_go2_viewer.py --vx 0.6          # walk
+python3 scripts/onnx_go2_getup_viewer.py --fallen    # getup
+python3 scripts/onnx_go2_run_viewer.py               # run
+python3 scripts/onnx_go2_standjump_viewer.py         # 立定跳
+python3 scripts/onnx_go2_switch_viewer.py --vx 0.6   # walk↔getup 切换
+</code></pre>
+<p>查看器做的事：
+1. <code>mujoco.MjModel.from_xml_path</code> 载入同一模型；
+2. 每 <code>ctrl_dt</code> 组装观测（gyro / gravity / command / 关节角 / 速度 / last_act …）；
+3. <code>onnxruntime.InferenceSession</code> 推理得动作；
+4. env 内 PD：<code>target = default + act*scale</code>，<code>tau = Kp(target−q) − Kd·qd</code>，clamp；
+5. <code>mujoco.mj_step</code> × n_substeps，<code>viewer.sync()</code>。</p>
+<h3>4. 部署注意</h3>
+<ul>
+<li><strong>obs 维度和拼装必须和训练时一模一样</strong>（少一维/顺序错 = 策略失效）。</li>
+<li>动作映射（相对默认 or 相对当前）也要一致。</li>
+<li>真机：<code>onnxruntime</code> 在树莓派上 CPU 推理 1–5ms 级；用 <code>CPUExecutionProvider</code>。</li>
+<li>注意 <strong>MJX↔MuJoCo/真机的差距</strong>（见 04 篇自建狗结论）：训练环境里的好策略，不一定直接迁移。</li>
+</ul>
+<h3>5. 关键坑</h3>
+<table>
+<thead>
+<tr>
+<th>坑</th>
+<th>解</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Unsupported IR version 14</code></td>
+<td><code>make_model(..., ir_version=10)</code></td>
+</tr>
+<tr>
+<td>导出的 ONNX 和训练不一致</td>
+<td>检查 mean/std、层顺序、Swish 实现、Tanh、Split</td>
+</tr>
+<tr>
+<td>维度对不上</td>
+<td>用 <code>env.observation_size["state"]</code>、<code>env.action_size</code> 确认</td>
+</tr>
+</tbody>
+</table>
+<h2 class="chapter" id="ch5"><span class="ch-num">05</span>踩坑与调参</h2>
+<blockquote>
+<p>这一篇是“血泪清单”。按「环境/工具」「训练」「导出/部署」分组。</p>
+</blockquote>
+<h3>1. 环境 / 工具</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>现象</th>
+<th>原因</th>
+<th>解决</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>mujoco_playground</code> 装不上(要求 Py≥3.11)</td>
+<td>新版限制</td>
+<td>装 <strong>v0.1.0</strong>（支持 3.10）</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>git clone</code> menagerie 卡住</td>
+<td>脚本联网、GitHub 被墙</td>
+<td>手动放 <code>external_deps/mujoco_menagerie/{unitree_go1,go2}</code> 软链</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>make_data() ... 'nconmax'</code></td>
+<td>mjx 3.15 去掉 nconmax</td>
+<td>改 <code>naconmax</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>缺 sensor <code>*_global_linvel</code></td>
+<td>足端 site 名不一致</td>
+<td>把足端 site 改名 <code>FR/FL/RR/RL</code>，常量同步</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>matplotlib _ARRAY_API not found</code></td>
+<td>numpy 2.x 冲突</td>
+<td><code>pip install -U matplotlib</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>重启后工程全没了</td>
+<td>工程放在 <code>/tmp</code></td>
+<td>放家目录/windows_share</td>
+</tr>
+<tr>
+<td>7</td>
+<td>CPU 跑很久、GPU 空</td>
+<td>JIT/XLA 首次编译</td>
+<td>开编译缓存 / 用 ONNX 查看</td>
+</tr>
+</tbody>
+</table>
+<h3>2. 训练</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>现象</th>
+<th>原因</th>
+<th>解决</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>8</td>
+<td>getup 训到 ~13M 变 NaN</td>
+<td>摔倒/接触数值爆炸，无防污染</td>
+<td>obs/reward <code>nan_to_num+clip</code>；reset 地面附近起步；有限能量终止</td>
+</tr>
+<tr>
+<td>9</td>
+<td>续训报 <code>shapes not equal</code></td>
+<td>换了 obs/动作维度的任务却 <code>load_checkpoint_path</code></td>
+<td>不同任务从零；只有同族才暖启动</td>
+</tr>
+<tr>
+<td>10</td>
+<td>以为 <code>num_timesteps</code> 是累计</td>
+<td>每次运行从 0 数</td>
+<td>步数看 checkpoint 目录名；续训才累计</td>
+</tr>
+<tr>
+<td>11</td>
+<td>checkpoint 丢进度</td>
+<td>只在 eval 时保存</td>
+<td><code>num_evals</code> 别太小</td>
+</tr>
+<tr>
+<td>12</td>
+<td>训练结束卡 <code>Starting inference...</code></td>
+<td>渲染阶段卡(EGL)</td>
+<td>checkpoint 已存，可杀，用 ONNX 看</td>
+</tr>
+<tr>
+<td>13</td>
+<td>reward 变高但行为变差</td>
+<td><strong>reward hacking</strong>（刷分退化解）</td>
+<td>逐行为验证；奖励防“少做=高分”</td>
+</tr>
+<tr>
+<td>14</td>
+<td>训练/查看同时开内存爆</td>
+<td>两个 JAX 进程</td>
+<td>训练用 JAX、查看用 ONNX，错开</td>
+</tr>
+</tbody>
+</table>
+<h3>3. 导出 / 部署</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>现象</th>
+<th>原因</th>
+<th>解决</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>15</td>
+<td><code>Unsupported IR version 14</code></td>
+<td>onnx 默认 IR 太新</td>
+<td><code>ir_version=10</code></td>
+</tr>
+<tr>
+<td>16</td>
+<td>恢复 checkpoint <code>No structure</code></td>
+<td>路径不对</td>
+<td>传具体步数目录或 <code>checkpoints/</code>，用绝对路径</td>
+</tr>
+<tr>
+<td>17</td>
+<td>ONNX 推理和训练不一致</td>
+<td>mean/std、层序、Swish/Tanh/Split 写错</td>
+<td>导出后做 JAX↔ONNX 数值比对</td>
+</tr>
+<tr>
+<td>18</td>
+<td>换成 MuJoCo/真机就不行</td>
+<td><strong>MJX↔MuJoCo gap</strong></td>
+<td>见 04 篇：域随机化/物理对齐，或别指望直接迁移</td>
+</tr>
+</tbody>
+</table>
+<h3>4. 调参经验（少走弯路）</h3>
+<ul>
+<li><strong>先小规模验证</strong>：<code>num_envs</code> 小、<code>num_timesteps</code> 短，确认环境/reward 不炸再放大。</li>
+<li><strong>一次只改一个东西</strong>：奖励项、权重、域随机化，分开看效果。</li>
+<li><strong>看分项不看总分</strong>：<code>eval/episode_reward/&lt;项&gt;</code> 才知道是哪项在动。</li>
+<li><strong>reward hacking 自查</strong>：把所有“正奖励”去掉后，策略还会做该做的事吗？若不会，说明它在刷别的项。</li>
+<li><strong>行为验证</strong>：训完一定逐动作/逐脚检查（姿态、抬脚、速度），不能只看 reward 数。</li>
+<li><strong>续训判据</strong>：obs 维度 + 动作语义不变 → 可暖启动；变了 → 新 env + 新 ONNX。</li>
+</ul>
+<h3>5. 一句话</h3>
+<p>RL 里 <strong>90% 的坑是环境和奖励，不是算法</strong>。PPO 很稳，真出问题多半是观测拼错、奖励被刷、或 sim 与真机不一致。</p>
+<h2 class="chapter" id="ch6"><span class="ch-num">06</span>RL 术语 / 英文词速查（语境对照）</h2>
+<blockquote>
+<p>更新：2026-10-10 ｜ 配套：<code>RL_学习笔记_从概念到Go2实战.md</code>
+按"我们聊天里怎么用"解释，不是字典定义。</p>
+</blockquote>
+<hr />
+<h3>A. RL 核心概念</h3>
+<table>
+<thead>
+<tr>
+<th>词</th>
+<th>中/含义</th>
+<th>语境</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>agent</strong></td>
+<td>智能体</td>
+<td>就是那只"狗"（决策者）</td>
+</tr>
+<tr>
+<td><strong>environment (env)</strong></td>
+<td>环境</td>
+<td>MuJoCo 仿真世界（含地形/物理）</td>
+</tr>
+<tr>
+<td><strong>observation (obs)</strong></td>
+<td>观测</td>
+<td>每步喂给网络的数，如 48/45/42 维向量</td>
+</tr>
+<tr>
+<td><strong>action</strong></td>
+<td>动作</td>
+<td>网络输出，12 个关节位置增量</td>
+</tr>
+<tr>
+<td><strong>reward</strong></td>
+<td>奖励</td>
+<td>打分信号（走对/站直/过墙给分）</td>
+</tr>
+<tr>
+<td><strong>episode</strong></td>
+<td>回合</td>
+<td>一次尝试（比如 120 步、~2.4s）</td>
+</tr>
+<tr>
+<td><strong>step (timestep)</strong></td>
+<td>步</td>
+<td>一次决策；<code>ctrl_dt=0.02s</code>→50Hz</td>
+</tr>
+<tr>
+<td><strong>policy π</strong></td>
+<td>策略</td>
+<td>网络 <code>观测→动作</code> 的映射</td>
+</tr>
+<tr>
+<td><strong>value V(s)</strong></td>
+<td>价值</td>
+<td>"这个状态值多少分"（Critic 估）</td>
+</tr>
+<tr>
+<td><strong>advantage A(s,a)</strong></td>
+<td>优势</td>
+<td>这动作比"平均"好多少</td>
+</tr>
+<tr>
+<td><strong>return</strong></td>
+<td>回报</td>
+<td>一回合累计（折扣）奖励</td>
+</tr>
+<tr>
+<td><strong>discount γ</strong></td>
+<td>折扣因子</td>
+<td>未来的分打几折（0.97）</td>
+</tr>
+<tr>
+<td><strong>rollout / trajectory</strong></td>
+<td>轨迹/采样</td>
+<td>用当前策略跑一段收数据</td>
+</tr>
+<tr>
+<td><strong>exploration / exploitation</strong></td>
+<td>探索 / 利用</td>
+<td>早期多试 / 后期用好的</td>
+</tr>
+<tr>
+<td><strong>entropy</strong></td>
+<td>熵</td>
+<td>动作分布的随机性=探索强度</td>
+</tr>
+<tr>
+<td><strong>on-policy</strong></td>
+<td>在线</td>
+<td>只用当前策略数据（PPO）</td>
+</tr>
+<tr>
+<td><strong>off-policy</strong></td>
+<td>离线</td>
+<td>能用旧数据/经验池（SAC）</td>
+</tr>
+<tr>
+<td><strong>replay buffer</strong></td>
+<td>经验池</td>
+<td>off-policy 存历史数据的地方</td>
+</tr>
+<tr>
+<td><strong>Actor / Critic</strong></td>
+<td>策略网 / 价值网</td>
+<td>出动作 / 估 V；部署只要 Actor</td>
+</tr>
+<tr>
+<td><strong>GAE</strong></td>
+<td>优势估计法</td>
+<td>用 TD 误差加权算 A（λ 折中偏差/方差）</td>
+</tr>
+<tr>
+<td><strong>TD error (δ)</strong></td>
+<td>时序差分误差</td>
+<td><code>r+γV(s')−V(s)</code></td>
+</tr>
+<tr>
+<td><strong>reward shaping</strong></td>
+<td>奖励塑形</td>
+<td>设计分项奖励引导行为</td>
+</tr>
+<tr>
+<td><strong>reward hacking</strong></td>
+<td>奖励钻空子</td>
+<td>学会歪招骗分（如"站着躺赢"）</td>
+</tr>
+<tr>
+<td><strong>sparse / dense reward</strong></td>
+<td>稀疏/稠密奖励</td>
+<td>只有终点给分 / 每步都给</td>
+</tr>
+<tr>
+<td><strong>converge / plateau</strong></td>
+<td>收敛 / 平台</td>
+<td>涨不动了</td>
+</tr>
+<tr>
+<td><strong>terminate / done</strong></td>
+<td>终止</td>
+<td>摔倒/超时提前结束回合</td>
+</tr>
+<tr>
+<td><strong>reset</strong></td>
+<td>重置</td>
+<td>回合开始，初始化状态</td>
+</tr>
+</tbody>
+</table>
+<h3>B. 训练 / 工程</h3>
+<table>
+<thead>
+<tr>
+<th>词</th>
+<th>含义</th>
+<th>语境</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>num_envs</strong></td>
+<td>并行环境数</td>
+<td>2048 只狗同时练</td>
+</tr>
+<tr>
+<td><strong>num_timesteps</strong></td>
+<td>总步数</td>
+<td>100M 步（脚本每次从 0 数）</td>
+</tr>
+<tr>
+<td><strong>batch / minibatch</strong></td>
+<td>批 / 小批</td>
+<td>一次更新用的数据块</td>
+</tr>
+<tr>
+<td><strong>unroll_length</strong></td>
+<td>每次采多少步</td>
+<td>=20</td>
+</tr>
+<tr>
+<td><strong>learning_rate</strong></td>
+<td>学习率</td>
+<td>步长</td>
+</tr>
+<tr>
+<td><strong>max_grad_norm</strong></td>
+<td>梯度裁剪</td>
+<td>防梯度爆炸</td>
+</tr>
+<tr>
+<td><strong>normalize obs/adv</strong></td>
+<td>归一化</td>
+<td>观测/优势标准化，稳训练</td>
+</tr>
+<tr>
+<td><strong>checkpoint</strong></td>
+<td>存档</td>
+<td>训练中途存的参数</td>
+</tr>
+<tr>
+<td><strong>warm-start / resume / fine-tune</strong></td>
+<td>暖启动/续训/微调</td>
+<td>从已有 ckpt 接着练</td>
+</tr>
+<tr>
+<td><strong>eval（evaluation）</strong></td>
+<td>评估</td>
+<td>定期用确定性策略测水平</td>
+</tr>
+<tr>
+<td><strong>seed</strong></td>
+<td>随机种子</td>
+<td>复现实验</td>
+</tr>
+<tr>
+<td><strong>JIT</strong></td>
+<td>即时编译</td>
+<td>首次跑要编译（几分钟）</td>
+</tr>
+<tr>
+<td><strong>XLA</strong></td>
+<td>JAX 编译后端</td>
+<td>把计算图编成机器码</td>
+</tr>
+<tr>
+<td><strong>OOM</strong></td>
+<td>显存爆了</td>
+<td>out of memory</td>
+</tr>
+<tr>
+<td><strong>sps</strong></td>
+<td>每秒步数</td>
+<td>训练速度</td>
+</tr>
+<tr>
+<td><strong>walltime</strong></td>
+<td>墙钟时间</td>
+<td>真实耗时</td>
+</tr>
+<tr>
+<td><strong>wandb / TensorBoard</strong></td>
+<td>曲线工具</td>
+<td>看训练曲线</td>
+</tr>
+</tbody>
+</table>
+<h3>C. 腿式机器人</h3>
+<table>
+<thead>
+<tr>
+<th>词</th>
+<th>含义</th>
+<th>语境</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>locomotion</strong></td>
+<td>运动/行走</td>
+<td>让四足会走</td>
+</tr>
+<tr>
+<td><strong>gait</strong></td>
+<td>步态</td>
+<td>trot(小跑)、bound(蹦跑)、gallop</td>
+</tr>
+<tr>
+<td><strong>stand_still</strong></td>
+<td>站立不动</td>
+<td>命令0时别乱动</td>
+</tr>
+<tr>
+<td><strong>tracking</strong></td>
+<td>跟踪</td>
+<td>跟速度命令（tracking_lin_vel）</td>
+</tr>
+<tr>
+<td><strong>termination</strong></td>
+<td>摔倒终止</td>
+<td>倒了就罚/结束</td>
+</tr>
+<tr>
+<td><strong>privileged state</strong></td>
+<td>特权观测</td>
+<td>训练给 Critic 的"上帝视角"</td>
+</tr>
+<tr>
+<td><strong>domain randomization (DR)</strong></td>
+<td>域随机化</td>
+<td>随机化摩擦/质量→抗真机差异</td>
+</tr>
+<tr>
+<td><strong>sim2real</strong></td>
+<td>仿真到现实</td>
+<td>把仿真策略上真机</td>
+</tr>
+<tr>
+<td><strong>system identification</strong></td>
+<td>系统辨识</td>
+<td>测真机参数</td>
+</tr>
+<tr>
+<td><strong>actuator</strong></td>
+<td>执行器</td>
+<td>电机/驱动器</td>
+</tr>
+<tr>
+<td><strong>joint / DOF</strong></td>
+<td>关节 / 自由度</td>
+<td>12 关节=12 DoF</td>
+</tr>
+<tr>
+<td><strong>PD control / 位置伺服</strong></td>
+<td>位置控制</td>
+<td><code>Kp/Kd</code> 跟目标角</td>
+</tr>
+<tr>
+<td><strong>torque</strong></td>
+<td>力矩</td>
+<td>电机出力</td>
+</tr>
+<tr>
+<td><strong>IMU / encoder</strong></td>
+<td>惯性单元 / 编码器</td>
+<td>测姿态 / 测关节角</td>
+</tr>
+<tr>
+<td><strong>linvel</strong></td>
+<td>线速度</td>
+<td>机身速度（真机难测）</td>
+</tr>
+<tr>
+<td><strong>gravity vector</strong></td>
+<td>重力向量(机体系)</td>
+<td>判断倾角；直立≈(0,0,-1)</td>
+</tr>
+<tr>
+<td><strong>forwardvector</strong></td>
+<td>前向向量(世界系)</td>
+<td>机身 x 轴朝向；判断"朝哪"</td>
+</tr>
+<tr>
+<td><strong>feet_air_time / clearance</strong></td>
+<td>离地时间/高度</td>
+<td>迈步相关奖励</td>
+</tr>
+<tr>
+<td><strong>CoM / COM</strong></td>
+<td>质心</td>
+<td>影响平衡</td>
+</tr>
+<tr>
+<td><strong>MJCF / URDF</strong></td>
+<td>模型格式</td>
+<td>MuJoCo / ROS 的机器人描述</td>
+</tr>
+</tbody>
+</table>
+<h3>D. 算法 / 工具缩写</h3>
+<table>
+<thead>
+<tr>
+<th>缩写</th>
+<th>全称</th>
+<th>一句话</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>PPO</strong></td>
+<td>Proximal Policy Optimization</td>
+<td>最常用的稳定 RL（我们在用）</td>
+</tr>
+<tr>
+<td><strong>SAC / TD3</strong></td>
+<td>—</td>
+<td>off-policy，样本效率高</td>
+</tr>
+<tr>
+<td><strong>DQN</strong></td>
+<td>Deep Q-Network</td>
+<td>离散动作</td>
+</tr>
+<tr>
+<td><strong>RLHF</strong></td>
+<td>RL from Human Feedback</td>
+<td>用人类偏好训 LLM</td>
+</tr>
+<tr>
+<td><strong>SFT</strong></td>
+<td>Supervised Fine-Tuning</td>
+<td>监督微调</td>
+</tr>
+<tr>
+<td><strong>DPO</strong></td>
+<td>Direct Preference Optimization</td>
+<td>免 RL 的偏好对齐</td>
+</tr>
+<tr>
+<td><strong>GRPO</strong></td>
+<td>Group Relative Policy Optimization</td>
+<td>去 Critic 的 PPO(推理模型)</td>
+</tr>
+<tr>
+<td><strong>MJX / MuJoCo</strong></td>
+<td>—</td>
+<td>物理引擎 / 其 JAX 版(GPU 并行)</td>
+</tr>
+<tr>
+<td><strong>JAX / Brax</strong></td>
+<td>—</td>
+<td>数值+自动微分 / RL 库(含 PPO)</td>
+</tr>
+<tr>
+<td><strong>ONNX / onnxruntime</strong></td>
+<td>—</td>
+<td>模型通用格式 / 轻量推理引擎</td>
+</tr>
+<tr>
+<td><strong>EGL</strong></td>
+<td>—</td>
+<td>无头渲染后端</td>
+</tr>
+</tbody>
+</table>
+<h3>E. 本项目专有词</h3>
+<table>
+<thead>
+<tr>
+<th>词</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>walk / run / getup / jump / standjump</strong></td>
+<td>走路 / 跑步蹦跳 / 起身 / 前跳 / 立定跳(越墙)</td>
+</tr>
+<tr>
+<td><strong>cross / cross_bonus</strong></td>
+<td>越过墙后的每步分 / 首次越墙一次性奖</td>
+</tr>
+<tr>
+<td><strong>stay</strong></td>
+<td>过墙后"站稳 + 朝前"奖励</td>
+</tr>
+<tr>
+<td><strong>fall_penalty</strong></td>
+<td>摔倒一次的大惩罚</td>
+</tr>
+<tr>
+<td><strong>wall_x</strong></td>
+<td>墙的位置 x</td>
+</tr>
+<tr>
+<td><strong>action_scale (0.5)</strong></td>
+<td>动作 → 关节目标的缩放</td>
+</tr>
+<tr>
+<td><strong>Kp=35 / Kd=0.5</strong></td>
+<td>底层 PD 增益</td>
+</tr>
+<tr>
+<td><strong>ctrl_dt / sim_dt</strong></td>
+<td>控制 50Hz / 仿真 250Hz</td>
+</tr>
+<tr>
+<td><strong>obs 48/45/42</strong></td>
+<td>不同任务的观测维度（walk 48 / jump 45 / getup 42 / standjump 48）</td>
+</tr>
+<tr>
+<td><strong>privileged_state</strong></td>
+<td>Critic 专用"开挂"观测</td>
+</tr>
+</tbody>
+</table>
+<div class="tip-box" style="margin-top:40px;"><div class="tip-title">💻 配套源码</div>
+本笔记对应源码：<a href="https://github.com/Ian-cyy/mujoco-control-rl" target="_blank" rel="noopener">github.com/Ian-cyy/mujoco-control-rl</a>
+&nbsp;·&nbsp; <a href="../">← 返回目录</a></div>
+</div></main>
+<button class="back-to-top" id="backToTop" title="回到顶部">↑</button>
+<script>
+  // ===== 深色模式切换 =====
+  const themeBtn = document.getElementById('themeBtn');
+  const html = document.documentElement;
+  const savedTheme = localStorage.getItem('mj-notes-theme');
+  if (savedTheme === 'dark') {
+    html.setAttribute('data-theme', 'dark');
+    themeBtn.textContent = '☀️';
+  }
+  themeBtn.addEventListener('click', () => {
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      themeBtn.textContent = '🌙';
+      localStorage.setItem('mj-notes-theme', 'light');
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      themeBtn.textContent = '☀️';
+      localStorage.setItem('mj-notes-theme', 'dark');
+    }
+  });
+
+  // ===== 移动端侧边栏 =====
+  const menuBtn = document.getElementById('menuBtn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  menuBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+  document.querySelectorAll('.toc-list a').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 900) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+      }
+    });
+  });
+
+  // ===== 滚动监听：高亮当前章节 + 进度条 + 回到顶部 =====
+  const tocLinks = document.querySelectorAll('.toc-list a');
+  const chapters = document.querySelectorAll('h2.chapter');
+  const progressBar = document.getElementById('progressBar');
+  const backToTop = document.getElementById('backToTop');
+
+  function updateActiveChapter() {
+    let current = '';
+    const scrollPos = window.scrollY + 170;   // ★ 覆盖 80+80 落位 + 10px 余量
+    chapters.forEach(ch => {
+      if (ch.offsetTop <= scrollPos) {
+        current = ch.id;
+      }
+    });
+    // ★ 滚到页面底部时强制高亮最后一章
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      current = chapters[chapters.length - 1].id;
+    }
+    tocLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('data-target') === current) {
+        link.classList.add('active');
+      }
+    });
+  }
+
+  function updateProgress() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = progress + '%';
+    if (scrollTop > 400) {
+      backToTop.classList.add('visible');
+    } else {
+      backToTop.classList.remove('visible');
+    }
+  }
+
+  window.addEventListener('scroll', () => {
+    updateActiveChapter();
+    updateProgress();
+  }, { passive: true });
+
+  backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  updateActiveChapter();
+  updateProgress();
+</script></body></html>

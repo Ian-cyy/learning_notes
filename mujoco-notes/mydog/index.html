@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自建狗 · MuJoCo 笔记</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f6f8fb;
+    --bg-card: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --primary: #1a2744;
+    --primary-light: #2c4a7c;
+    --accent: #4a9eff;
+    --accent-light: #e8f2ff;
+    --code-bg: #f4f6fa;
+    --code-text: #2c3e50;
+    --formula-bg: #faf8f2;
+    --formula-border: #e8dcc0;
+    --formula-text: #5a4a2a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+    --sidebar-width: 280px;
+    --content-max: 860px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --text: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border: #334155;
+    --border-light: #1e293b;
+    --primary: #3b5998;
+    --primary-light: #4a6fa5;
+    --accent: #60a5fa;
+    --accent-light: #1e3a5f;
+    --code-bg: #1e293b;
+    --code-text: #cbd5e1;
+    --formula-bg: #1e293b;
+    --formula-border: #475569;
+    --formula-text: #fbbf24;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg);
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ===== 顶部导航栏 ===== */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.85);
+  }
+  [data-theme="dark"] .topbar { background: rgba(15,23,42,0.85); }
+
+  .topbar-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-title .dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .topbar-title .sub {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 8px;
+  }
+
+  .topbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .icon-btn {
+    width: 36px; height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .menu-btn { display: none; }
+
+  /* ===== 侧边栏 ===== */
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: var(--sidebar-width);
+    height: calc(100vh - 60px);
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px 0;
+    z-index: 90;
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar-header {
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sidebar-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .toc-list { list-style: none; padding: 0 12px; }
+  .toc-list li { margin: 2px 0; }
+  .toc-list a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13.5px;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+  }
+  .toc-list a:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+  .toc-list a.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  .toc-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    background: var(--border);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .toc-list a.active .toc-num {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* 系列文章导航 */
+  .series-nav { padding: 12px 20px; }
+  .series-nav .sn-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .series-nav a {
+    display: block;
+    padding: 7px 12px;
+    margin: 4px 0;
+    border-radius: 7px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .series-nav a:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+  .series-nav a.cur {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ===== 主内容区 ===== */
+  .main {
+    margin-left: var(--sidebar-width);
+    margin-top: 60px;
+    padding: 40px 48px 80px;
+    min-height: calc(100vh - 60px);
+  }
+
+  .content-wrapper {
+    max-width: var(--content-max);
+    margin: 0 auto;
+  }
+
+  /* ===== 文章头部 ===== */
+  .article-header {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid var(--border);
+  }
+  .article-header .tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+  .article-header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .article-header .subtitle {
+    font-size: 17px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+  }
+  .article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .article-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* ===== 章节标题 ===== */
+  h2.chapter {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 50px 0 24px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: #fff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+    scroll-margin-top: 80px;
+  }
+  h2.chapter .ch-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 32px 0 14px;
+    padding-left: 14px;
+    border-left: 4px solid var(--accent);
+    scroll-margin-top: 80px;
+  }
+
+  h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-light);
+    margin: 22px 0 10px;
+    scroll-margin-top: 80px;
+  }
+
+  p { margin: 10px 0; text-align: justify; }
+
+  /* ===== 代码块 ===== */
+  pre, code {
+    font-family: "JetBrains Mono", "Fira Code", "DejaVu Sans Mono", "Noto Sans Mono CJK SC", monospace;
+  }
+  pre {
+    position: relative;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 13px;
+    line-height: 1.65;
+    overflow-x: auto;
+    margin: 14px 0;
+    color: var(--code-text);
+  }
+  pre .lang-label {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--border-light);
+    padding: 1px 8px;
+    border-radius: 5px;
+    letter-spacing: .5px;
+  }
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #e06c5e;
+  }
+  [data-theme="dark"] code { color: #f87171; }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* ===== 公式 ===== */
+  .formula {
+    background: var(--formula-bg);
+    border: 1px solid var(--formula-border);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 14px 0;
+    font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace;
+    font-size: 14px;
+    text-align: center;
+    color: var(--formula-text);
+    overflow-x: auto;
+  }
+
+  /* ===== 表格 ===== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13.5px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  th {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  td {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--bg-secondary); }
+  td code { white-space: normal; word-break: break-word; }
+  td a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  td a:hover { text-decoration: underline; }
+
+  /* ===== 提示框 ===== */
+  .tip-box, .warn-box {
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 16px 0;
+  }
+  .tip-box {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+  }
+  .tip-box .tip-title {
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .warn-box {
+    background: #fef5e7;
+    border-left: 4px solid #f59e0b;
+  }
+  [data-theme="dark"] .warn-box { background: #422006; border-left-color: #f59e0b; }
+  .warn-box .warn-title {
+    font-weight: 700;
+    color: #d97706;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  [data-theme="dark"] .warn-box .warn-title { color: #fbbf24; }
+
+  /* ===== 列表 ===== */
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  /* ===== 回到顶部 ===== */
+  .back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 44px; height: 44px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+    z-index: 80;
+  }
+  .back-to-top.visible { opacity: 1; visibility: visible; }
+  .back-to-top:hover { transform: translateY(-2px); }
+
+  /* ===== 阅读进度条 ===== */
+  .progress-bar {
+    position: fixed;
+    top: 60px; left: 0;
+    height: 3px;
+    background: var(--accent);
+    z-index: 95;
+    transition: width 0.1s;
+  }
+
+  /* ===== 遮罩层（移动端） ===== */
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 60px; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 85;
+  }
+  .overlay.show { display: block; }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 900px) {
+    .menu-btn { display: flex; }
+    .sidebar {
+      transform: translateX(-100%);
+      box-shadow: var(--shadow-lg);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; padding: 24px 20px 60px; }
+    .article-header h1 { font-size: 24px; }
+    h2.chapter { font-size: 19px; padding: 12px 16px; }
+    h2.chapter .ch-num { width: 30px; height: 30px; font-size: 14px; }
+    .topbar-title .sub { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .main { padding: 16px 14px 50px; }
+    .article-meta { gap: 12px; font-size: 12px; }
+    pre { font-size: 12px; padding: 12px 14px; }
+    table { font-size: 12px; }
+    th, td { padding: 7px 10px; }
+  }
+
+  /* ===== 滚动条美化 ===== */
+  .sidebar::-webkit-scrollbar { width: 5px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  pre::-webkit-scrollbar { height: 6px; }
+  pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style></head><body>
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menuBtn" title="目录">☰</button>
+  <div class="topbar-title"><span class="dot"></span>自建狗<span class="sub">CAD→MJCF · 对称修复 · 训练 · 结论 · 2026/10/29</span></div>
+  <div class="topbar-actions"><a class="icon-btn" href="../../" title="返回笔记主页" style="text-decoration:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg></a><a class="icon-btn" href="https://github.com/Ian-cyy" target="_blank" title="GitHub: Ian-cyy" style="text-decoration:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg></a>
+    <button class="icon-btn" id="themeBtn" title="切换深色模式">🌙</button></div>
+</header>
+<div class="overlay" id="overlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header"><h3>📑 本页目录</h3></div>
+  <ul class="toc-list"><li><a href="#ch1" data-target="ch1"><span class="toc-num">01</span>从 CAD 到 MJCF（自建机械狗）</a></li>
+<li><a href="#ch2" data-target="ch2"><span class="toc-num">02</span>模型问题与镜像对称修复（重点）</a></li>
+<li><a href="#ch3" data-target="ch3"><span class="toc-num">03</span>自建狗 RL 环境与训练结果</a></li>
+<li><a href="#ch4" data-target="ch4"><span class="toc-num">04</span>结论：MJX↔MuJoCo gap 与模型瓶颈</a></li></ul>
+  <div class="series-nav"><div class="sn-title">📚 MuJoCo 系列</div>
+<a href="../">📖 主页 · MuJoCo · 控制 · RL</a>
+<a href="../basics/">01 · MuJoCo 基础</a>
+<a href="../control/">02 · 经典控制</a>
+<a href="../rl/">03 · 强化学习 · Go2</a>
+<a href="../mydog/" class="cur">04 · 自建狗</a></div>
+  <div class="sidebar-footer">环境：MuJoCo / MJX / Brax(PPO)<br>
+共 4 篇 · 合并为一页<br>
+<a href="https://github.com/Ian-cyy/mujoco-control-rl" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">→ 源码仓库</a></div>
+</aside>
+<main class="main"><div class="content-wrapper">
+  <div class="article-header"><span class="tag">SELF-BUILT QUADRUPED</span><h1>自建狗</h1>
+    <p class="subtitle">CAD→MJCF · 对称修复 · 训练 · 结论</p>
+    <div class="article-meta"><span>🗓 2026-10-29</span><span>📚 4 篇</span>
+      <span>🖥 MuJoCo / MJX / Brax</span>
+      <span>👤 <a href="https://github.com/Ian-cyy" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">GitHub @Ian-cyy</a></span></div>
+  </div>
+<h2 class="chapter" id="ch1"><span class="ch-num">01</span>从 CAD 到 MJCF（自建机械狗）</h2>
+<blockquote>
+<p>目标：把 SolidWorks 装配体变成 MuJoCo/MJX 能训的模型。这条路踩了很多坑，记录下来。</p>
+</blockquote>
+<h3>1. 路线</h3>
+<pre><code>SolidWorks 装配体(.SLDASM)
+  → sw2robot / URDF 导出
+  → 修正 URDF（坐标系、碰撞、关节）
+  → MJCF（MuJoCo XML）
+  → 简化（串联腿）用于 MJX 训练
+</code></pre>
+<h3>2. 两个模型版本（按用途）</h3>
+<table>
+<thead>
+<tr>
+<th>版本</th>
+<th>文件</th>
+<th>用途</th>
+<th>特点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>四杆闭环</td>
+<td><code>dog_mjcf/dog.xml</code></td>
+<td>MuJoCo 本地看/仿真</td>
+<td>真四杆：hip/knee 驱动 + rod/shank 被动 + 膝盖销 equality×4</td>
+</tr>
+<tr>
+<td>串联简化</td>
+<td><code>dog_mjcf_simple/dog_simple.xml</code></td>
+<td>MJX/RL 训练</td>
+<td>每腿 hip+knee 直驱，<strong>无闭环</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>为什么分两版：<strong>MJX 对 equality 闭环不稳</strong>（体重一压容易折叠），所以训练用串联简化版；四杆版更真实，用来本地验证运动学。
+两版同几何/同质量/同网格，总质量 ~6.0kg。</p>
+</blockquote>
+<h3>3. 常见导出问题 &amp; 修复</h3>
+<ol>
+<li><strong>网格碰撞</strong>：CAD 导出的三角网格直接做碰撞，MJX 容易炸/OOM → <strong>改成基本体碰撞</strong>（box/capsule/sphere）。</li>
+<li><strong>积分器</strong>：<code>implicitfast</code> 在 MJX 不稳 → 改 <strong><code>Euler</code></strong>。</li>
+<li><strong><code>contype/conaffinity</code> 位掩码</strong>：<code>2 &amp; 1 == 0</code> → 腿不碰地、直接穿地。统一改成 <code>contype=1</code> 的碰撞体、地板 <code>conaffinity=1</code>。</li>
+<li><strong>中文路径</strong>：MuJoCo 在 Windows 打不开中文路径 → 用英文副本目录。</li>
+<li><strong>坐标系不统一</strong>：各零件导出后局部坐标系不一致（后面镜像修复的根源，见 02 篇）。</li>
+</ol>
+<h3>4. XML 关键设置（本项目）</h3>
+<pre><span class="lang-label">xml</span><code class="language-xml">&lt;compiler angle=&quot;radian&quot; autolimits=&quot;true&quot;/&gt;
+&lt;option timestep=&quot;0.004&quot; integrator=&quot;Euler&quot;/&gt;
+&lt;!-- 视觉网格：只做外观 --&gt;
+&lt;default&gt;&lt;geom type=&quot;mesh&quot; density=&quot;0&quot; contype=&quot;0&quot; conaffinity=&quot;0&quot;/&gt;&lt;/default&gt;
+&lt;!-- 碰撞体：单独给 contype=1 --&gt;
+&lt;geom name=&quot;thigh_col1&quot; type=&quot;capsule&quot; contype=&quot;1&quot; conaffinity=&quot;0&quot; .../&gt;
+</code></pre>
+<ul>
+<li>视觉网格 <code>density=0, contype=0</code> → <strong>不参与质量/碰撞</strong>（后面“镜像只改视觉不影响物理”就靠这个）。</li>
+<li>每腿结构：<code>L{i}_thigh</code>（含 hip joint）→ <code>L{i}_shank</code>（含 knee joint）→ 脚。</li>
+<li><code>home</code> keyframe 存参考站姿（四脚等高的解）。</li>
+</ul>
+<h3>5. 关节与执行器</h3>
+<ul>
+<li>每腿 2 个 <code>hinge</code>（hip、knee）；共 8 个执行器 <code>m_hip_L1..4</code>、<code>m_knee_L1..4</code>。</li>
+<li>骨盆（base）用 <code>freejoint</code>（6 DOF）。</li>
+<li><code>qpos</code> = 7(free) + 8 = <strong>15</strong>；<code>qvel</code> = 6 + 8 = <strong>14</strong>。</li>
+</ul>
+<h3>6. 生成脚本（若需重建）</h3>
+<p><code>scripts/build_dog_model_v2.py</code>（四杆）、<code>scripts/build_dog_simple.py</code>（串联）、<code>scripts/level_stance2.py</code>（调平求解）。</p>
+<h3>7. 教训</h3>
+<ul>
+<li><strong>CAD 装配姿态 ≠ 物理正确姿态</strong>：手拼装配体常没对齐，导出只是忠实还原（四脚高低不一、髋偏移）。</li>
+<li>MJX 对复杂约束（equality/闭环）宽容度低 → 训练模型要“能省则省”。</li>
+<li>模型是后面所有 RL 的地基，<strong>地基歪了，奖励怎么调都白搭</strong>（见 03/04 篇）。</li>
+</ul>
+<h2 class="chapter" id="ch2"><span class="ch-num">02</span>模型问题与镜像对称修复（重点）</h2>
+<blockquote>
+<p>自建狗模型最坑的一段：<strong>左右不对称 + 视觉网格炸开</strong>。这里记录诊断、数学、脚本、验证全过程，可直接复用。</p>
+</blockquote>
+<h3>1. 现象</h3>
+<ul>
+<li>四脚高度不一致（0.131 / 0.100 / 0.064 / 0.034 m），L4 髋横向偏 <strong>3.2cm</strong>；</li>
+<li>用同一套"镜像"逻辑修完，右腿<strong>视觉网格飞出去</strong>（<code>thigh_mid</code> 顶点跑到 x=-0.61 / z=0.66，腿"炸开"）；</li>
+<li>视觉上"模型显示不对"，但碰撞/关节其实对。</li>
+</ul>
+<h3>2. 诊断</h3>
+<p>用 <code>scripts/mydog_symmetry_check.py</code> 在世界坐标下比较 <code>L1↔mirror(L3)</code>、<code>L2↔mirror(L4)</code> 的关节锚点/脚：
+- 关节/碰撞体：<code>hip</code> 完全对称、<code>knee/foot</code> 有偏差（最大 0.076m）；
+- 进一步用<strong>网格顶点</strong>比较（更严格的镜像距离）：右腿网格对左腿镜像误差 <strong>10~90mm</strong> → <strong>原始模型的网格本身就没镜像好</strong>。</p>
+<h3>3. 关键认知：反射不能复用同一份网格</h3>
+<p>把左腿"镜像"到右腿，几何变换是<strong>关于 x-z 平面反射</strong>（<code>y→-y</code>）：
+- 位置 <code>(x,y,z) → (x,-y,z)</code>；
+- 四元数 <code>(w,x,y,z) → (w,-x,y,-z)</code>（即 <code>M·R·M</code>，<code>M=diag(1,-1,1)</code>）；
+- <code>fromto</code> 两端 y 取反；关节 <code>axis</code> 的 y 取反；
+- 惯性 <code>fullinertia</code> 的 <code>Ixy</code>、<code>Iyz</code> 取反。</p>
+<p><strong>但反射矩阵 <code>det(M)=-1</code>，不是旋转。</strong> 想用<strong>同一份未镜像的 STL</strong> 得到镜像件，数学上不可能——第一次我只反射了变换、没镜像网格，结果每个网格被"转到错误朝向"，腿就炸开了（<code>thigh_mid</code> 顶点甩到 z=0.66）。
+→ 正确做法：<strong>同时镜像网格资产</strong>。</p>
+<h3>4. 解决方案（两个脚本）</h3>
+<h4>(a) <code>scripts/mirror_mydog_meshes.py</code> —— 生成镜像 STL</h4>
+<p>对腿用到的 7 个网格 <code>knee_conn/motor/thigh_in/thigh_mid/thigh_out/shank/foot</code>：
+- 顶点 y 反射 <code>y→-y</code>；
+- <strong>交换三角形绕序</strong>（保证法线朝外，否则渲染黑/反面）；
+- 写成 <code>*_R.stl</code>（二进制 STL，格式：80 字节头 + uint32 数量 + 每三角 50 字节）。</p>
+<h4>(b) <code>scripts/mirror_mydog_legs.py</code> —— 重建右腿</h4>
+<ul>
+<li>取 <code>L1_thigh</code>、<code>L2_thigh</code> 子树，做上面的反射；</li>
+<li>命名改写 <code>L1→L3、L2→L4</code>（<code>col1→col3</code> 等）；<strong>网格引用换成 <code>*_R.stl</code></strong>；</li>
+<li>在 <code>&lt;asset&gt;</code> 登记镜像网格；</li>
+<li><strong>修 <code>home</code> keyframe</strong>：右腿关节轴翻成 <code>-y</code> 后，为与左腿对称，<code>L3=-L1</code>、<code>L4=-L2</code>。</li>
+</ul>
+<blockquote>
+<p>白盒推导：设左腿网格点 <code>V</code>、变换 <code>(R1,t1)</code>；镜像后世界点 = <code>M(R1 V + t1)</code>。
+取 <code>V' = M V</code>（镜像网格）、<code>t3 = M t1</code>、<code>R3 = M R1 M</code>，则 <code>R3 V' + t3 = M R1 V + M t1</code> 完全相等 → 真镜像。
+（这正是"镜像网格 + 反射变换"组合生效的原因。）</p>
+</blockquote>
+<h3>5. 验证（<code>mydog_symmetry_check.py</code>）</h3>
+<ul>
+<li>关节/碰撞体镜像：<strong>0.00000 m</strong>；</li>
+<li>网格逐顶点镜像距离：<strong>10~90mm → 0.00mm</strong>；</li>
+<li>四脚等高（z≈0.001，在 qpos0 和 home 两种姿态下都对称）；</li>
+<li>渲染 ASCII 复核：无飞出/悬空部件。</li>
+</ul>
+<h3>6. 重要副作用：物理没变</h3>
+<ul>
+<li>视觉网格是 <code>contype=0, density=0</code> → <strong>不参与碰撞、不贡献质量</strong>；</li>
+<li>所以"修视觉网格"<strong>不改变动力学</strong> → 镜像修复前训好的 ONNX（物理相同）<strong>仍然有效</strong>，不用重训。</li>
+</ul>
+<h3>7. 教训</h3>
+<ul>
+<li><strong>先验证网格，不只验证关节</strong>：很多"对称"只差在视觉网格上。</li>
+<li>反射 ≠ 旋转：涉及网格/惯性的镜像，必须<strong>连网格一起镜像</strong>。</li>
+<li>修模型前先备份：<code>mydog_simple.xml.bak_before_symmetry</code>。</li>
+<li>建模时最好在 CAD 就"参考坐标系统一/镜像装配"，能省掉这一整套修修补补。</li>
+</ul>
+<h2 class="chapter" id="ch3"><span class="ch-num">03</span>自建狗 RL 环境与训练结果</h2>
+<blockquote>
+<p>在自建狗上跑 MJX + Brax PPO，扩了 stand / walk 两个任务。这一篇记录环境、命令、结果，以及一次“奖励被刷”的教训。</p>
+</blockquote>
+<h3>1. 环境代码结构</h3>
+<p><code>mjplay/mujoco_playground/_src/locomotion/mydog/</code>
+| 文件 | 作用 |
+|---|---|
+| <code>mydog_constants.py</code> | 模型路径、body/sensor 名 |
+| <code>base.py</code> | <code>MyDogEnv</code> 基类（PD、观测、termination 等） |
+| <code>stand.py</code> | <code>MyDogStandFlatTerrain</code>（站立） |
+| <code>walk.py</code> | <code>MyDogWalkFlatTerrain</code>（直走） |
+| <code>randomize.py</code> | 域随机化（摩擦/质量/质心/armature…） |
+| <code>xmls/mydog_simple.xml</code> | 模型（串联腿，见 01/02 篇） |</p>
+<p>注册：<code>locomotion/__init__.py</code> + <code>config/locomotion_params.py</code>。</p>
+<h3>2. 观测 / 动作</h3>
+<table>
+<thead>
+<tr>
+<th>任务</th>
+<th>obs</th>
+<th>动作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Stand</td>
+<td><strong>30</strong> = gyro(3)+gravity(3)+ (q−q_home)(8)+qvel(8)+last_act(8)</td>
+<td>8 关节力矩增量</td>
+</tr>
+<tr>
+<td>Walk</td>
+<td><strong>35</strong> = 上面 + command(3) + 步态时钟 sin/cos(2)</td>
+<td>8</td>
+</tr>
+</tbody>
+</table>
+<p>env 内 PD：<code>target = q_home + act*0.1</code>，<code>tau = Kp*(target−q) − Kd*qd</code>，clamp ±12。</p>
+<h3>3. 训练命令</h3>
+<pre><span class="lang-label">bash</span><code class="language-bash">cd ~/mujoco_ws/go2_rl/mjplay
+python3 -u learning/train_jax_ppo.py --env_name=MyDogWalkFlatTerrain \
+  --num_timesteps=80000000 --num_envs=2048 --num_evals=10 \
+  --domain_randomization=True --use_tb=True --num_videos=0 --suffix=mydog_walk_xxx
+</code></pre>
+<p>自建狗比 Go2 慢（~96k–200k 步/分），一条 60–80M 约数小时。</p>
+<h3>4. Stand 结果</h3>
+<table>
+<thead>
+<tr>
+<th>运行</th>
+<th>设置</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mydog_stand_v3</code></td>
+<td>DR</td>
+<td>reward ~14.2，height 284，ep_len 300</td>
+</tr>
+<tr>
+<td><code>mydog_stand_sym</code></td>
+<td>对称模型/no-DR</td>
+<td>reward <strong>14.38</strong>（~10M 后平台），四脚等高</td>
+</tr>
+</tbody>
+</table>
+<p>→ 对称化后站立训练<strong>没有变差</strong>，说明镜像改造没伤性能。</p>
+<h3>5. Walk 结果（一路实验）</h3>
+<table>
+<thead>
+<tr>
+<th>运行</th>
+<th>说明</th>
+<th>reward</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mydog_walk_cont2</code></td>
+<td>基础直走</td>
+<td>22.5</td>
+<td>步态是 bound</td>
+</tr>
+<tr>
+<td><code>mydog_trot2</code></td>
+<td>加步态时钟+feet_clearance</td>
+<td>—</td>
+<td>gait 匹配↑，tracking 掉</td>
+</tr>
+<tr>
+<td><code>walk_sym</code></td>
+<td>对称模型</td>
+<td>28.7</td>
+<td>会走，L3 偏弱</td>
+</tr>
+<tr>
+<td><code>walk_sym2</code></td>
+<td>加“方差对称奖励”</td>
+<td>32.8</td>
+<td><strong>退化：后腿拖地、不前进</strong></td>
+</tr>
+<tr>
+<td><code>walk_sym3</code></td>
+<td>改“每脚达标奖励”</td>
+<td><strong>39.5</strong></td>
+<td>指标好看，但仍拖后腿（见 04 篇）</td>
+</tr>
+</tbody>
+</table>
+<h3>6. 关键教训：奖励被“刷”了</h3>
+<p><strong><code>walk_sym2</code> 的对称奖励设计有漏洞</strong>：</p>
+<pre><code>foot_symmetry = -var(各脚最近落地抬脚峰值)
+</code></pre>
+<ul>
+<li>直觉：让四脚抬得一样高 → 对称。</li>
+<li><strong>漏洞</strong>：脚不落地就不更新峰值、全部保持 0 → <strong>方差=0 → 满分</strong>。策略于是<strong>干脆都不抬脚</strong>（或只抬前腿），reward 反而更高。结果：后腿拖地、机身不前进。</li>
+<li>验证：在<strong>训练环境（MJX）里也一样拖后腿</strong>（不是 sim gap）。</li>
+</ul>
+<p><strong>修法（<code>walk_sym3</code>）</strong>：换成“每只脚必须达标才给分”</p>
+<pre><code>foot_lift = Σ_f clip(最近摆动抬脚峰值 / 目标高度, 0, 1)   # 不抬的脚得 0
+## 抬脚瞬间把该脚峰值清零（防“抬一次就吃老本”）
+</code></pre>
+<ul>
+<li>好处：站着/少抬脚拿不到分，不可刷。</li>
+<li>结果：<code>foot_lift</code> 从 401→632、clearance 惩罚 −328→−17，指标确实在往“四脚都抬”走。</li>
+<li><strong>但</strong>：最终逐脚验证仍然后腿弱（见 04 篇结论）——指标改善 ≠ 真走起来。</li>
+</ul>
+<h3>7. 导出 ONNX</h3>
+<pre><span class="lang-label">bash</span><code class="language-bash">cd ~/mujoco_ws/go2_rl
+sed 's/Go2JoystickFlatTerrain/MyDogWalkFlatTerrain/' scripts/export_go2_onnx.py &gt; /tmp/export_walk.py
+python3 /tmp/export_walk.py --ckpt mjplay/logs/&lt;run&gt;/checkpoints --out policies/mydog_walk_xxx.onnx
+</code></pre>
+<p>查看：<code>python3 scripts/onnx_mydog_walk_viewer.py --onnx policies/mydog_walk_xxx.onnx</code></p>
+<h3>8. 小结</h3>
+<ul>
+<li>自建狗能训起来（stand 很稳），但 <strong>walk 的“四条腿均匀迈步”很难</strong>。</li>
+<li>奖励一定要防“退化解”（少做=高分）。</li>
+<li>reward 高不等于行为对，<strong>必须逐脚/逐行为验证</strong>（见 04 篇）。</li>
+</ul>
+<h2 class="chapter" id="ch4"><span class="ch-num">04</span>结论：MJX↔MuJoCo gap 与模型瓶颈</h2>
+<blockquote>
+<p>这一篇是整个自建狗系列的“诚实总结”：我们到底卡在哪、为什么、下一步。</p>
+</blockquote>
+<h3>1. MJX↔MuJoCo gap（真实存在）</h3>
+<p>同一份 <code>walk_sym</code> 策略（ONNX/checkpoint），在两个环境里表现差别巨大：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>MJX（训练环境）</th>
+<th>MuJoCo（普通仿真）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>机身前进（6s）</td>
+<td><strong>+0.558 m</strong></td>
+<td><strong>+0.059 m</strong></td>
+</tr>
+<tr>
+<td>四脚抬脚</td>
+<td>都能抬（后腿 15mm+）</td>
+<td>后腿几乎拖地（6mm）</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>说明：<strong>在 MJX 里能走的策略，到 MuJoCo 明显退化</strong>。这就是 sim-to-sim gap（更别说 sim-to-real）。</li>
+<li>原因方向：接触/摩擦/求解器差异、MJX 与 MuJoCo 的数值实现不同。</li>
+</ul>
+<h3>2. 更糟的是：训练里就有“拖后腿”</h3>
+<ul>
+<li><code>walk_sym2 / walk_sym3</code> 在<strong>训练环境（MJX）里也拖两条后腿</strong>（L1/L3 抬 6–8mm）、机身几乎不前进。</li>
+<li>所以：<strong>后期的退化不是 gap，是策略本身没学对</strong>（奖励被刷/局部最优）。</li>
+<li>对比：早期 <code>walk_sym</code> 在 MJX 里<strong>确实走了 +0.558m</strong>（虽然后腿 L3 偏弱），是“相对最好”的。</li>
+</ul>
+<h3>3. 那到底是模型问题还是训练问题？</h3>
+<ul>
+<li><strong>模型能抬腿</strong>：手写一个开环 trot，四脚都能抬 100–160mm（说明关节/几何没有物理性缺陷）。</li>
+<li><strong>但干净稳定的 trot 很难</strong>：我们试了
+  1. 关节正弦（knee 反相）→ 向后退着飞、前腿蹬后腿拖；
+  2. 关节正弦（knee 同相）→ 能走但像“蹦”（腿在扑腾）；
+  3. 足端轨迹 + 腿部 IK → IK 发散/机身塌陷（手写实现也不稳）。</li>
+<li>RL 和手写<strong>都卡在同一处</strong> → <strong>瓶颈在模型/动力学本身</strong>，不只是奖励：</li>
+<li>腿是<strong>串联 2-DOF</strong>、几何较怪（大腿朝后下、小腿朝前下）；</li>
+<li><strong>脚掌很小</strong>、机身 ~6kg 相对腿偏重；</li>
+<li>缺少能稳定支撑/推动的足端接触，容易“扑腾/塌”。</li>
+</ul>
+<h3>4. 结论</h3>
+<ul>
+<li><strong>能站</strong>（stand 很稳），<strong>能训</strong>（RL 跑得起来），但<strong>“四条腿均匀迈步的稳定 trot”做不出来</strong>（RL 与我手写都失败）。</li>
+<li>这不是“再调调奖励/多训一会儿”能解决的——<strong>要动模型</strong>。</li>
+</ul>
+<h3>5. 下一步方向（任选其一或多选）</h3>
+<ol>
+<li><strong>改模型</strong>（最根治）：
+   - 调腿长/脚掌大小/质心/关节限位/摩擦；让足端能稳定支撑与推动；
+   - 或参考成熟四足（如 Go2）的腿型/质量分布重构。</li>
+<li><strong>换更标准的四足模型</strong>：先在 Go2/Anymal 上把步态跑通，再迁移回自建狗。</li>
+<li><strong>用经典控制器</strong>：足端轨迹 + 正确的 IK + VMC 平衡层（本项目 <code>go2_mpc</code> 方向，但需要补稳定平衡层）。</li>
+<li><strong>暂时接受</strong>：<code>walk_sym</code> 是相对最好的一版（MJX 能走），先用于展示/文档，走路问题留作后续。</li>
+</ol>
+<h3>6. 最重要的方法论教训</h3>
+<ul>
+<li><strong>reward 高 ≠ 行为对</strong>：一定逐脚/逐行为验证（本项目多次被 reward 指标“骗”）。</li>
+<li><strong>先分清 gap 还是训练失败</strong>：在<strong>训练环境里</strong>单独测一遍（我们就是靠这个确认 sym2/sym3 是训练问题）。</li>
+<li><strong>模型是地基</strong>：地基（几何/质量/接触）不改进，奖励和算法都是空中楼阁。</li>
+<li><strong>保留备份与可回退</strong>：ONNX、checkpoint、模型 <code>.bak</code> 都留着，实验失败能回去。</li>
+</ul>
+<hr />
+<blockquote>
+<p>这一段经历比“成功”更有价值：它把 RL 里“奖励设计、reward hacking、sim gap、模型重要性”全踩了一遍。</p>
+</blockquote>
+<div class="tip-box" style="margin-top:40px;"><div class="tip-title">💻 配套源码</div>
+本笔记对应源码：<a href="https://github.com/Ian-cyy/mujoco-control-rl" target="_blank" rel="noopener">github.com/Ian-cyy/mujoco-control-rl</a>
+&nbsp;·&nbsp; <a href="../">← 返回目录</a></div>
+</div></main>
+<button class="back-to-top" id="backToTop" title="回到顶部">↑</button>
+<script>
+  // ===== 深色模式切换 =====
+  const themeBtn = document.getElementById('themeBtn');
+  const html = document.documentElement;
+  const savedTheme = localStorage.getItem('mj-notes-theme');
+  if (savedTheme === 'dark') {
+    html.setAttribute('data-theme', 'dark');
+    themeBtn.textContent = '☀️';
+  }
+  themeBtn.addEventListener('click', () => {
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      themeBtn.textContent = '🌙';
+      localStorage.setItem('mj-notes-theme', 'light');
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      themeBtn.textContent = '☀️';
+      localStorage.setItem('mj-notes-theme', 'dark');
+    }
+  });
+
+  // ===== 移动端侧边栏 =====
+  const menuBtn = document.getElementById('menuBtn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  menuBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+  document.querySelectorAll('.toc-list a').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 900) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+      }
+    });
+  });
+
+  // ===== 滚动监听：高亮当前章节 + 进度条 + 回到顶部 =====
+  const tocLinks = document.querySelectorAll('.toc-list a');
+  const chapters = document.querySelectorAll('h2.chapter');
+  const progressBar = document.getElementById('progressBar');
+  const backToTop = document.getElementById('backToTop');
+
+  function updateActiveChapter() {
+    let current = '';
+    const scrollPos = window.scrollY + 170;   // ★ 覆盖 80+80 落位 + 10px 余量
+    chapters.forEach(ch => {
+      if (ch.offsetTop <= scrollPos) {
+        current = ch.id;
+      }
+    });
+    // ★ 滚到页面底部时强制高亮最后一章
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      current = chapters[chapters.length - 1].id;
+    }
+    tocLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('data-target') === current) {
+        link.classList.add('active');
+      }
+    });
+  }
+
+  function updateProgress() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = progress + '%';
+    if (scrollTop > 400) {
+      backToTop.classList.add('visible');
+    } else {
+      backToTop.classList.remove('visible');
+    }
+  }
+
+  window.addEventListener('scroll', () => {
+    updateActiveChapter();
+    updateProgress();
+  }, { passive: true });
+
+  backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  updateActiveChapter();
+  updateProgress();
+</script></body></html>
