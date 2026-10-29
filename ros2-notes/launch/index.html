@@ -224,6 +224,12 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>hljs.highlightAll();</script>
+<style id="mobile-guard">
+  /* 移动端防横向溢出：长内联代码/长 token 断行，禁止页面左右拖动 */
+  html, body { overflow-x: hidden; }
+  :not(pre) > code { overflow-wrap: anywhere; word-break: break-word; }
+  p, li, th, td { overflow-wrap: anywhere; }
+</style>
 </head>
 <body>
 

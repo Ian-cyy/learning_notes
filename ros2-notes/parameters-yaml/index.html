@@ -523,6 +523,12 @@
   pre::-webkit-scrollbar { height: 6px; }
   pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 </style>
+<style id="mobile-guard">
+  /* 移动端防横向溢出：长内联代码/长 token 断行，禁止页面左右拖动 */
+  html, body { overflow-x: hidden; }
+  :not(pre) > code { overflow-wrap: anywhere; word-break: break-word; }
+  p, li, th, td { overflow-wrap: anywhere; }
+</style>
 </head>
 <body>
 
