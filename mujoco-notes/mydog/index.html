@@ -504,13 +504,15 @@
   pre::-webkit-scrollbar { height: 6px; }
   pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 .series-nav{padding:12px 20px}.series-nav .sn-title{font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px}.series-nav a{display:block;padding:7px 12px;margin:4px 0;border-radius:7px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);text-decoration:none;font-size:13px;transition:all .2s}.series-nav a:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}.series-nav a.cur{border-color:var(--accent);color:var(--accent);background:var(--accent-light);font-weight:600}</style><style id="mobile-guard">
-  /* 移动端彻底防横向溢出（长代码换行、宽表格内部滚动、长词断行） */
+  /* 代码块可横向滑动；页面整体禁止横向移动；长词/宽表格不撑破页面 */
   html, body { overflow-x: hidden; max-width: 100%; }
-  body, body * { overflow-wrap: anywhere; word-break: break-word; }
-  pre { max-width: 100%; }
+  body { overflow-wrap: anywhere; }
+  main, .content-wrapper { min-width: 0; max-width: 100%; overflow-x: hidden; }
+  pre { max-width: 100%; overflow-x: auto; }
+  table { max-width: 100%; }
   @media (max-width: 900px) {
-    pre { white-space: pre-wrap; }
-    table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    pre { white-space: pre; overflow-x: auto; }
+    table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   }
 </style>
 </head><body>
